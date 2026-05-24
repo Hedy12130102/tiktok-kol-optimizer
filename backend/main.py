@@ -35,7 +35,7 @@ def optimize(req: OptimizeRequest):
     data_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "sample_kols.json")
     with open(data_path) as f:
         all_kols = [KOL(**d) for d in json.load(f)]
-    # 筛选国家+品类
+    # Filter by country and category
     filtered = [k for k in all_kols
                 if k.country == req.country and k.category == req.category]
     

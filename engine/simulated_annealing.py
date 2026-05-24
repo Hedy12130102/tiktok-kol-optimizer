@@ -4,7 +4,7 @@ from .models import KOL
 from .fitness import fitness
 
 def get_neighbour(state: List[int]) -> List[int]:
-    """单点翻转邻域生成"""
+    """Generate neighborhood by single point flip"""
     neighbour = copy.copy(state)
     idx = random.randint(0, len(state) - 1)
     neighbour[idx] = 1 - neighbour[idx]
@@ -19,14 +19,14 @@ def simulated_annealing(
     max_iter: int = 500,
 ) -> Tuple[List[int], float, List[float]]:
     """
-    返回: (最优状态, 最优Fitness, 每步最优fitness历史)
+    Returns: (best state, best fitness, history of best fitness per step)
     """
     n = len(kols)
     current = [random.randint(0, 1) for _ in range(n)]
     current_cost = fitness(current, kols, budget)
     best = copy.copy(current)
     best_cost = current_cost
-    history = []  # 用于画收敛曲线
+    history = []  # Used to plot convergence curve
 
     T = T0
     while T > T_min:
@@ -39,7 +39,7 @@ def simulated_annealing(
             if current_cost < best_cost:
                 best = copy.copy(current)
                 best_cost = current_cost
-            history.append(-best_cost)  # 记录GMV（正数）
+            history.append(-best_cost)  # Record GMV (positive)
         T *= alpha
 
     return best, best_cost, history

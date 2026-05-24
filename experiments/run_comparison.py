@@ -23,7 +23,7 @@ def run_experiment(budget=5000.0):
     print("Running Random Search...")
     _, _, rs_hist = random_search(kols, budget)
 
-    # 统一长度（截取最短）
+    # Unify length (truncate to shortest)
     min_len = min(len(sa_hist), len(hc_hist), len(rs_hist))
 
     os.makedirs("experiments/plots", exist_ok=True)
@@ -37,7 +37,7 @@ def run_experiment(budget=5000.0):
     plt.legend()
     plt.tight_layout()
     plt.savefig("experiments/plots/convergence.png", dpi=150)
-    print("图表已保存至 experiments/plots/convergence.png")
+    print("Chart saved to experiments/plots/convergence.png")
 
 if __name__ == "__main__":
     run_experiment()

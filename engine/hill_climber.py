@@ -16,7 +16,7 @@ def hill_climber(
         neighbour = copy.copy(current)
         neighbour[idx] = 1 - neighbour[idx]
         new_cost = fitness(neighbour, kols, budget)
-        if new_cost < current_cost:        # 只接受更好的解
+        if new_cost < current_cost:        # Accept only better solutions
             current, current_cost = neighbour, new_cost
         history.append(-current_cost)
 

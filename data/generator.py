@@ -10,12 +10,12 @@ def generate_kols(num: int = 200, output_path: str = "data/sample_kols.json"):
     
     for i in range(1, num + 1):
         followers = random.randint(10000, 5000000)
-        # 互动率通常与粉丝数成反比，加上一点随机性
+        # Engagement rate is usually inversely proportional to followers, with some randomness
         base_engagement = max(0.01, 100000 / followers)
         engagement_rate = min(0.3, max(0.001, base_engagement * random.uniform(0.5, 1.5)))
         fit_score = random.uniform(0.3, 1.0)
         
-        # 坑位费通常与粉丝数和互动率正相关
+        # Cost is usually positively correlated with followers and engagement rate
         base_cost = followers * engagement_rate * 0.05
         cost = max(50.0, min(100000.0, base_cost * random.uniform(0.8, 1.2)))
         
