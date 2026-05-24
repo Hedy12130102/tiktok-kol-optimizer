@@ -1,9 +1,16 @@
+import csv
 import json
 import random
 import os
 
-def generate_kols(num: int = 200, output_path: str = "data/sample_kols.json"):
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+def generate_kols(
+    num: int = 200,
+    json_output_path: str = "data/sample_kols.json",
+    csv_output_path: str = "data/influencers_mock.csv",
+    seed: int = 42,
+):
+    random.seed(seed)
+    os.makedirs(os.path.dirname(json_output_path), exist_ok=True)
     countries = ["MY", "ID", "TH", "PH"]
     categories = ["beauty", "tech", "fashion"]
     kols = []
@@ -30,10 +37,15 @@ def generate_kols(num: int = 200, output_path: str = "data/sample_kols.json"):
             "cost": round(cost, 2)
         })
         
-    with open(output_path, "w", encoding="utf-8") as f:
+    with open(json_output_path, "w", encoding="utf-8") as f:
         json.dump(kols, f, indent=4, ensure_ascii=False)
+
+    with open(csv_output_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=kols[0].keys())
+        writer.writeheader()
+        writer.writerows(kols)
     
-    print(f"Successfully generated {num} KOLs to {output_path}")
+    print(f"Successfully generated {num} KOLs to {json_output_path} and {csv_output_path}")
 
 if __name__ == "__main__":
     generate_kols()

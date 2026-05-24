@@ -1,18 +1,22 @@
 import copy, random
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from .models import KOL
 from .fitness import fitness
 
 def random_search(
-    kols: List[KOL], budget: float, max_iter: int = 5000
+    kols: List[KOL],
+    budget: float,
+    max_iter: int = 5000,
+    seed: Optional[int] = None,
 ) -> Tuple[List[int], float, List[float]]:
+    rng = random.Random(seed)
     n = len(kols)
-    best = [random.randint(0, 1) for _ in range(n)]
+    best = [0] * n
     best_cost = fitness(best, kols, budget)
     history = []
 
     for _ in range(max_iter):
-        current = [random.randint(0, 1) for _ in range(n)]
+        current = [rng.randint(0, 1) for _ in range(n)]
         current_cost = fitness(current, kols, budget)
         if current_cost < best_cost:
             best = copy.copy(current)
