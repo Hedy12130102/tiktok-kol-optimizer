@@ -1,6 +1,7 @@
+# pyrefly: ignore [missing-import]
 import streamlit as st, requests
 
-st.set_page_config(page_title="KOL Matrix Optimizer", page_icon="🎯")
+st.set_page_config(page_title="KOL Matrix Optimizer")
 st.title(" TikTok Shop KOL Matrix Optimizer")
 
 budget   = st.slider("Marketing Budget (USD)", 500, 20000, 5000, step=500)
