@@ -1,6 +1,6 @@
 # TikTok Shop KOL Matrix Optimizer
 
-基于课程模块 **Local Search & Optimization** 的达人矩阵组合优化项目。系统把 TikTok Shop 东南亚达人选择建模为一个带预算约束的组合优化问题，并对比 **Hill Climber**、**Simulated Annealing** 和 **Random Search** 的搜索效果。
+This project is built around the **Local Search & Optimization** course module. It models TikTok Shop KOL portfolio selection in Southeast Asia as a budget-constrained combinatorial optimization problem, then compares **Hill Climber**, **Simulated Annealing**, and **Random Search**.
 
 ## Problem Formulation
 
