@@ -8,9 +8,9 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from engine.models import KOL
-from engine.simulated_annealing import simulated_annealing
-from engine.hill_climber import hill_climber
-from engine.random_search import random_search
+from engine.optimization.simulated_annealing import simulated_annealing
+from engine.optimization.hill_climber import hill_climber
+from engine.optimization.random_search import random_search
 from engine.fitness import summarize_state
 
 def load_kols(path="data/sample_kols.json") -> list:
