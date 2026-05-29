@@ -3,9 +3,9 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from engine.models import KOL
-from engine.hill_climber import hill_climber
-from engine.simulated_annealing import simulated_annealing
-from engine.random_search import random_search
+from engine.optimization.hill_climber import hill_climber
+from engine.optimization.simulated_annealing import simulated_annealing
+from engine.optimization.random_search import random_search
 
 def test_algorithms():
     kols = [
