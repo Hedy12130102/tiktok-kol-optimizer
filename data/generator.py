@@ -66,7 +66,7 @@ def generate_kols(
         writer = csv.DictWriter(f, fieldnames=kols[0].keys())
         writer.writeheader()
         writer.writerows(kols)
-    
+    return kols
     print(f"Successfully generated {num} KOLs to {json_output_path} and {csv_output_path}")
 
 if __name__ == "__main__":
