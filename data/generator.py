@@ -24,7 +24,7 @@ def generate_kols(
             # Micro: 10k ~ 100k (40% + 35% = 75%)
             followers = random.randint(10000, 100000)
         elif tier_roll < 95.0:
-            # Macro: 100k ~ 1python data/generator.pyM (75% + 20% = 95%)
+            # Macro: 100k ~ 1M
             followers = random.randint(100001, 1000000)
         else:
             # Mega: > 1M (Remaining 5%)
