@@ -12,10 +12,9 @@ import numpy as np
 from data.generator import generate_kols
 from engine.models import KOL
 
-# 👇 MATCHING THEIR EXACT FUNCTION NAMES FROM YOUR IMAGES 👇
-from engine.hill_climber import hill_climber
-from engine.simulated_annealing import simulated_annealing
-from engine.random_search import random_search
+from engine.optimization.hill_climber import hill_climber
+from engine.optimization.simulated_annealing import simulated_annealing
+from engine.optimization.random_search import random_search
 
 def load_kols_from_list(kol_dicts):
     return [KOL(**item) for item in kol_dicts]
