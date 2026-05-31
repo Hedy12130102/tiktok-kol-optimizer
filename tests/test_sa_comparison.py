@@ -11,15 +11,28 @@ with open("data/sample_kols.json") as f:
 # Step 2: Filter for Malaysian beauty category KOLs
 kols_my = [k for k in kols if k.country == "MY" and k.category == "beauty"]
 
+# Set fixed budget constraint for KOL selection
+budget_limit = 15000.0
+
 print(f"Loaded {len(kols_my)} Malaysian beauty KOLs\n")
 
 # Step 3: Run the standard Simulated Annealing algorithm
 print("Running Standard Simulated Annealing...")
-sa_state, _, sa_hist = simulated_annealing(kols_my, iterations=5000, seed=42)
+sa_state, _, sa_hist = simulated_annealing(
+    kols_my,
+    budget=budget_limit,
+    max_iter=500,
+    seed=42
+)
 
 # Step 4: Run the improved Simulated Annealing algorithm
 print("Running Improved Simulated Annealing...")
-sai_state, _, sai_hist = simulated_annealing_improved(kols_my, iterations=5000, seed=42)
+sai_state, _, sai_hist = simulated_annealing_improved(
+    kols_my,
+    budget=budget_limit,
+    max_iter=500,
+    seed=42
+)
 
 # Step 5: Calculate and compare GMV results
 sa_result = summarize_state(sa_state, kols_my)
