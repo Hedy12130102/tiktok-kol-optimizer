@@ -31,7 +31,7 @@ sai_state, _, sai_hist = simulated_annealing_improved(
     kols_my,
     budget=budget_limit,
     max_iter=500,
-    swap_prob=0.6
+    swap_prob=0.6,
     seed=42
 )
 
