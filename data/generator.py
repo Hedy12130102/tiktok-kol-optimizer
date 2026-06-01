@@ -34,9 +34,20 @@ def generate_kols(
         engagement_rate = min(0.3, max(0.001, base_engagement * random.uniform(0.5, 1.5)))
         fit_score = random.uniform(0.3, 1.0)
         
-        # Cost is usually positively correlated with followers and engagement rate
-        base_cost = followers * engagement_rate * 0.05
-        cost = max(50.0, min(100000.0, base_cost * random.uniform(0.8, 1.2)))
+        # Tier-based cost: bigger KOLs eat a much larger share of the budget,
+        # creating the local-optimum trap that demonstrates SA's advantage over HC.
+        # Calibrated against a reference budget of $5,000.
+        BUDGET_REF = 5000.0
+        if followers >= 1_000_000:        # Mega
+            cost_ratio = random.uniform(0.60, 0.90)
+        elif followers >= 100_000:        # Macro
+            cost_ratio = random.uniform(0.25, 0.55)
+        elif followers >= 10_000:         # Micro
+            cost_ratio = random.uniform(0.05, 0.15)
+        else:                             # Nano
+            cost_ratio = random.uniform(0.01, 0.04)
+        cost = round(BUDGET_REF * cost_ratio, 2)
+        
        
         noise = random.randint(-int(followers * 0.05), int(followers * 0.05))
         avg_views = max(0, int(followers * 0.3 + noise))
