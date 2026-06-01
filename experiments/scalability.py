@@ -87,8 +87,8 @@ def run_scalability_experiment():
             # Generate a fresh KOL pool for this seed
             kol_dicts = generate_kols(
                 num=N,
-                json_output_path=f"data/temp_kols_{N}_{seed}.json",
-                csv_output_path=f"data/temp_kols_{N}_{seed}.csv",
+                json_output_path=None,
+                csv_output_path=None,
                 seed=seed,
             )
             kols = dicts_to_kols(kol_dicts)
@@ -107,11 +107,6 @@ def run_scalability_experiment():
 
             print(f"  seed={seed}  SA={gmv_sa:>10,.0f}  HC={gmv_hc:>10,.0f}  RS={gmv_rs:>10,.0f}")
 
-            # Clean up temp files
-            for ext in [".json", ".csv"]:
-                tmp = f"data/temp_kols_{N}_{seed}{ext}"
-                if os.path.exists(tmp):
-                    os.remove(tmp)
 
     # ── Write CSV ─────────────────────────────────────────────────
     csv_path = "experiments/plots/scalability_results.csv"
@@ -131,7 +126,7 @@ def run_scalability_experiment():
                     round(np.mean(times), 4), round(np.std(times), 4),
                     round(np.mean(gmvs),  2),  round(np.std(gmvs),  2),
                 ])
-    print(f"\n✅  CSV saved → {csv_path}")
+    print(f"\n[SUCCESS] CSV saved -> {csv_path}")
 
     # ── Compute summary arrays for plotting ───────────────────────
     summary = {}
@@ -167,7 +162,7 @@ def run_scalability_experiment():
     for path in ["experiments/plots/scalability_time.png", "docs/figures/scalability_time.png"]:
         fig.savefig(path, dpi=150)
     plt.close(fig)
-    print("✅  Time chart saved → docs/figures/scalability_time.png")
+    print("[SUCCESS] Time chart saved -> docs/figures/scalability_time.png")
 
     # ── Plot 2: Final GMV ─────────────────────────────────────────
     fig, ax = plt.subplots(figsize=(9, 5))
@@ -194,7 +189,7 @@ def run_scalability_experiment():
     for path in ["experiments/plots/scalability_gmv.png", "docs/figures/scalability_gmv.png"]:
         fig.savefig(path, dpi=150)
     plt.close(fig)
-    print("✅  GMV chart saved  → docs/figures/scalability_gmv.png")
+    print("[SUCCESS] GMV chart saved  -> docs/figures/scalability_gmv.png")
 
     # ── Print summary table ───────────────────────────────────────
     print("\n" + "═" * 70)

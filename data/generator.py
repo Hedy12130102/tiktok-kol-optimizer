@@ -10,7 +10,10 @@ def generate_kols(
     seed: int = 42,
 ):
     random.seed(seed)
-    os.makedirs(os.path.dirname(json_output_path), exist_ok=True)
+    if json_output_path and os.path.dirname(json_output_path):
+        os.makedirs(os.path.dirname(json_output_path), exist_ok=True)
+    if csv_output_path and os.path.dirname(csv_output_path):
+        os.makedirs(os.path.dirname(csv_output_path), exist_ok=True)
     countries = ["MY", "ID", "TH", "PH"]
     categories = ["beauty", "tech", "fashion"]
     kols = []
@@ -70,15 +73,18 @@ def generate_kols(
             "age_group": age_group
         })
         
-    with open(json_output_path, "w", encoding="utf-8") as f:
-        json.dump(kols, f, indent=4, ensure_ascii=False)
+    if json_output_path:
+        with open(json_output_path, "w", encoding="utf-8") as f:
+            json.dump(kols, f, indent=4, ensure_ascii=False)
 
-    with open(csv_output_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=kols[0].keys())
-        writer.writeheader()
-        writer.writerows(kols)
-    return kols
-    print(f"Successfully generated {num} KOLs to {json_output_path} and {csv_output_path}")
+    if csv_output_path:
+        with open(csv_output_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=kols[0].keys())
+            writer.writeheader()
+            writer.writerows(kols)
+            
+    if json_output_path and csv_output_path:
+        print(f"Successfully generated {num} KOLs to {json_output_path} and {csv_output_path}")
     
     return kols
 
