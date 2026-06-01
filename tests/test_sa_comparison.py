@@ -12,7 +12,7 @@ with open("data/sample_kols.json") as f:
 kols_my = [k for k in kols if k.country == "MY" and k.category == "beauty"]
 
 # Set fixed budget constraint for KOL selection
-budget_limit = 15000.0
+budget_limit = 5000.0
 
 print(f"Loaded {len(kols_my)} Malaysian beauty KOLs\n")
 
