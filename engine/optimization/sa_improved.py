@@ -73,6 +73,7 @@ def simulated_annealing_improved(
         (best_state, best_cost, history)
     """
     rng = random.Random(seed)
+    rng.randint(0,1000)
     n = len(kols)
     current = [0] * n
     current_cost = fitness(current, kols, budget)
