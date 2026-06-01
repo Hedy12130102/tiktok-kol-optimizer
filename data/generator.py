@@ -68,6 +68,8 @@ def generate_kols(
         writer.writerows(kols)
     
     print(f"Successfully generated {num} KOLs to {json_output_path} and {csv_output_path}")
+    
+    return kols
 
 if __name__ == "__main__":
     import argparse  # We import this here so we don't disrupt the top of your file
