@@ -8,41 +8,44 @@ from engine.models import KOL
 from engine.fitness import fitness
 
 
-def get_neighbour_bitflip(state: List[int], rng: random.Random) -> List[int]:
-    """Flip one random bit (add or remove one KOL)."""
+def get_neighbour_swap_operator(state: List[int], rng: random.Random) -> List[int]:
+    """
+    Smart neighborhood generator.
+    Allows a standard 1-bit flip OR a 2-bit swap to prevent budget paralysis
+    by replacing an expensive KOL with cheaper options seamlessly.
+    """
     neighbour = copy.copy(state)
-    idx = rng.randint(0, len(state) - 1)
-    neighbour[idx] = 1 - neighbour[idx]
+    n = len(state)
+    
+    # 40% chance: standard single bit flip (add/remove one KOL)
+    if rng.random() < 0.4:
+        idx = rng.randint(0, n - 1)
+        neighbour[idx] = 1 - neighbour[idx]
+    # 60% chance: Perform a structural SWAP (drop a selected KOL, add an unselected one)
+    else:
+        selected_indices = [i for i, val in enumerate(state) if val == 1]
+        unselected_indices = [i for i, val in enumerate(state) if val == 0]
+        
+        if selected_indices and unselected_indices:
+            drop_idx = rng.choice(selected_indices)
+            add_idx = rng.choice(unselected_indices)
+            neighbour[drop_idx] = 0
+            neighbour[add_idx] = 1
+            
     return neighbour
 
 
 def simulated_annealing(
     kols: List[KOL],
     budget: float,
-    T0: float = 50000.0,
-    T_min: float = 1.0,
-    alpha: float = 0.95,
-    max_iter: int = 500,
+    T0: float = 100.0,       # Initial temperature optimized for cost bounds
+    T_min: float = 0.01,
+    alpha: float = 0.98,     # Slower cooling to thoroughly search swap spaces
+    max_iter: int = 150,     # Stable iteration limit
     seed: Optional[int] = None,
 ) -> Tuple[List[int], float, List[float]]:
     """
-    Simulated Annealing with bit-flip neighbourhood.
-
-    Accepts worse neighbours with probability exp(-delta / T), which
-    allows the search to escape local optima that trap Hill Climber.
-    Temperature decreases geometrically: T = T * alpha each round.
-
-    Args:
-        kols:      List of KOL candidates.
-        budget:    Maximum total hiring cost (USD).
-        T0:        Initial temperature (controls early exploration).
-        T_min:     Stopping temperature.
-        alpha:     Cooling rate (0 < alpha < 1, typically 0.90–0.99).
-        max_iter:  Neighbour evaluations per temperature level.
-        seed:      Random seed for reproducibility.
-
-    Returns:
-        (best_state, best_cost, history)
+    Simulated Annealing utilizing a swap operator to bypass local optimum traps.
     """
     rng = random.Random(seed)
     n = len(kols)
@@ -55,19 +58,20 @@ def simulated_annealing(
     T = T0
     while T > T_min:
         for _ in range(max_iter):
-            neighbour = get_neighbour_bitflip(current, rng)
-            delta = fitness(neighbour, kols, budget) - current_cost
+            neighbour = get_neighbour_swap_operator(current, rng)
+            new_cost = fitness(neighbour, kols, budget)
+            delta = new_cost - current_cost
 
-            # Accept if better, or with Metropolis probability if worse
-            if delta < 0 or rng.random() < math.exp(-delta / T):
+            # Accept if cost decreases, or via temperature probability threshold
+            if delta < 0 or (T > 0 and rng.random() < math.exp(-delta / T)):
                 current = neighbour
-                current_cost = fitness(neighbour, kols, budget)
+                current_cost = new_cost
 
-            if current_cost < best_cost:
-                best = copy.copy(current)
-                best_cost = current_cost
+                if current_cost < best_cost:
+                    best = copy.copy(current)
+                    best_cost = current_cost
 
-            history.append(-best_cost)       # record best GMV seen so far
+            history.append(-best_cost)
 
         T *= alpha
 
