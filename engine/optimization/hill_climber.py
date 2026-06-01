@@ -16,7 +16,22 @@ def hill_climber(
     """
     Hill Climber (greedy local search).
 
-    Only accepts a neighbour if it strictly improves the cost function (minimization).
+    Only accepts a neighbour if it strictly improves the cost function.
+    Fast to converge but prone to getting trapped in local optima —
+    e.g. after selecting expensive macro KOLs the budget is exhausted
+    and no single-bit flip can improve the solution further.
+
+    Args:
+        kols:      List of KOL candidates.
+        budget:    Maximum total hiring cost (USD).
+        max_iter:  Number of neighbour evaluations.
+        seed:      Random seed for reproducibility.
+
+    Returns:
+        (best_state, best_cost, history)
+        best_state  — binary list, 1 = KOL selected.
+        best_cost   — final cost function value (negative GMV).
+        history     — best GMV at each iteration step (for convergence plot).
     """
     rng = random.Random(seed)
     n = len(kols)
@@ -30,10 +45,9 @@ def hill_climber(
         neighbour[idx] = 1 - neighbour[idx]
         new_cost = fitness(neighbour, kols, budget)
 
-        # Minimization check: lower cost is better
-        if new_cost < current_cost:
+        if new_cost < current_cost:          # accept only improvements
             current, current_cost = neighbour, new_cost
 
-        history.append(-current_cost)
+        history.append(-current_cost)        # record GMV (positive)
 
     return current, current_cost, history
