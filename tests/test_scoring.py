@@ -2,7 +2,7 @@ import pytest
 from engine.models import KOL
 from engine.scoring.creator_score import compute_creator_score
 from engine.scoring.explainer import generate_reasons
-from engine.fitness import predict_roi_from_state
+from engine.fitness import summarize_state
 
 # ---------------------- Fixtures ----------------------
 @pytest.fixture
@@ -43,10 +43,13 @@ def test_tier_classification():
     assert kol_micro.tier == "Micro"
     assert kol_nano.tier == "Nano"
 
-def test_predict_roi_from_state(test_kols):
-    """Test case 5: ROI calculation logic"""
+def test_roi_calculation_from_state(test_kols):
+    """Test case 5: ROI calculation using summarize_state"""
     # Select the first two KOLs
     state = [1, 1, 0, 0]
-    roi = predict_roi_from_state(state, test_kols)
+    summary = summarize_state(state, test_kols)
+    
+    assert "roi" in summary, "ROI key missing in summary"
+    roi = summary["roi"]
     assert isinstance(roi, (int, float)), "ROI should be a numeric value"
     assert roi > 0, "ROI should be positive for valid selection"
