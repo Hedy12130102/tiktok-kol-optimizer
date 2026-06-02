@@ -20,6 +20,7 @@ import sys
 import time
 from typing import Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
  
 # ── Make project root importable ──────────────────────────────────
@@ -37,6 +38,14 @@ app = FastAPI(
     title="TikTok Shop KOL Matrix Optimizer API",
     description="Local search optimizer for selecting a KOL portfolio under a marketing budget.",
     version="1.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
  
 # ── Enum constants ────────────────────────────────────────────────
