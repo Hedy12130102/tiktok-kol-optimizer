@@ -74,8 +74,10 @@ if "results" in st.session_state:
         st.write(display_df.to_html(escape=False,index=False),unsafe_allow_html=True)
         st.markdown("<h3 style='text-align:center'>KOL Details</h3>",unsafe_allow_html=True)
         for kol in results["selected_kols"]:
+            temp_r=[]
             r=kol.get("reasons",[])
-            temp_r=' '.join(x for x in r)
+            for i in r:
+                temp_r.append(f"✅ {i}")
             n=kol["name"]
             reason_list.append({"name":n,"reason":temp_r})
             with st.expander(f'{kol["name"]} -- Followers:{kol["followers"]:,}'):
@@ -90,7 +92,10 @@ if "results" in st.session_state:
                     st.metric("Tier",get_tier(kol["followers"]))
         st.markdown("<h3 style='text-align:center'>Reasons:</h3>",unsafe_allow_html=True)
         for i,v in enumerate(reason_list):
-            st.write(f"{i+1}. {v['name']}: {v['reason']}")
+            st.write(f'{i+1}. {v["name"]}: ')
+            for j in v["reason"]:
+                st.write(f"{j}")
+
     with tab2:
         col1,col2,col3=st.columns(3)
         with col1:
