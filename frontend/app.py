@@ -34,7 +34,7 @@ with st.sidebar:
     budget=st.number_input("Budget(USD)",min_value=1,value=50000,step=5000)
     country=st.selectbox("Country",["MY","ID","TH","PH"])
     category=st.selectbox("Category",["beauty","tech","fashion"])
-    if st.button("Check",type="primary",key="optimize"):
+    if st.button("Check",type="primary",key="optimize_bt"):
         with st.spinner("Computing..."):
             try:
                 payload={
@@ -129,11 +129,14 @@ if "results" in st.session_state:
             fig_pie.update_layout(showlegend=False)
             st.plotly_chart(fig_pie,use_container_width=True)
 else:
-    st.info("Configure parameters on the left and click 'check' button.")
+    with tab1:
+        st.info("Configure parameters on the left and click 'check' button.")
+    with tab2:
+        st.info("Configure parameters on the left and click 'check' button.")
 with tab3:
     test_budget=st.number_input("Budget",min_value=1,value=50000,step=5000)
     n_size=st.slider("KOL Pool Size",min_value=10,max_value=500,value=100,step=10,help="Test algorithm performance with different pool sizes.")
-    if st.button("Check",type="primary",key="scalability"):
+    if st.button("Check",type="primary",key="scalability_bt"):
         with st.spinner("Analysing..."):
             try:
                 payload={
@@ -180,8 +183,11 @@ with tab3:
                     st.dataframe(df_scal,use_container_width=True)
                     best_time=df_scal.loc[df_scal["Time(Seconds)"].idxmin(),"Algorithm"]
                     best_gmv=df_scal.loc[df_scal["GMV"].idxmax(),"Algorithm"]
-                    st.info(f"\nFastest Algorithm:{best_time}\nBest GMV Algorithm:{best_gmv}")
+                    st.info(f"\nFastest Algorithm:{best_time}")
+                    st.info(f"\nBest GMV Algorithm:{best_gmv}")
             else:
                 st.warning("No scalability data available.")
         else:
-            st.info("Set Pool Size and Budget above and click 'check' button.")
+            st.error("Error")
+    else:
+        st.info("Set Pool Size and Budget above and click 'check' button.")
