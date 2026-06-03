@@ -1,105 +1,193 @@
-# pyrefly: ignore [missing-import]
 import pandas as pd
 import requests
 import streamlit as st
-
-
-API_URL = "http://localhost:8000/optimize"
-
-st.set_page_config(page_title="TikTok KOL Matrix Optimizer", layout="wide")
-
-st.title("TikTok Shop KOL Matrix Optimizer")
-st.caption("Local Search & Optimization: Hill Climber vs Simulated Annealing")
-
-with st.sidebar:
-    st.header("Campaign Settings")
-    budget = st.slider("Marketing budget (USD)", 500, 20000, 5000, step=500)
-    country = st.selectbox("Target country", ["MY", "ID", "TH", "PH"])
-    category = st.selectbox("Product category", ["beauty", "tech", "fashion"])
-    seed = st.number_input("Random seed", min_value=0, max_value=9999, value=42, step=1)
-    run = st.button("Run optimization", type="primary", use_container_width=True)
-
-if not run:
-    st.info("Choose a budget and market segment, then run the optimizer.")
-    st.stop()
-
+import plotly.express as px
+def get_tier(followers):
+    if followers>1000000:
+        return "Mega"
+    elif followers>100000:
+        return "Macro"
+    elif followers>10000:
+        return "Micro"
+    else:
+        return "Nano"
+def badge_color(tier):
+    colors={
+        "Mega":"#9b59b6",
+        "Macro":"#3498db",
+        "Micro":"#2ecc71",
+        "Nano":"#f1c40f"
+    }
+    color=colors.get(tier,"#95a5a6")
+    return f'<span style="background-color:{color};color:white;padding:2px 8px;border-radius:12px;font-size:12px">{tier}</span>'
+st.set_page_config(page_title="Tiktok Shop KOL Matrix System",layout="wide")
+API_URL = "http://localhost:8000"
+st.markdown("<h1 style='text-align:center'>Tiktok Shop KOL Matrix System</h1>",unsafe_allow_html=True)
 try:
-    with st.spinner("Searching for the best KOL matrix..."):
-        response = requests.post(
-            API_URL,
-            json={
-                "budget": budget,
-                "country": country,
-                "category": category,
-                "seed": seed,
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-except requests.RequestException as exc:
-    st.error(f"Backend request failed: {exc}")
-    st.stop()
-
-data = response.json()
-if data["candidates"] == 0:
-    st.warning("No KOL candidates found for this country and category.")
-    st.stop()
-
-metric_cols = st.columns(5)
-metric_cols[0].metric("Best algorithm", data["best_algorithm"])
-metric_cols[1].metric("Predicted GMV", f"${data['total_gmv']:,.0f}")
-metric_cols[2].metric("Budget used", f"${data['total_cost']:,.0f}", f"{data['total_cost'] / budget:.1%}")
-metric_cols[3].metric("Selected KOLs", len(data["selected_kols"]))
-metric_cols[4].metric("Candidates", data["candidates"])
-
-results = data["results"]
-summary_df = pd.DataFrame(
-    [
-        {
-            "Algorithm": result["algorithm"],
-            "Selected KOLs": result["selected_count"],
-            "Budget Used": result["total_cost"],
-            "Predicted GMV": result["total_gmv"],
-            "ROI": result["roi"],
+    health=requests.get(f"{API_URL}/health")
+    health.raise_for_status()
+    st.success("Backend connected.")
+except:
+    st.error("Backend unavailable. Make sure uvicorn is runing.")
+with st.sidebar:
+    st.header("Configuration")
+    budget=st.number_input("Budget(USD)",min_value=1,value=50000,step=5000)
+    country=st.selectbox("Country",["MY","ID","TH","PH"])
+    category=st.selectbox("Category",["beauty","tech","fashion"])
+    if st.button("Check",type="primary",key="optimize_bt"):
+        with st.spinner("Computing..."):
+            try:
+                payload={
+                    "budget":budget,
+                    "country":country,
+                    "category":category,
+                    "seed":42
+                }
+                response=requests.post(f"{API_URL}/optimize",json=payload,timeout=60)
+                response.raise_for_status()
+                data=response.json()
+                if data.get("candidates",0)==0:
+                    st.session_state.pop("results",None)
+                    st.warning("No KOL was found for this filter combination. Please try different country/category.")
+                else:
+                    st.session_state["results"]=data
+                st.success("Backend connected successfully.")
+            except requests.exceptions.ConnectionError:
+                st.error("Backend unavailable. Make sure uvicorn is runing.")
+            except requests.exceptions.Timeout:
+                st.error("Request timeout. Please try again.")
+            except requests.exceptions.HTTPError:
+                st.error(f"HTTP error: {response.status_code}.")
+            except Exception as e:
+                st.error(f"Unexcepted error: {e}.")
+tab1,tab2,tab3=st.tabs(["Selected KOLs","Chart Analysis","Scalability Analysis"])
+if "results" in st.session_state:
+    results=st.session_state["results"]
+    with tab1:
+        reason_list=[]
+        df=pd.DataFrame(results["selected_kols"])
+        df["tier"]=df["followers"].apply(get_tier)
+        df["badge"]=df["tier"].apply(badge_color)
+        display_df=df[["name","followers","badge","cost","expected_gmv"]].copy()
+        display_df.columns=["Name","Followers","Tier","Cost(USD)","Expected GMV(USD)"]
+        st.markdown("<h3 style='text-align:center'>Selected KOLs</h3>",unsafe_allow_html=True)
+        st.write(display_df.to_html(escape=False,index=False),unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align:center'>KOL Details</h3>",unsafe_allow_html=True)
+        for kol in results["selected_kols"]:
+            r=kol.get("reasons",[])
+            temp_r=' '.join(x for x in r)
+            n=kol["name"]
+            reason_list.append({"name":n,"reason":temp_r})
+            with st.expander(f'{kol["name"]} -- Followers:{kol["followers"]:,}'):
+                col1,col2=st.columns(2)
+                with col1:
+                    st.metric("Followers",f"{kol['followers']:,}")
+                    st.metric("Fit Score",f"{kol['fit_score']:.2f}")
+                    st.metric("Cost",f"${kol['cost']:.2f}")
+                with col2:
+                    st.metric("Engagement Rate",f"{kol['engagement_rate']:.2f}")
+                    st.metric("Expected GMV",f"${kol['expected_gmv']:.2f}")
+                    st.metric("Tier",get_tier(kol["followers"]))
+        st.markdown("<h3 style='text-align:center'>Reasons:</h3>",unsafe_allow_html=True)
+        for i,v in enumerate(reason_list):
+            st.write(f"{i+1}. {v['name']}: {v['reason']}")
+    with tab2:
+        col1,col2,col3=st.columns(3)
+        with col1:
+            st.metric("Best Algorithm",results["best_algorithm"])
+        with col2:
+            st.metric("Total GMV",f"${results['total_gmv']:.0f}")
+        with col3:
+            st.metric("ROI",f"{results['roi']:.2f}x")
+        st.divider()
+        name_change={
+            "simulated_annealing":"Simulated Annealing",
+            "hill_climber":"Hill Climber",
+            "random_search":"Random Search"
         }
-        for result in results.values()
-    ]
-).sort_values("Predicted GMV", ascending=False)
-
-st.subheader("Algorithm Comparison")
-st.dataframe(
-    summary_df,
-    use_container_width=True,
-    hide_index=True,
-    column_config={
-        "Budget Used": st.column_config.NumberColumn(format="$%.0f"),
-        "Predicted GMV": st.column_config.NumberColumn(format="$%.0f"),
-        "ROI": st.column_config.NumberColumn(format="%.2f"),
-    },
-)
-
-history = {}
-min_len = min(len(result["history"]) for result in results.values())
-for result in results.values():
-    history[result["algorithm"]] = result["history"][:min_len]
-
-st.subheader("Convergence Curve")
-st.line_chart(pd.DataFrame(history))
-
-st.subheader("Best KOL Matrix")
-selected_df = pd.DataFrame(data["selected_kols"])
-if selected_df.empty:
-    st.warning("The best feasible solution selected no KOLs under this budget.")
+        roi_al=[]
+        for k,v in results["results"].items():
+            display_name=name_change.get(k,k)
+            roi_al.append({
+                "Algorithm":display_name,
+                "ROI":v["roi"]
+            })
+        roi_df=pd.DataFrame(roi_al)
+        fig_bar=px.bar(roi_df,x="Algorithm",y="ROI",text="ROI",color="Algorithm",title="Algorithm comparison")
+        fig_bar.update_traces(texttemplate='%{text:.2f}x',textposition='outside')
+        fig_bar.update_layout(showlegend=False)
+        st.plotly_chart(fig_bar,use_container_width=True)
+        df=pd.DataFrame(results["selected_kols"])
+        df["tier"]=df["followers"].apply(get_tier)
+        tier_count=df["tier"].value_counts().reset_index()
+        tier_count.columns=(["Tier","Count"])
+        if not tier_count.empty:
+            fig_pie=px.pie(tier_count,values="Count",names="Tier",color="Tier",
+                color_discrete_map={"Mega":"#9b59b6","Macro":"#3498db",
+                "Micro":"#2ecc71","Nano":"#f1c40f"},title="Tier Distribution")
+            fig_pie.update_traces(textposition="inside",textinfo="percent+label")
+            fig_pie.update_layout(showlegend=False)
+            st.plotly_chart(fig_pie,use_container_width=True)
 else:
-    selected_df = selected_df.sort_values("expected_gmv", ascending=False)
-    st.dataframe(
-        selected_df,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "cost": st.column_config.NumberColumn("cost", format="$%.0f"),
-            "expected_gmv": st.column_config.NumberColumn("expected_gmv", format="$%.0f"),
-            "engagement_rate": st.column_config.NumberColumn("engagement_rate", format="%.2%"),
-            "fit_score": st.column_config.ProgressColumn("fit_score", min_value=0, max_value=1),
-        },
-    )
+    with tab1:
+        st.info("Configure parameters on the left and click 'check' button.")
+    with tab2:
+        st.info("Configure parameters on the left and click 'check' button.")
+with tab3:
+    test_budget=st.number_input("Budget",min_value=1,value=50000,step=5000)
+    n_size=st.slider("KOL Pool Size",min_value=10,max_value=500,value=100,step=10,help="Test algorithm performance with different pool sizes.")
+    if st.button("Check",type="primary",key="scalability_bt"):
+        with st.spinner("Analysing..."):
+            try:
+                payload={
+                    "n":n_size,
+                    "budget":test_budget,
+                    "seed":42
+                }
+                response=requests.post(f"{API_URL}/scalability",json=payload,timeout=120)
+                response.raise_for_status()
+                scal_data=response.json()
+                st.session_state["scalability"]=scal_data
+                st.success("Backend connected successfully.")
+            except requests.exceptions.ConnectionError:
+                st.error("Backend unavailable. Make sure uvicorn is runing.")
+            except requests.exceptions.Timeout:
+                st.error("Request timeout. Please try again.")
+            except requests.exceptions.HTTPError:
+                st.error(f"HTTP error: {response.status_code}.")
+            except Exception as e:
+                st.error(f"Unexcepted error: {e}.")
+        if "scalability" in st.session_state:
+            data=[]
+            scal_data=st.session_state["scalability"]
+            display_name=["Simulated Annealing","Hill Climber","Random Search"]
+            back_name=["simulated_annealing","hill_climber","random_search"]
+            for name,key in zip(display_name,back_name):
+                if key in scal_data:
+                    data.append({"Algorithm":name,"Time(Seconds)":scal_data[key]["time_seconds"],
+                                 "GMV":scal_data[key]["total_gmv"],"ROI":scal_data[key]["roi"],
+                                 "Selected":scal_data[key]["selected_count"]})
+            if data:
+                col1,col2=st.columns(2)
+                df_scal=pd.DataFrame(data)
+                with col1:
+                    fig_time=px.bar(df_scal,x="Algorithm",y="Time(Seconds)",text="Time(Seconds)",color="Algorithm",title=f"Execution Time at Pool Size {n_size}")
+                    fig_time.update_traces(texttemplate="%{text:.3f}s",textposition="outside")
+                    st.plotly_chart(fig_time,use_container_width=True)
+                with col2:
+                    fig_gmv=px.bar(df_scal,x="Algorithm",y="GMV",text="GMV",color="Algorithm",title="GMV found by each algorithm")
+                    fig_gmv.update_traces(texttemplate="%{text:,.0f}",textposition="outside")
+                    st.plotly_chart(fig_gmv,use_container_width=True)
+                st.divider()
+                with st.expander("Detailed Performance Data"):
+                    st.dataframe(df_scal,use_container_width=True)
+                    best_time=df_scal.loc[df_scal["Time(Seconds)"].idxmin(),"Algorithm"]
+                    best_gmv=df_scal.loc[df_scal["GMV"].idxmax(),"Algorithm"]
+                    st.info(f"\nFastest Algorithm:{best_time}")
+                    st.info(f"\nBest GMV Algorithm:{best_gmv}")
+            else:
+                st.warning("No scalability data available.")
+        else:
+            st.error("Error")
+    else:
+        st.info("Set Pool Size and Budget above and click 'check' button.")
