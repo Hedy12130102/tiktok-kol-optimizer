@@ -405,9 +405,11 @@ def run_single_optimization(
     budget: float,
     seed: int,
     scores: List[float],
+    sa_T0: float = 100.0,
+    sa_max_iter: int = 150,
 ) -> AlgorithmResult:
-    """Run all 3 algorithms and return the best one."""
-    sa_state, _, sa_hist = simulated_annealing(filtered, budget, seed=seed)
+    """Run all 3 algorithms with SA parameter presets and return the best one."""
+    sa_state, _, sa_hist = simulated_annealing(filtered, budget, seed=seed, T0=sa_T0, max_iter=sa_max_iter)
     hc_state, _, hc_hist = hill_climber(filtered, budget, seed=seed)
     rs_state, _, rs_hist = random_search(filtered, budget, seed=seed)
 
@@ -529,20 +531,23 @@ def optimize_plans(req: OptimizeRequest):
 
     scores = compute_creator_score(filtered)
 
-    # ── Aggressive: max GMV up to 120% budget ──
+    # ── Aggressive: high T₀ (200), more iterations (300), 120% budget ──
     aggressive_budget = req.budget * 1.2
-    agg_result = run_single_optimization(filtered, aggressive_budget, req.seed, scores)
+    agg_result = run_single_optimization(filtered, aggressive_budget, req.seed, scores,
+                                         sa_T0=200.0, sa_max_iter=300)
     agg_tier = compute_tier_breakdown(agg_result.selected_kols)
     agg_overlap = detect_audience_overlap(agg_result.selected_kols, filtered)
 
-    # ── Balanced: standard budget (current behavior) ──
-    bal_result = run_single_optimization(filtered, req.budget, req.seed + 1, scores)
+    # ── Balanced: current defaults (T₀=100, 150 iters), standard budget ──
+    bal_result = run_single_optimization(filtered, req.budget, req.seed + 1, scores,
+                                         sa_T0=100.0, sa_max_iter=150)
     bal_tier = compute_tier_breakdown(bal_result.selected_kols)
     bal_overlap = detect_audience_overlap(bal_result.selected_kols, filtered)
 
-    # ── Safe: cap at 80% budget, prioritize ROI ──
+    # ── Safe: lower T₀ (50), fewer iterations (100), 80% budget ──
     safe_budget = req.budget * 0.8
-    safe_result = run_single_optimization(filtered, safe_budget, req.seed + 2, scores)
+    safe_result = run_single_optimization(filtered, safe_budget, req.seed + 2, scores,
+                                          sa_T0=50.0, sa_max_iter=100)
     safe_tier = compute_tier_breakdown(safe_result.selected_kols)
     safe_overlap = detect_audience_overlap(safe_result.selected_kols, filtered)
 
