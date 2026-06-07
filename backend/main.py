@@ -98,6 +98,9 @@ class KOLDetail(KOLResult):
     avg_likes: Optional[int] = None
     gender_ratio: Optional[float] = None
     age_group: Optional[str] = None
+    predicted_gmv_solo: float = 0.0
+    audience_overlap_risk: float = 0.0
+    cost_effectiveness_rank: int = 0
  
  
 class AlgorithmResult(BaseModel):
@@ -110,6 +113,22 @@ class AlgorithmResult(BaseModel):
     history: List[float]
  
  
+class OverlapWarning(BaseModel):
+    kol_id_1: int
+    kol_name_1: str
+    kol_id_2: int
+    kol_name_2: str
+    overlap_score: float  # 0~1, higher = more audience overlap
+    reason: str
+
+
+class TierBreakdown(BaseModel):
+    Mega: int = 0
+    Macro: int = 0
+    Micro: int = 0
+    Nano: int = 0
+
+
 class OptimizeResponse(BaseModel):
     budget: float
     country: str
@@ -121,6 +140,28 @@ class OptimizeResponse(BaseModel):
     total_gmv: float
     roi: float
     results: Dict[str, AlgorithmResult]
+    tier_breakdown: TierBreakdown = TierBreakdown()
+    overlap_warnings: List[OverlapWarning] = []
+
+
+class PlanResult(BaseModel):
+    plan_name: str          # "Aggressive", "Balanced", "Safe"
+    description: str
+    budget_limit: float     # effective budget used for this plan
+    selected_kols: List[KOLResult]
+    total_cost: float
+    total_gmv: float
+    roi: float
+    tier_breakdown: TierBreakdown = TierBreakdown()
+    overlap_warnings: List[OverlapWarning] = []
+
+
+class OptimizePlansResponse(BaseModel):
+    budget: float
+    country: str
+    category: str
+    candidates: int
+    plans: List[PlanResult]
  
  
 class KOLListResponse(BaseModel):
@@ -225,6 +266,163 @@ def build_algorithm_result(
     )
  
  
+def compute_tier_breakdown(kols: List[KOLResult]) -> TierBreakdown:
+    """Count KOLs by tier."""
+    counts = {"Mega": 0, "Macro": 0, "Micro": 0, "Nano": 0}
+    for k in kols:
+        t = k.tier or get_tier_from_followers(k.followers)
+        if t in counts:
+            counts[t] += 1
+    return TierBreakdown(**counts)
+
+
+def get_tier_from_followers(followers: int) -> str:
+    if followers >= 1_000_000:
+        return "Mega"
+    if followers >= 100_000:
+        return "Macro"
+    if followers >= 10_000:
+        return "Micro"
+    return "Nano"
+
+
+def detect_audience_overlap(selected_kols: List[KOLResult], all_kols: List[KOL]) -> List[OverlapWarning]:
+    """
+    Detect KOL pairs in the selected portfolio that have high audience overlap.
+
+    Overlap is computed as a combination of:
+    - Same country + same category → high overlap risk
+    - Similar follower range → medium overlap risk
+    A pair is flagged when overlap_score > 0.5.
+    """
+    warnings: List[OverlapWarning] = []
+    n = len(selected_kols)
+    if n < 2:
+        return warnings
+
+    # Build a dict for quick follower lookup
+    follower_map = {k.id: k.followers for k in all_kols}
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            a = selected_kols[i]
+            b = selected_kols[j]
+
+            # Calculate overlap score (0~1)
+            score = 0.0
+            reasons: List[str] = []
+
+            # Same country → +0.4
+            if a.country == b.country:
+                score += 0.4
+                reasons.append("same country")
+
+            # Same category → +0.3
+            if a.category == b.category:
+                score += 0.3
+                reasons.append("same category")
+
+            # Similar follower range (within 20%) → +0.3
+            fa = follower_map.get(a.id, a.followers)
+            fb = follower_map.get(b.id, b.followers)
+            if fa > 0 and fb > 0:
+                ratio = min(fa, fb) / max(fa, fb)
+                if ratio > 0.8:
+                    score += 0.3
+                    reasons.append("similar follower range")
+
+            if score > 0.5:
+                warnings.append(OverlapWarning(
+                    kol_id_1=a.id,
+                    kol_name_1=a.name,
+                    kol_id_2=b.id,
+                    kol_name_2=b.name,
+                    overlap_score=round(score, 2),
+                    reason=", ".join(reasons),
+                ))
+
+    # Sort by overlap_score descending
+    warnings.sort(key=lambda w: w.overlap_score, reverse=True)
+    return warnings
+
+
+def compute_audience_overlap_risk(kol: KOL, all_kols: List[KOL]) -> float:
+    """
+    Compute how similar this KOL's audience is to other popular KOLs
+    (top 20% by followers). Returns 0~1 risk score.
+    """
+    if len(all_kols) <= 1:
+        return 0.0
+
+    # Top 20% KOLs by followers (the "popular" ones)
+    sorted_by_followers = sorted(all_kols, key=lambda k: k.followers, reverse=True)
+    top_n = max(1, len(all_kols) // 5)
+    top_kols = sorted_by_followers[:top_n]
+
+    total_overlap = 0.0
+    count = 0
+    for other in top_kols:
+        if other.id == kol.id:
+            continue
+        overlap = 0.0
+        if kol.country == other.country:
+            overlap += 0.4
+        if kol.category == other.category:
+            overlap += 0.3
+        # Follower similarity within 50%
+        if kol.followers > 0 and other.followers > 0:
+            ratio = min(kol.followers, other.followers) / max(kol.followers, other.followers)
+            if ratio > 0.5:
+                overlap += 0.3
+        total_overlap += overlap
+        count += 1
+
+    if count == 0:
+        return 0.0
+    return round(min(total_overlap / count, 1.0), 2)
+
+
+def compute_cost_effectiveness_rank(kol: KOL, all_kols: List[KOL]) -> int:
+    """
+    Rank this KOL within the pool by GMV/cost ratio.
+    Rank 1 = best cost-effectiveness.
+    """
+    if kol.cost <= 0:
+        return len(all_kols)  # put at the bottom if cost is 0
+
+    target_ratio = kol.expected_gmv() / kol.cost
+    # Count how many KOLs have a better ratio
+    better_count = sum(
+        1 for k in all_kols
+        if k.cost > 0 and (k.expected_gmv() / k.cost) > target_ratio
+    )
+    return better_count + 1
+
+
+def run_single_optimization(
+    filtered: List[KOL],
+    budget: float,
+    seed: int,
+    scores: List[float],
+) -> AlgorithmResult:
+    """Run all 3 algorithms and return the best one."""
+    sa_state, _, sa_hist = simulated_annealing(filtered, budget, seed=seed)
+    hc_state, _, hc_hist = hill_climber(filtered, budget, seed=seed)
+    rs_state, _, rs_hist = random_search(filtered, budget, seed=seed)
+
+    min_len = min(len(sa_hist), len(hc_hist), len(rs_hist))
+    sa_hist, hc_hist, rs_hist = sa_hist[:min_len], hc_hist[:min_len], rs_hist[:min_len]
+
+    results = {
+        "simulated_annealing": build_algorithm_result("Simulated Annealing", sa_state, sa_hist, filtered, scores),
+        "hill_climber":        build_algorithm_result("Hill Climber",        hc_state, hc_hist, filtered, scores),
+        "random_search":       build_algorithm_result("Random Search",       rs_state, rs_hist, filtered, scores),
+    }
+
+    best_key = max(results, key=lambda k: results[k].total_gmv)
+    return results[best_key]
+
+
 # ════════════════════════════════════════════════════════════════
 #  Endpoints
 # ════════════════════════════════════════════════════════════════
@@ -284,7 +482,11 @@ def optimize(req: OptimizeRequest):
  
     best_key = max(results, key=lambda key: results[key].total_gmv)
     best = results[best_key]
- 
+
+    # Compute tier breakdown and audience overlap for the best result
+    tier_bd = compute_tier_breakdown(best.selected_kols)
+    overlap_warnings = detect_audience_overlap(best.selected_kols, filtered)
+
     return OptimizeResponse(
         budget=req.budget,
         country=req.country,
@@ -296,7 +498,95 @@ def optimize(req: OptimizeRequest):
         total_gmv=best.total_gmv,
         roi=best.roi,
         results=results,
+        tier_breakdown=tier_bd,
+        overlap_warnings=overlap_warnings,
     )
+
+@app.post("/optimize-plans", response_model=OptimizePlansResponse)
+def optimize_plans(req: OptimizeRequest):
+    """Return 3 plans: Aggressive (max GMV), Balanced (current), Safe (80% budget, prioritize ROI)."""
+    # Input validation
+    if req.budget <= 0:
+        raise HTTPException(status_code=422, detail="budget must be a positive number")
+    if req.country not in VALID_COUNTRIES:
+        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH")
+    if req.category not in VALID_CATEGORIES:
+        raise HTTPException(status_code=422, detail="category must be one of: beauty, tech, fashion")
+
+    all_kols = load_kols()
+    filtered = [k for k in all_kols
+                if k.country == req.country and k.category == req.category]
+
+    if not filtered:
+        return OptimizePlansResponse(
+            budget=req.budget,
+            country=req.country,
+            category=req.category,
+            candidates=0,
+            plans=[],
+        )
+
+    scores = compute_creator_score(filtered)
+
+    # ── Aggressive: max GMV up to 120% budget ──
+    aggressive_budget = req.budget * 1.2
+    agg_result = run_single_optimization(filtered, aggressive_budget, req.seed, scores)
+    agg_tier = compute_tier_breakdown(agg_result.selected_kols)
+    agg_overlap = detect_audience_overlap(agg_result.selected_kols, filtered)
+
+    # ── Balanced: standard budget (current behavior) ──
+    bal_result = run_single_optimization(filtered, req.budget, req.seed + 1, scores)
+    bal_tier = compute_tier_breakdown(bal_result.selected_kols)
+    bal_overlap = detect_audience_overlap(bal_result.selected_kols, filtered)
+
+    # ── Safe: cap at 80% budget, prioritize ROI ──
+    safe_budget = req.budget * 0.8
+    safe_result = run_single_optimization(filtered, safe_budget, req.seed + 2, scores)
+    safe_tier = compute_tier_breakdown(safe_result.selected_kols)
+    safe_overlap = detect_audience_overlap(safe_result.selected_kols, filtered)
+
+    return OptimizePlansResponse(
+        budget=req.budget,
+        country=req.country,
+        category=req.category,
+        candidates=len(filtered),
+        plans=[
+            PlanResult(
+                plan_name="Aggressive",
+                description="Maximize GMV with up to 120% budget. Best for growth campaigns.",
+                budget_limit=aggressive_budget,
+                selected_kols=agg_result.selected_kols,
+                total_cost=agg_result.total_cost,
+                total_gmv=agg_result.total_gmv,
+                roi=agg_result.roi,
+                tier_breakdown=agg_tier,
+                overlap_warnings=agg_overlap,
+            ),
+            PlanResult(
+                plan_name="Balanced",
+                description="Stay within budget for the optimal GMV-ROI balance. Recommended default.",
+                budget_limit=req.budget,
+                selected_kols=bal_result.selected_kols,
+                total_cost=bal_result.total_cost,
+                total_gmv=bal_result.total_gmv,
+                roi=bal_result.roi,
+                tier_breakdown=bal_tier,
+                overlap_warnings=bal_overlap,
+            ),
+            PlanResult(
+                plan_name="Safe",
+                description="Cap spending at 80% of budget, prioritizing ROI over raw GMV. Best for conservative campaigns.",
+                budget_limit=safe_budget,
+                selected_kols=safe_result.selected_kols,
+                total_cost=safe_result.total_cost,
+                total_gmv=safe_result.total_gmv,
+                roi=safe_result.roi,
+                tier_breakdown=safe_tier,
+                overlap_warnings=safe_overlap,
+            ),
+        ],
+    )
+
  
  
 @app.get("/kols", response_model=KOLListResponse)
@@ -366,6 +656,9 @@ def get_kol(kol_id: int):
         avg_likes=raw.get("avg_likes"),
         gender_ratio=raw.get("gender_ratio"),
         age_group=raw.get("age_group"),
+        predicted_gmv_solo=round(target.expected_gmv(), 2),
+        audience_overlap_risk=compute_audience_overlap_risk(target, all_kols),
+        cost_effectiveness_rank=compute_cost_effectiveness_rank(target, all_kols),
     )
  
  
