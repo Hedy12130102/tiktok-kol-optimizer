@@ -33,6 +33,7 @@ from engine.optimization.hill_climber import hill_climber
 from engine.optimization.random_search import random_search
 from engine.scoring.creator_score import compute_creator_score
 from engine.scoring.explainer import generate_reasons, get_tier
+from backend.crud import router as crud_router
  
 app = FastAPI(
     title="TikTok Shop KOL Matrix Optimizer API",
@@ -47,6 +48,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(crud_router)
  
 # ── Enum constants ────────────────────────────────────────────────
 VALID_COUNTRIES = ["MY", "ID", "TH", "PH"]
