@@ -1,0 +1,370 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background: #0F0F1A;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2A2A3C;
+    border-radius: 10px;
+  }
+
+  input[type="range"] {
+    accent-color: #68dbae;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: #1A1A2E;
+    border: 1px solid #2A2A3C;
+    backdrop-filter: blur(24px);
+  }
+
+  .primary-gradient {
+    background: linear-gradient(135deg, #FE2C55, #FF6B6B);
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  }
+
+  .sa-highlight {
+    border: 1px solid #68dbae;
+    background: rgba(104, 219, 174, 0.05);
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  .kol-card:hover {
+    border-color: rgba(255, 177, 182, 0.5);
+    transform: translateY(-2px);
+    transition: all 0.25s;
+  }
+
+  #conv-svg {
+    width: 100%;
+    height: 260px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #e6bcbd;
+  }
+
+  .nav-item:hover {
+    background: #2a2a25;
+  }
+
+  .nav-item.active {
+    color: #ffb3b6;
+    background: rgba(255, 81, 104, 0.06);
+    border-right: 2px solid #ffb3b6;
+  }
+
+  .tier-mega {
+    background: #4A148C;
+    color: #fff;
+  }
+
+  .tier-macro {
+    background: #0D47A1;
+    color: #fff;
+  }
+
+  .tier-micro {
+    background: #1B5E20;
+    color: #fff;
+  }
+
+  .tier-nano {
+    background: #E65100;
+    color: #fff;
+  }
+
+  .row-hover:hover {
+    background: rgba(104, 219, 174, 0.05);
+  }
+
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    animation: slideIn 0.3s ease;
+  }
+
+  .toast.ok {
+    background: #1B5E20;
+    color: #fff;
+  }
+
+  .toast.err {
+    background: #93000a;
+    color: #fff;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .form-input {
+    width: 100%;
+    background: #f5f5f0;
+    border: 1px solid #5d3f40;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #1a1a1a;
+    outline: none;
+    font-size: 14px;
+  }
+
+  .form-input:focus {
+    border-color: #68dbae;
+    background: #fff;
+  }
+
+  .form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #ad8889;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: #68dbae;
+    color: #003827;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.1);
+  }
+
+  .btn-danger {
+    background: #93000a;
+    color: #ffdad6;
+  }
+
+  .btn-danger:hover {
+    background: #b71c1c;
+  }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid #5d3f40;
+    color: #e5e2da;
+  }
+
+  .btn-outline:hover {
+    background: #2a2a25;
+  }
+
+  .view-toggle {
+    display: flex;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #2A2A3C;
+  }
+
+  .view-toggle button {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+    color: #ad8889;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+  }
+
+  .view-toggle button.active {
+    background: #68dbae;
+    color: #003827;
+  }
+
+  .contrib-bar {
+    height: 6px;
+    background: #2A2A3C;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .contrib-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #68dbae, #26a37a);
+    border-radius: 99px;
+    transition: width 0.5s ease;
+  }
+
+  /* Plan cards */
+  .plan-card {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .plan-card:hover {
+    border-color: rgba(104, 219, 174, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .plan-card.selected {
+    border-color: #68dbae;
+    box-shadow: 0 0 20px rgba(104, 219, 174, 0.1);
+  }
+
+  .plan-toggle-btn {
+    padding: 6px 20px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+    border: 1px solid #2A2A3C;
+    color: #ad8889;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .plan-toggle-btn:hover {
+    border-color: #68dbae;
+    color: #68dbae;
+  }
+
+  .plan-toggle-btn.active {
+    background: #68dbae;
+    border-color: #68dbae;
+    color: #003827;
+  }
+
+  /* KOL detail modal */
+  .kol-detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 200;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 40px;
+    overflow-y: auto;
+  }
+
+  .kol-detail-card {
+    width: 680px;
+    max-width: 95vw;
+    margin-bottom: 60px;
+  }
+
+  /* Risk indicators */
+  .risk-low {
+    color: #68dbae;
+  }
+
+  .risk-med {
+    color: #f1c40f;
+  }
+
+  .risk-high {
+    color: #ff6b6b;
+  }
+
+  .risk-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .risk-dot.low { background: #68dbae; }
+  .risk-dot.med { background: #f1c40f; }
+  .risk-dot.high { background: #ff6b6b; }
+
+  /* Demo bar */
+  .demo-bar {
+    height: 8px;
+    background: #2A2A3C;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .demo-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s ease;
+  }
+
+  .demo-fill.female { background: #ff6b6b; }
+  .demo-fill.male { background: #3498db; }
+
+  /* Tier chip */
+  .tier-chip {
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

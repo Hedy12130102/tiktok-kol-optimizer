@@ -21,6 +21,7 @@ import time
 from typing import Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
  
 # ── Make project root importable ──────────────────────────────────
@@ -738,3 +739,8 @@ def scalability(req: ScalabilityRequest):
         hill_climber=run(hill_climber),
         random_search=run(random_search),
     )
+
+
+# ── Serve frontend as static files (after all API routes) ──────────
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
