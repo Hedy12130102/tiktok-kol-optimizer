@@ -15,15 +15,12 @@ def test_fitness():
     ]
     budget = 1500
 
-    # New GMV formula: sqrt(f) × ctr × cvr × aov × pp × 200
-    # A (MY/beauty, 100K): GMV ≈ $7,902.53
-    # B (MY/tech, 50K):    GMV ≈ $7,137.53
-    # Total GMV ≈ $15,040.06
-    # Overlap: both MY → 0.4 score → 0.4 × 5000 = 2000 penalty
-    # Total cost = 1800 > 1500 → budget penalty = (1800-1500)×1e6 = 300,000,000
-    # Fitness = -15040.06 + 300000000 + 2000 = 299986959.94
+    # GMV: A ≈ $7,902.53, B ≈ $7,137.53, total ≈ $15,040.06
+    # Overlap: same age_group "18-24" → 0.3 × 1500 = 450
+    # Budget: cost 1800 > 1500 → penalty = (1800-1500)×1e6 = 300,000,000
+    # Fitness = -15040.06 + 300000000 + 450 = 299985409.94
 
-    expected_fitness = 299986959.94
+    expected_fitness = 299985409.94
     val = fitness([1, 1], kols, budget)
     assert val == expected_fitness, f"Expected {expected_fitness}, got {val}"
 
@@ -33,29 +30,35 @@ def test_fitness():
 
 
 def test_summarize_state_with_overlap():
-    """Verify overlap penalty is computed for same country+category KOLs."""
+    """Verify overlap penalty is computed for similar follower range + age KOLs."""
     kols = [
         KOL(id=1, name="X", country="MY", category="beauty",
-            followers=50000, engagement_rate=0.1, fit_score=0.5, cost=500),
+            followers=50000, engagement_rate=0.1, fit_score=0.5, cost=500,
+            age_group="25-34", gender_ratio=0.5),
         KOL(id=2, name="Y", country="MY", category="beauty",
-            followers=48000, engagement_rate=0.1, fit_score=0.5, cost=500),
+            followers=48000, engagement_rate=0.1, fit_score=0.5, cost=500,
+            age_group="25-34", gender_ratio=0.5),
     ]
     summary = summarize_state([1, 1], kols)
-    # Same country (0.4) + same category (0.3) + similar followers (48K/50K=0.96>0.8 → 0.3)
-    # Full overlap score = 1.0 → penalty = 1.0 × 5000 = 5000
-    assert summary["overlap_penalty"] == 5000, \
-        f"Expected overlap penalty 5000, got {summary['overlap_penalty']}"
+    # follower ratio 48K/50K=0.96 > 0.5 → 0.5
+    # age_group: both default "18-24" → 0.3
+    # gender: 0.5 not extreme
+    # Total score = 0.8 → penalty = 0.8 × 1500 = 1200
+    assert summary["overlap_penalty"] == 1200, \
+        f"Expected overlap penalty 1200, got {summary['overlap_penalty']}"
 
 
 def test_summarize_state_no_overlap():
     """No overlap penalty for different country+category KOLs."""
     kols = [
         KOL(id=1, name="X", country="MY", category="beauty",
-            followers=50000, engagement_rate=0.1, fit_score=0.5, cost=500),
+            followers=50000, engagement_rate=0.1, fit_score=0.5, cost=500,
+            age_group="18-24", gender_ratio=0.5),
         KOL(id=2, name="Y", country="TH", category="tech",
-            followers=500000, engagement_rate=0.1, fit_score=0.5, cost=500),
+            followers=500000, engagement_rate=0.1, fit_score=0.5, cost=500,
+            age_group="35+", gender_ratio=0.5),
     ]
     summary = summarize_state([1, 1], kols)
-    # Different country (0) + different category (0) + follower ratio 0.1 (not>0.8 → 0)
+    # Different followers (ratio 0.1 < 0.5), different age, no gender extreme → 0
     assert summary["overlap_penalty"] == 0, \
         f"Expected 0 overlap penalty, got {summary['overlap_penalty']}"

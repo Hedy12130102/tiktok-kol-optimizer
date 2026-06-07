@@ -4,7 +4,7 @@ from .models import KOL
 
 # Penalty weight for audience overlap — higher = stronger discouragement
 # of near-duplicate creators in the same portfolio
-_OVERLAP_PENALTY_WEIGHT = 5000  # dollars of effective GMV penalty per full-overlap pair
+_OVERLAP_PENALTY_WEIGHT = 1500  # effective GMV penalty per unit of overlap score
 
 
 def fitness(state: List[int], kols: List[KOL], budget: float) -> float:
@@ -51,12 +51,16 @@ def _compute_overlap_penalty(selected: List[KOL]) -> float:
     """
     Compute audience overlap penalty for a portfolio.
 
-    Two KOLs are considered overlapping when they share:
-    - same country + same category → 0.4
-    - similar follower range (within 20%) → 0.3 each
+    IMPORTANT: The /optimize endpoint already filters by country AND category,
+    so ALL KOLs in the selected list share those attributes. We MUST NOT
+    penalise same country/category — that would penalise every pair equally
+    and drown the GMV signal. Instead, we only penalise pairs that ALSO
+    share a similar follower range, which is a genuine redundancy signal.
 
-    Full match (same country + same category + similar followers) = 1.0 score.
-    The penalty discourages selecting near-duplicate creators.
+    Two KOLs are considered overlapping when they share:
+    - same follower range (within 20% of each other) → 0.5
+    - same age group → 0.3
+    - same gender skew (both >70% or both <30%) → 0.2
     """
     n = len(selected)
     if n < 2:
@@ -69,17 +73,21 @@ def _compute_overlap_penalty(selected: List[KOL]) -> float:
             a, b = selected[i], selected[j]
             score = 0.0
 
-            # Same country → +0.4
-            if a.country == b.country:
-                score += 0.4
-            # Same category → +0.3
-            if a.category == b.category:
-                score += 0.3
-            # Similar follower range (within 20%)
+            # Similar follower range (within 50%) — main redundancy signal
             if a.followers > 0 and b.followers > 0:
                 ratio = min(a.followers, b.followers) / max(a.followers, b.followers)
-                if ratio > 0.8:
-                    score += 0.3
+                if ratio > 0.5:
+                    score += 0.5
+
+            # Same age group → both target the same demographic
+            if a.age_group and b.age_group and a.age_group == b.age_group:
+                score += 0.3
+
+            # Same gender skew (both heavily female or both heavily male)
+            if a.gender_ratio >= 0.7 and b.gender_ratio >= 0.7:
+                score += 0.2
+            elif a.gender_ratio <= 0.3 and b.gender_ratio <= 0.3:
+                score += 0.2
 
             total_overlap += score * _OVERLAP_PENALTY_WEIGHT
 
