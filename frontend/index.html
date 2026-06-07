@@ -173,6 +173,20 @@
                         </div>
                     </section>
 
+                    <!-- Plan comparison cards -->
+                    <section id="plans-section" class="hidden space-y-lg">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-title-md text-title-md text-on-surface">Strategy Plans</h3>
+                            <p class="text-[11px] text-on-surface-variant">Click a plan to view its creators</p>
+                        </div>
+                        <div id="plans-grid" class="grid grid-cols-3 gap-gutter"></div>
+                        <div class="flex justify-center gap-sm">
+                            <button class="plan-toggle-btn active" onclick="selectPlan('Aggressive')">Aggressive</button>
+                            <button class="plan-toggle-btn" onclick="selectPlan('Balanced')">Balanced</button>
+                            <button class="plan-toggle-btn" onclick="selectPlan('Safe')">Safe</button>
+                        </div>
+                    </section>
+
                     <!-- KOL cards -->
                     <section>
                         <div class="flex items-center justify-between mb-lg">
@@ -246,7 +260,14 @@
                                             class="w-2 h-2 rounded-full bg-outline inline-block"></span> Random</span>
                                 </div>
                             </div>
-                            <svg id="conv-svg" viewBox="0 0 800 240" preserveAspectRatio="none">
+                            <svg id="conv-svg" viewBox="0 0 850 260" preserveAspectRatio="none">
+                                <!-- Y-axis labels -->
+                                <g id="conv-ticks">
+                                    <text x="4" y="94" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
+                                    <text x="4" y="96" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
+                                    <text x="4" y="96" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
+                                    <text x="4" y="96" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
+                                </g>
                                 <path id="conv-rs" fill="none" stroke="#ad8889" stroke-width="2" stroke-dasharray="4" />
                                 <path id="conv-hc" fill="none" stroke="#ec683d" stroke-width="2.5" />
                                 <path id="conv-sa" fill="none" stroke="#68dbae" stroke-width="3.5" />
@@ -391,6 +412,85 @@
         </div>
     </div>
 
+    <!-- ═══════════ KOL DETAIL MODAL ═══════════ -->
+    <div id="kol-detail-overlay" class="kol-detail-overlay hidden" onclick="if(event.target===this)closeKolDetail()">
+        <div class="kol-detail-card glass-card rounded-xl p-lg">
+            <div class="flex justify-between items-start mb-lg">
+                <div class="flex items-center gap-md">
+                    <div class="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[36px]">person</span>
+                    </div>
+                    <div>
+                        <h3 id="kd-name" class="font-headline-lg text-headline-lg text-on-surface">—</h3>
+                        <p id="kd-meta" class="text-on-surface-variant text-body-base">—</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-sm">
+                    <span id="kd-tier" class="tier-chip">—</span>
+                    <button onclick="closeKolDetail()" class="text-outline hover:text-white ml-md">
+                        <span class="material-symbols-outlined text-[28px]">close</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Key stats row -->
+            <div id="kd-stats" class="grid grid-cols-5 gap-md mb-lg"></div>
+
+            <!-- Demographics + Computed -->
+            <div class="grid grid-cols-2 gap-lg mb-lg">
+                <!-- Demographics -->
+                <div class="glass-card rounded-xl p-md">
+                    <h4 class="font-label-sm text-label-sm text-on-surface-variant mb-md uppercase">Audience Demographics</h4>
+                    <div class="space-y-md">
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1">
+                                <span class="text-on-surface-variant">Gender Ratio</span>
+                                <span id="kd-gender-label" class="text-on-surface font-bold">—</span>
+                            </div>
+                            <div class="demo-bar">
+                                <div id="kd-gender-bar" class="demo-fill female" style="width:50%"></div>
+                            </div>
+                            <div class="flex justify-between text-[9px] text-on-surface-variant/50 mt-1">
+                                <span>Female</span><span>Male</span>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-on-surface-variant uppercase">Age Group</span>
+                            <p id="kd-age" class="font-title-md text-on-surface mt-xs">—</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Computed metrics -->
+                <div class="glass-card rounded-xl p-md">
+                    <h4 class="font-label-sm text-label-sm text-on-surface-variant mb-md uppercase">Computed Metrics</h4>
+                    <div class="space-y-md">
+                        <div>
+                            <span class="text-[10px] text-on-surface-variant uppercase">Solo Predicted GMV</span>
+                            <p id="kd-solo-gmv" class="font-title-md text-secondary font-bold font-data-mono">—</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-on-surface-variant uppercase">Cost-Effectiveness Rank</span>
+                            <p id="kd-rank" class="font-title-md text-on-surface font-data-mono">—</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-on-surface-variant uppercase">Audience Overlap Risk</span>
+                            <div class="flex items-center gap-xs mt-xs">
+                                <span id="kd-risk-dot" class="risk-dot low"></span>
+                                <span id="kd-risk" class="font-title-md text-on-surface font-data-mono">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full reasons -->
+            <div class="glass-card rounded-xl p-md">
+                <h4 class="font-label-sm text-label-sm text-on-surface-variant mb-md uppercase">Why This Creator?</h4>
+                <div id="kd-reasons" class="space-y-sm"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API = 'http://localhost:8000';
         const TIER_BADGE = { Mega: 'tier-mega', Macro: 'tier-macro', Micro: 'tier-micro', Nano: 'tier-nano' };
@@ -400,6 +500,9 @@
         const fmtF = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : n;
         const PAGE_TITLES = { dashboard: 'Optimizer Dashboard', creators: 'Creator Management' };
         let currentView = 'business';
+        let selectedPlanName = 'Aggressive';
+        let allPlansData = null;
+        let enhancedKolMap = {};
 
         // ══════════ VIEW TOGGLE ══════════
         function setView(v) {
@@ -430,17 +533,32 @@
         function toast(msg, type = 'ok') { const t = document.createElement('div'); t.className = 'toast ' + type; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3000); }
 
         // ══════════ DASHBOARD ══════════
-        function historyToPath(hist, W, H, maxY) { if (!hist || !hist.length) return ''; const step = W / (hist.length - 1); return hist.map((v, i) => { const x = i * step; const y = H - (v / maxY) * H * 0.9; return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) }).join(' '); }
-        function renderConvergence(results) { const W = 800, H = 240, sa = results.simulated_annealing.history, hc = results.hill_climber.history, rs = results.random_search.history, maxY = Math.max(...sa, ...hc, ...rs, 1); document.getElementById('conv-sa').setAttribute('d', historyToPath(sa, W, H, maxY)); document.getElementById('conv-hc').setAttribute('d', historyToPath(hc, W, H, maxY)); document.getElementById('conv-rs').setAttribute('d', historyToPath(rs, W, H, maxY)); }
+        function historyToPath(hist, maxY) { if (!hist || !hist.length) return ''; const PLOT_W = 770, PLOT_H = 220, PLOT_X = 65, PLOT_Y = 15; const step = PLOT_W / (hist.length - 1); return hist.map((v, i) => { const x = PLOT_X + i * step; const y = PLOT_Y + PLOT_H - (v / maxY) * PLOT_H; return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) }).join(' '); }
+        function renderConvergence(results) { const sa = results.simulated_annealing.history, hc = results.hill_climber.history, rs = results.random_search.history; if (!sa || !sa.length) return; const maxY = Math.max(...sa, ...hc, ...rs, 1); document.getElementById('conv-sa').setAttribute('d', historyToPath(sa, maxY)); document.getElementById('conv-hc').setAttribute('d', historyToPath(hc, maxY)); document.getElementById('conv-rs').setAttribute('d', historyToPath(rs, maxY)); // Update Y-axis ticks const PLOT_Y = 15, PLOT_H = 220; const ticks = ['$0', '$' + (maxY * 0.25 / 1000).toFixed(0) + 'K', '$' + (maxY * 0.5 / 1000).toFixed(0) + 'K', '$' + (maxY * 0.75 / 1000).toFixed(0) + 'K', '$' + (maxY / 1000).toFixed(0) + 'K']; const yPositions = [PLOT_Y + PLOT_H, PLOT_Y + PLOT_H * 0.75, PLOT_Y + PLOT_H * 0.5, PLOT_Y + PLOT_H * 0.25, PLOT_Y]; // Also add light grid lines const gridGroup = document.getElementById('conv-ticks'); gridGroup.innerHTML = ticks.map((t, i) => `<text x="58" y="${yPositions[i] + 3}" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace" text-anchor="end">${t}</text><line x1="65" y1="${yPositions[i]}" x2="835" y2="${yPositions[i]}" stroke="#2A2A3C" stroke-width="0.5" />`).join(''); }
         function renderBenchmark(results, bestAlgo) { const order = ['simulated_annealing', 'hill_climber', 'random_search'], descs = { simulated_annealing: 'Probabilistic Global Max', hill_climber: 'Local Optimum Search', random_search: 'Stochastic Selection' }, tbody = document.getElementById('bench-body'); tbody.innerHTML = ''; order.sort((a, b) => results[b].total_gmv - results[a].total_gmv).forEach(key => { const r = results[key], isBest = r.algorithm === bestAlgo, tr = document.createElement('tr'); tr.className = isBest ? 'sa-highlight' : ''; tr.innerHTML = `<td class="px-md py-md"><div class="font-bold text-on-surface text-sm">${r.algorithm}</div><div class="text-[10px] text-on-surface-variant/70">${descs[key]}</div></td><td class="px-md py-md text-right font-data-mono ${isBest ? 'text-secondary' : 'text-on-surface-variant'}">${fmt(r.total_gmv)}</td><td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.roi.toFixed(2)}x</td>`; tbody.appendChild(tr); }); const note = results.hill_climber.total_gmv > 0 ? ((results.simulated_annealing.total_gmv / results.hill_climber.total_gmv - 1) * 100).toFixed(0) : 0; document.querySelector('#bench-note p').textContent = `"SA outperformed HC by ${note}% in this run."`; }
 
         function bizKolCard(kol, totalGmv) {
             const tier = kol.tier || 'Micro', reasons = (kol.reasons || []).slice(0, 3), contrib = totalGmv > 0 ? ((kol.expected_gmv / totalGmv) * 100).toFixed(1) : 0;
             const reasonsHtml = reasons.map(r => `<div style="margin:4px 0;font-size:12px;color:#e6bcbd">✅ ${r}</div>`).join('');
-            return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer">
-    <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'}" style="padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
+            // Enhanced fields from /kol/{id}
+            const enh = enhancedKolMap[kol.id] || {};
+            const rank = enh.cost_effectiveness_rank || '—';
+            const risk = enh.audience_overlap_risk != null ? enh.audience_overlap_risk : null;
+            let riskHtml = '';
+            if (risk !== null) {
+                const level = risk < 0.3 ? 'low' : risk < 0.6 ? 'med' : 'high';
+                const label = risk < 0.3 ? 'Low' : risk < 0.6 ? 'Medium' : 'High';
+                riskHtml = `<span class="risk-dot ${level}"></span><span class="risk-${level}">${label} overlap risk</span>`;
+            }
+            const rankText = rank !== '—' ? `#${rank} cost-effective` : '';
+            return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer" onclick="openKolDetail(${kol.id})">
+    <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
     <div class="grid grid-cols-3 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-center"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Est. GMV</p><p class="font-title-md text-secondary font-data-mono font-bold">${fmt(kol.expected_gmv)}</p></div></div>
     <div><div class="flex justify-between text-[10px] mb-1"><span class="text-on-surface-variant uppercase">GMV contribution</span><span class="text-secondary font-bold">${contrib}%</span></div><div class="contrib-bar"><div class="contrib-fill" style="width:${contrib}%"></div></div></div>
+    <div class="flex items-center gap-md text-[11px]">
+        ${riskHtml ? `<div class="flex items-center gap-xs">${riskHtml}</div>` : ''}
+        ${rankText ? `<div class="flex items-center gap-xs text-on-surface-variant"><span class="material-symbols-outlined text-[12px]">trending_up</span>${rankText}</div>` : ''}
+    </div>
     <div class="text-[11px]"><div style="font-weight:600;color:#68dbae;margin-bottom:6px">Why this creator?</div>${reasonsHtml}</div>
   </div>`;
         }
@@ -448,11 +566,22 @@
         function techKolCard(kol) {
             const tier = kol.tier || 'Micro', reasons = (kol.reasons || []).slice(0, 3);
             const reasonsHtml = reasons.length ? `<div class="mt-md text-[11px] text-on-surface-variant/80 bg-surface-container-low p-md rounded-lg border border-outline-variant/30">${reasons.map(r => `<div class="mb-1">✅ ${r}</div>`).join('')}</div>` : '';
-            return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer">
-    <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'}" style="padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
+            const enh = enhancedKolMap[kol.id] || {};
+            const rank = enh.cost_effectiveness_rank || '—';
+            const risk = enh.audience_overlap_risk != null ? enh.audience_overlap_risk : null;
+            let riskBadge = '';
+            if (risk !== null) {
+                const level = risk < 0.3 ? 'low' : risk < 0.6 ? 'med' : 'high';
+                const label = risk < 0.3 ? 'Low' : risk < 0.6 ? 'Med' : 'High';
+                riskBadge = `<div class="flex items-center gap-xs"><span class="risk-dot ${level}"></span><span class="risk-${level}">${label} overlap</span></div>`;
+            }
+            const rankText = rank !== '—' ? `<span class="text-on-surface-variant">#${rank} cost-effective</span>` : '';
+            return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer" onclick="openKolDetail(${kol.id})">
+    <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
     <div class="grid grid-cols-2 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div></div>
     <div class="space-y-xs"><div class="flex justify-between items-center text-[10px]"><span class="text-on-surface-variant uppercase">Fit Score</span><span class="text-secondary font-bold">${(kol.fit_score * 100).toFixed(0)}%</span></div><div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary rounded-full" style="width:${(kol.fit_score * 100).toFixed(0)}%"></div></div></div>
-    <div class="flex justify-between items-center pt-xs"><div class="bg-secondary/15 px-md py-sm rounded-lg border border-secondary/20"><p class="text-[9px] text-secondary uppercase font-bold tracking-wider">Est. GMV</p><p class="text-title-md font-bold text-secondary font-data-mono">${fmt(kol.expected_gmv)}</p></div><button class="text-on-surface-variant hover:text-primary flex items-center gap-xs text-[11px] why-btn">Why? <span class="material-symbols-outlined text-[14px]">expand_more</span></button></div>
+    ${riskBadge || rankText ? `<div class="flex items-center gap-md text-[11px]">${riskBadge}${rankText}</div>` : ''}
+    <div class="flex justify-between items-center pt-xs"><div class="bg-secondary/15 px-md py-sm rounded-lg border border-secondary/20"><p class="text-[9px] text-secondary uppercase font-bold tracking-wider">Est. GMV</p><p class="text-title-md font-bold text-secondary font-data-mono">${fmt(kol.expected_gmv)}</p></div><button class="text-on-surface-variant hover:text-primary flex items-center gap-xs text-[11px] why-btn" onclick="event.stopPropagation()">Why? <span class="material-symbols-outlined text-[14px]">expand_more</span></button></div>
     <div class="why-panel hidden">${reasonsHtml}</div></div>`;
         }
 
@@ -461,12 +590,95 @@
             const btn = document.getElementById('run-btn'); btn.innerHTML = '<div class="spinner"></div>'; btn.disabled = true;
             const payload = { budget: parseInt(budgetSlider.value), country: document.getElementById('country-select').value, category: document.getElementById('category-select').value, seed: parseInt(document.getElementById('seed-input').value) || 42 };
             try {
-                const res = await fetch(API + '/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!res.ok) { const err = await res.json(); throw new Error(err.detail || 'Request failed'); }
-                const data = await res.json(); renderDashboard(data, payload);
+                const [optRes, plansRes] = await Promise.all([
+                    fetch(API + '/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+                    fetch(API + '/optimize-plans', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                ]);
+                if (!optRes.ok) { const err = await optRes.json(); throw new Error(err.detail || 'Request failed'); }
+                const data = await optRes.json();
+                if (plansRes.ok) { const plansData = await plansRes.json(); renderPlans(plansData.plans, data); }
+                else { allPlansData = null; }
+                // Pre-fetch enhanced KOL data for enriched cards
+                try {
+                    const kolParams = new URLSearchParams({ limit: 200, country: payload.country, category: payload.category });
+                    const kolRes = await fetch(`${API}/kols?${kolParams}`);
+                    if (kolRes.ok) {
+                        const kolData = await kolRes.json();
+                        enhancedKolMap = {};
+                        kolData.kols.forEach(k => { enhancedKolMap[k.id] = k; });
+                    }
+                } catch (_) { enhancedKolMap = {}; }
+                renderDashboard(data, payload);
             } catch (e) { showError(e.message.includes('fetch') ? '⚠️ Backend unavailable — run: uvicorn backend.main:app --reload' : '⚠️ ' + e.message); }
             finally { btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">play_arrow</span> Run Optimization'; btn.disabled = false; }
         });
+
+        function renderPlans(plans, optData) {
+            if (!plans || !plans.length) { document.getElementById('plans-section').classList.add('hidden'); return; }
+            allPlansData = plans;
+            document.getElementById('plans-section').classList.remove('hidden');
+            const grid = document.getElementById('plans-grid');
+            const icons = { Aggressive: 'rocket_launch', Balanced: 'tune', Safe: 'shield' };
+            const colors = { Aggressive: 'border-l-4 border-[#FE2C55]', Balanced: 'border-l-4 border-secondary', Safe: 'border-l-4 border-[#f1c40f]' };
+            grid.innerHTML = plans.map((p, i) => {
+                const util = optData ? (p.total_cost / optData.budget * 100).toFixed(0) : '—';
+                const tb = p.tier_breakdown || { Mega: 0, Macro: 0, Micro: 0, Nano: 0 };
+                const warnings = (p.overlap_warnings || []).length;
+                const isSel = p.plan_name === selectedPlanName;
+                return `<div class="plan-card glass-card rounded-xl p-lg flex flex-col space-y-md ${colors[p.plan_name] || ''} ${isSel ? 'selected' : ''}" onclick="selectPlan('${p.plan_name}')">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-[24px] text-on-surface-variant">${icons[p.plan_name] || 'campaign'}</span>
+                    <h4 class="font-title-md text-title-md text-on-surface">${p.plan_name}</h4>
+                </div>
+                ${isSel ? '<span class="text-secondary text-[11px] font-bold">● Active</span>' : ''}
+            </div>
+            <p class="text-[11px] text-on-surface-variant">${p.description}</p>
+            <div class="grid grid-cols-2 gap-sm">
+                <div><p class="text-[10px] text-on-surface-variant uppercase">GMV</p><p class="font-title-md text-secondary font-bold font-data-mono">${fmt(p.total_gmv)}</p></div>
+                <div><p class="text-[10px] text-on-surface-variant uppercase">ROI</p><p class="font-title-md text-on-surface font-data-mono">${p.roi.toFixed(2)}x</p></div>
+                <div><p class="text-[10px] text-on-surface-variant uppercase">Creators</p><p class="font-title-md text-on-surface font-data-mono">${p.selected_kols.length}</p></div>
+                <div><p class="text-[10px] text-on-surface-variant uppercase">Budget Use</p><p class="font-title-md text-on-surface font-data-mono ${util > 100 ? 'text-error' : ''}">${util}%</p></div>
+            </div>
+            <div class="flex flex-wrap gap-1">
+                ${['Mega','Macro','Micro','Nano'].map(t => tb[t] > 0 ? `<span class="tier-chip ${TIER_BADGE[t] || ''}" style="font-size:10px">${TIER_EMOJI[t] || ''} ${tb[t]}</span>` : '').join('')}
+            </div>
+            ${warnings > 0 ? `<div class="flex items-center gap-xs text-[11px] text-[#f1c40f]"><span class="material-symbols-outlined text-[14px]">warning</span> ${warnings} audience overlap${warnings > 1 ? 's' : ''}</div>` : ''}
+          </div>`;
+            }).join('');
+            // Sync toggle buttons
+            document.querySelectorAll('.plan-toggle-btn').forEach(b => {
+                b.classList.toggle('active', b.textContent.trim() === selectedPlanName);
+            });
+            // Sync plan cards selected state
+            document.querySelectorAll('.plan-card').forEach(c => {
+                const name = c.querySelector('h4').textContent;
+                c.classList.toggle('selected', name === selectedPlanName);
+            });
+        }
+
+        function selectPlan(name) {
+            selectedPlanName = name;
+            // Re-render plan cards and toggle buttons
+            document.querySelectorAll('.plan-card').forEach(c => {
+                const cardName = c.querySelector('h4').textContent;
+                c.classList.toggle('selected', cardName === name);
+            });
+            document.querySelectorAll('.plan-toggle-btn').forEach(b => {
+                b.classList.toggle('active', b.textContent.trim() === name);
+            });
+            // Update KOL grid with this plan's KOLs
+            if (!allPlansData) return;
+            const plan = allPlansData.find(p => p.plan_name === name);
+            if (!plan) return;
+            const sorted = [...plan.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
+            const totalGmv = plan.total_gmv;
+            document.getElementById('biz-count').textContent = sorted.length;
+            document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, totalGmv)).join('');
+            document.getElementById('biz-gmv').textContent = fmt(plan.total_gmv);
+            document.getElementById('biz-roi').textContent = plan.roi.toFixed(2) + 'x';
+            document.getElementById('biz-cost').textContent = fmt(plan.total_cost);
+        }
 
         function renderDashboard(data, payload) {
             if (data.candidates === 0) { showError('No creators in the pool. Go to Creators page to add your KOLs first.'); return; }
@@ -502,6 +714,77 @@
             techGrid.querySelectorAll('.why-btn').forEach(btn => { btn.addEventListener('click', () => { btn.closest('.kol-card').querySelector('.why-panel').classList.toggle('hidden'); }); });
 
             setView('business');
+        }
+
+        // ══════════ KOL DETAIL MODAL ══════════
+        async function openKolDetail(id) {
+            const overlay = document.getElementById('kol-detail-overlay');
+            overlay.classList.remove('hidden');
+            // Show loading state
+            document.getElementById('kd-name').textContent = 'Loading...';
+            document.getElementById('kd-meta').textContent = '';
+            document.getElementById('kd-tier').textContent = '...';
+            document.getElementById('kd-stats').innerHTML = '';
+            document.getElementById('kd-solo-gmv').textContent = '—';
+            document.getElementById('kd-rank').textContent = '—';
+            document.getElementById('kd-risk').textContent = '—';
+            document.getElementById('kd-gender-label').textContent = '—';
+            document.getElementById('kd-gender-bar').style.width = '50%';
+            document.getElementById('kd-age').textContent = '—';
+            document.getElementById('kd-reasons').innerHTML = '';
+            document.getElementById('kd-risk-dot').className = 'risk-dot low';
+            try {
+                const r = await fetch(`${API}/kol/${id}`);
+                if (!r.ok) throw new Error('Not found');
+                const d = await r.json();
+                renderKolDetail(d);
+            } catch (e) {
+                document.getElementById('kd-name').textContent = 'Error loading creator';
+            }
+        }
+
+        function renderKolDetail(d) {
+            document.getElementById('kd-name').textContent = d.name;
+            document.getElementById('kd-meta').textContent = `${d.category} · ${d.country} · ${fmtF(d.followers)} followers`;
+            const tier = d.tier || 'Micro';
+            const tierSpan = document.getElementById('kd-tier');
+            tierSpan.textContent = `${TIER_EMOJI[tier] || ''} ${tier}`;
+            tierSpan.className = `tier-chip ${TIER_BADGE[tier] || 'tier-micro'}`;
+
+            // Stats
+            document.getElementById('kd-stats').innerHTML = [
+                { label: 'Followers', v: fmtF(d.followers) },
+                { label: 'Engagement', v: (d.engagement_rate * 100).toFixed(1) + '%' },
+                { label: 'Fit Score', v: (d.fit_score * 100).toFixed(0) + '%' },
+                { label: 'Hiring Cost', v: fmt(d.cost) },
+                { label: 'Est. GMV', v: fmt(d.expected_gmv), cls: 'text-secondary font-bold' },
+            ].map(s => `<div class="text-center p-sm rounded-lg bg-surface-container-low"><p class="text-[10px] text-on-surface-variant uppercase">${s.label}</p><p class="font-title-md font-data-mono ${s.cls || 'text-on-surface'}">${s.v}</p></div>`).join('');
+
+            // Demographics
+            const gRatio = d.gender_ratio != null ? d.gender_ratio : 0.5;
+            document.getElementById('kd-gender-label').textContent = `${(gRatio * 100).toFixed(0)}% Female / ${((1 - gRatio) * 100).toFixed(0)}% Male`;
+            document.getElementById('kd-gender-bar').style.width = `${(gRatio * 100).toFixed(0)}%`;
+            document.getElementById('kd-gender-bar').className = `demo-fill ${gRatio > 0.5 ? 'female' : 'male'}`;
+            document.getElementById('kd-age').textContent = d.age_group || 'Unknown';
+
+            // Computed
+            document.getElementById('kd-solo-gmv').textContent = fmt(d.predicted_gmv_solo || d.expected_gmv);
+            document.getElementById('kd-rank').textContent = d.cost_effectiveness_rank ? `#${d.cost_effectiveness_rank}` : '—';
+            const risk = d.audience_overlap_risk != null ? d.audience_overlap_risk : 0;
+            const riskLevel = risk < 0.3 ? 'low' : risk < 0.6 ? 'med' : 'high';
+            const riskLabel = risk < 0.3 ? 'Low' : risk < 0.6 ? 'Medium' : 'High';
+            document.getElementById('kd-risk').textContent = `${riskLabel} (${(risk * 100).toFixed(0)}%)`;
+            document.getElementById('kd-risk-dot').className = `risk-dot ${riskLevel}`;
+
+            // Reasons
+            const reasons = d.reasons || [];
+            document.getElementById('kd-reasons').innerHTML = reasons.length
+                ? reasons.map((r, i) => `<div class="flex items-start gap-sm text-body-base text-on-surface-variant"><span class="text-secondary font-bold">${i + 1}.</span><span>${r}</span></div>`).join('')
+                : '<p class="text-on-surface-variant">No reasons available.</p>';
+        }
+
+        function closeKolDetail() {
+            document.getElementById('kol-detail-overlay').classList.add('hidden');
         }
 
         // ══════════ CREATORS: CRUD ══════════

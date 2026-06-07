@@ -243,6 +243,113 @@
     border-radius: 99px;
     transition: width 0.5s ease;
   }
+
+  /* Plan cards */
+  .plan-card {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .plan-card:hover {
+    border-color: rgba(104, 219, 174, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .plan-card.selected {
+    border-color: #68dbae;
+    box-shadow: 0 0 20px rgba(104, 219, 174, 0.1);
+  }
+
+  .plan-toggle-btn {
+    padding: 6px 20px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+    border: 1px solid #2A2A3C;
+    color: #ad8889;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .plan-toggle-btn:hover {
+    border-color: #68dbae;
+    color: #68dbae;
+  }
+
+  .plan-toggle-btn.active {
+    background: #68dbae;
+    border-color: #68dbae;
+    color: #003827;
+  }
+
+  /* KOL detail modal */
+  .kol-detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 200;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 40px;
+    overflow-y: auto;
+  }
+
+  .kol-detail-card {
+    width: 680px;
+    max-width: 95vw;
+    margin-bottom: 60px;
+  }
+
+  /* Risk indicators */
+  .risk-low {
+    color: #68dbae;
+  }
+
+  .risk-med {
+    color: #f1c40f;
+  }
+
+  .risk-high {
+    color: #ff6b6b;
+  }
+
+  .risk-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .risk-dot.low { background: #68dbae; }
+  .risk-dot.med { background: #f1c40f; }
+  .risk-dot.high { background: #ff6b6b; }
+
+  /* Demo bar */
+  .demo-bar {
+    height: 8px;
+    background: #2A2A3C;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .demo-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s ease;
+  }
+
+  .demo-fill.female { background: #ff6b6b; }
+  .demo-fill.male { background: #3498db; }
+
+  /* Tier chip */
+  .tier-chip {
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+  }
 }
 
 @keyframes spin {
