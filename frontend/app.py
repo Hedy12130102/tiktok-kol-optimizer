@@ -97,9 +97,21 @@ if "results" in st.session_state:
                 st.write(f"{j}")
 
     with tab2:
+        local_search_results = {
+            k: v for k, v in results["results"].items()
+            if k in ["simulated_annealing", "hill_climber"]
+        }
+        recommended_key = max(
+            local_search_results,
+            key=lambda k: local_search_results[k]["total_gmv"]
+        )
+        recommended_name = {
+            "simulated_annealing": "Simulated Annealing",
+            "hill_climber": "Hill Climber",
+        }.get(recommended_key, results["best_algorithm"])
         col1,col2,col3=st.columns(3)
         with col1:
-            st.metric("Best Algorithm",results["best_algorithm"])
+            st.metric("Recommended Algorithm", recommended_name)
         with col2:
             st.metric("Total GMV",f"${results['total_gmv']:.0f}")
         with col3:

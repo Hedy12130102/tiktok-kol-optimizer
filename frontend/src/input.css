@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    background: #0F0F1A;
+    background: #0e0f0a;
   }
 
   ::-webkit-scrollbar {
@@ -16,24 +16,24 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #2A2A3C;
+    background: #353530;
     border-radius: 10px;
   }
 
   input[type="range"] {
-    accent-color: #68dbae;
+    accent-color: #00F2EA;
   }
 }
 
 @layer components {
   .glass-card {
-    background: #1A1A2E;
-    border: 1px solid #2A2A3C;
+    background: #161711;
+    border: 1px solid #353530;
     backdrop-filter: blur(24px);
   }
 
   .primary-gradient {
-    background: linear-gradient(135deg, #FE2C55, #FF6B6B);
+    background: linear-gradient(135deg, #00F2EA 0%, #FF0050 100%);
   }
 
   .material-symbols-outlined {
@@ -41,8 +41,8 @@
   }
 
   .sa-highlight {
-    border: 1px solid #68dbae;
-    background: rgba(104, 219, 174, 0.05);
+    border: 1px solid #00C853;
+    background: rgba(0, 200, 83, 0.05);
   }
 
   .spinner {
@@ -56,7 +56,7 @@
   }
 
   .kol-card:hover {
-    border-color: rgba(255, 177, 182, 0.5);
+    border-color: rgba(0, 242, 234, 0.5);
     transform: translateY(-2px);
     transition: all 0.25s;
   }
@@ -74,17 +74,17 @@
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.15s;
-    color: #e6bcbd;
+    color: #a7a7a0;
   }
 
   .nav-item:hover {
-    background: #2a2a25;
+    background: #20201b;
   }
 
   .nav-item.active {
-    color: #ffb3b6;
-    background: rgba(255, 81, 104, 0.06);
-    border-right: 2px solid #ffb3b6;
+    color: #00F2EA;
+    background: rgba(0, 242, 234, 0.08);
+    border-right: 2px solid #00F2EA;
   }
 
   .tier-mega {
@@ -108,7 +108,7 @@
   }
 
   .row-hover:hover {
-    background: rgba(104, 219, 174, 0.05);
+    background: rgba(0, 242, 234, 0.05);
   }
 
   .toast {
@@ -145,24 +145,24 @@
 
   .form-input {
     width: 100%;
-    background: #f5f5f0;
-    border: 1px solid #5d3f40;
+    background: #20201b;
+    border: 1px solid #353530;
     border-radius: 8px;
     padding: 8px 12px;
-    color: #1a1a1a;
+    color: #e5e2da;
     outline: none;
     font-size: 14px;
   }
 
   .form-input:focus {
-    border-color: #68dbae;
-    background: #fff;
+    border-color: #00F2EA;
+    background: #20201b;
   }
 
   .form-label {
     font-size: 12px;
     font-weight: 600;
-    color: #ad8889;
+    color: #a7a7a0;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     margin-bottom: 4px;
@@ -179,8 +179,8 @@
   }
 
   .btn-primary {
-    background: #68dbae;
-    color: #003827;
+    background: #00F2EA;
+    color: #003d3b;
   }
 
   .btn-primary:hover {
@@ -198,19 +198,19 @@
 
   .btn-outline {
     background: transparent;
-    border: 1px solid #5d3f40;
+    border: 1px solid #353530;
     color: #e5e2da;
   }
 
   .btn-outline:hover {
-    background: #2a2a25;
+    background: #20201b;
   }
 
   .view-toggle {
     display: flex;
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid #2A2A3C;
+    border: 1px solid #353530;
   }
 
   .view-toggle button {
@@ -218,20 +218,20 @@
     font-size: 12px;
     font-weight: 600;
     background: transparent;
-    color: #ad8889;
+    color: #a7a7a0;
     cursor: pointer;
     transition: all 0.15s;
     border: none;
   }
 
   .view-toggle button.active {
-    background: #68dbae;
-    color: #003827;
+    background: #00F2EA;
+    color: #003d3b;
   }
 
   .contrib-bar {
     height: 6px;
-    background: #2A2A3C;
+    background: #353530;
     border-radius: 99px;
     overflow: hidden;
     margin-top: 4px;
@@ -239,7 +239,7 @@
 
   .contrib-fill {
     height: 100%;
-    background: linear-gradient(90deg, #68dbae, #26a37a);
+    background: linear-gradient(90deg, #00C853, #00a344);
     border-radius: 99px;
     transition: width 0.5s ease;
   }
@@ -251,13 +251,13 @@
   }
 
   .plan-card:hover {
-    border-color: rgba(104, 219, 174, 0.4);
+    border-color: rgba(0, 242, 234, 0.4);
     transform: translateY(-2px);
   }
 
   .plan-card.selected {
-    border-color: #68dbae;
-    box-shadow: 0 0 20px rgba(104, 219, 174, 0.1);
+    border-color: #00F2EA;
+    box-shadow: 0 0 20px rgba(0, 242, 234, 0.1);
   }
 
   .plan-toggle-btn {
@@ -266,21 +266,21 @@
     font-size: 12px;
     font-weight: 600;
     background: transparent;
-    border: 1px solid #2A2A3C;
-    color: #ad8889;
+    border: 1px solid #353530;
+    color: #a7a7a0;
     cursor: pointer;
     transition: all 0.15s;
   }
 
   .plan-toggle-btn:hover {
-    border-color: #68dbae;
-    color: #68dbae;
+    border-color: #00F2EA;
+    color: #00F2EA;
   }
 
   .plan-toggle-btn.active {
-    background: #68dbae;
-    border-color: #68dbae;
-    color: #003827;
+    background: #00F2EA;
+    border-color: #00F2EA;
+    color: #003d3b;
   }
 
   /* KOL detail modal */
@@ -304,7 +304,7 @@
 
   /* Risk indicators */
   .risk-low {
-    color: #68dbae;
+    color: #00C853;
   }
 
   .risk-med {
@@ -322,14 +322,14 @@
     display: inline-block;
   }
 
-  .risk-dot.low { background: #68dbae; }
+  .risk-dot.low { background: #00C853; }
   .risk-dot.med { background: #f1c40f; }
   .risk-dot.high { background: #ff6b6b; }
 
   /* Demo bar */
   .demo-bar {
     height: 8px;
-    background: #2A2A3C;
+    background: #353530;
     border-radius: 99px;
     overflow: hidden;
   }
@@ -340,7 +340,7 @@
     transition: width 0.5s ease;
   }
 
-  .demo-fill.female { background: #ff6b6b; }
+  .demo-fill.female { background: #FF0050; }
   .demo-fill.male { background: #3498db; }
 
   /* Tier chip */

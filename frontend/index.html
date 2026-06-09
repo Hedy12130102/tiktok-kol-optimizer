@@ -12,6 +12,75 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap"
         rel="stylesheet" />
+    <!-- TikTok Color Scheme Overrides -->
+    <style>
+        /* Primary: TikTok Cyan #00F2EA */
+        .text-primary { color: #00F2EA !important; }
+        .bg-primary { background-color: #00F2EA !important; }
+        .bg-primary\/10 { background-color: rgba(0,242,234,.1) !important; }
+        .border-primary { border-color: #00F2EA !important; }
+        .hover\:text-primary:hover { color: #00F2EA !important; }
+        .focus\:ring-primary:focus { --tw-ring-color: rgba(0,242,234,1) !important; }
+        .shadow-primary\/20 { --tw-shadow-color: rgba(0,242,234,.2) !important; }
+        /* Secondary: TikTok Green #00C853 */
+        .text-secondary { color: #00C853 !important; }
+        .bg-secondary { background-color: #00C853 !important; }
+        .bg-secondary\/10 { background-color: rgba(0,200,83,.1) !important; }
+        .bg-secondary\/15 { background-color: rgba(0,200,83,.15) !important; }
+        .border-secondary { border-color: #00C853 !important; }
+        .border-secondary\/20 { border-color: rgba(0,200,83,.2) !important; }
+        .hover\:text-secondary:hover { color: #00C853 !important; }
+        /* Outline */
+        .text-outline { color: #4a4a45 !important; }
+        .bg-outline { background-color: #4a4a45 !important; }
+        .border-outline-variant { border-color: #353530 !important; }
+        .border-outline-variant\/30 { border-color: rgba(53,53,48,.3) !important; }
+        .divide-outline-variant\/30 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(53,53,48,.3) !important; }
+        /* On-surface-variant: neutral olive-grey */
+        .text-on-surface-variant { color: #a7a7a0 !important; }
+        .text-on-surface-variant\/40 { color: rgba(167,167,160,.4) !important; }
+        .text-on-surface-variant\/50 { color: rgba(167,167,160,.5) !important; }
+        .text-on-surface-variant\/70 { color: rgba(167,167,160,.7) !important; }
+        .text-on-surface-variant\/80 { color: rgba(167,167,160,.8) !important; }
+        /* Background & Surfaces */
+        .bg-background { background-color: #0e0f0a !important; }
+        .bg-background\/80 { background-color: rgba(14,15,10,.8) !important; }
+        .bg-surface { background-color: #161711 !important; }
+        .bg-surface-container { background-color: #20201b !important; }
+        .bg-surface-container-low { background-color: #1c1c17 !important; }
+        .bg-surface-container-high { background-color: #2a2a25 !important; }
+        .bg-surface-container-highest { background-color: #353530 !important; }
+        .bg-surface-container-highest\/30 { background-color: rgba(53,53,48,.3) !important; }
+        /* Error container stays */
+        .border-\[\#2A2A3C\] { border-color: #353530 !important; }
+        /* Convergence SVG lines */
+        #conv-sa { stroke: #00C853 !important; }
+        #conv-hc { stroke: #FB923C !important; }
+        #conv-rs { stroke: #4a4a45 !important; }
+        /* View toggle border */
+        .view-toggle { border-color: #353530 !important; }
+        .view-toggle button { color: #a7a7a0 !important; }
+        /* Plan card colors */
+        .border-\[\#FE2C55\] { border-color: #FF0050 !important; }
+        /* Technical view utilities not in compiled CSS */
+        .min-h-\[96px\] { min-height: 96px; }
+        .w-2\.5 { width: 10px; }
+        .h-2\.5 { height: 10px; }
+        .col-span-8 { grid-column: span 8 / span 8; }
+        .col-span-4 { grid-column: span 4 / span 4; }
+        /* Text sizes missing from compiled CSS */
+        .text-\[20px\] { font-size: 20px; line-height: 1.4; }
+        .text-\[24px\] { font-size: 24px; line-height: 1.3; }
+        .text-\[28px\] { font-size: 28px; line-height: 1.2; }
+        /* Layout utilities */
+        .min-w-0 { min-width: 0; }
+        .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .leading-tight { line-height: 1.25; }
+        /* Convergence chart container fills its wrapper */
+        #conv-svg { display: block; }
+        /* Bench table row highlight */
+        .sa-highlight td { background: rgba(0,200,83,0.04); }
+    </style>
 </head>
 
 <body class="font-body-base text-on-background antialiased overflow-hidden">
@@ -19,14 +88,14 @@
     <!-- ═══════════ SIDEBAR ═══════════ -->
     <aside
         class="h-screen w-[280px] fixed left-0 top-0 border-r border-outline-variant bg-surface-container flex flex-col py-lg px-md z-50">
-        <div class="flex items-center gap-sm mb-xl">
-            <div class="w-10 h-10 rounded-lg bg-[#000000] flex items-center justify-center">
-                <span class="text-[#00C853] font-extrabold text-[15px] tracking-tighter leading-none">tiko</span>
+        <div class="flex items-center gap-md mb-xl px-xs">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                style="background:#000000">
+                <span style="color:#00C853" class="font-extrabold text-[13px] tracking-tighter leading-none">tiko</span>
             </div>
             <div>
-                <h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary leading-none">tiko</h1>
-                <p class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest mt-1">
-                    KOL Optimizer</p>
+                <p class="text-on-surface font-bold text-[15px] leading-none">KOL Optimizer</p>
+                <p class="text-on-surface-variant font-label-sm text-label-sm tracking-wider mt-1">TikTok Shop</p>
             </div>
         </div>
         <nav class="flex-1 space-y-md overflow-y-auto pr-1">
@@ -49,7 +118,7 @@
                         <label class="font-label-sm text-label-sm text-on-surface-variant">Target Country</label>
                         <select id="country-select"
                             class="w-full border border-outline-variant rounded-lg p-sm text-body-base focus:ring-1 focus:ring-primary outline-none"
-                            style="background:#f5f5f0;color:#1a1a1a">
+                            style="background:#20201b;color:#e5e2da;border-color:#353530">
                             <option value="MY">🇲🇾 Malaysia</option>
                             <option value="ID">🇮🇩 Indonesia</option>
                             <option value="TH">🇹🇭 Thailand</option>
@@ -60,7 +129,7 @@
                         <label class="font-label-sm text-label-sm text-on-surface-variant">Product Category</label>
                         <select id="category-select"
                             class="w-full border border-outline-variant rounded-lg p-sm text-body-base focus:ring-1 focus:ring-primary outline-none"
-                            style="background:#f5f5f0;color:#1a1a1a">
+                            style="background:#20201b;color:#e5e2da;border-color:#353530">
                             <option value="beauty">💄 Beauty</option>
                             <option value="tech">📱 Tech</option>
                             <option value="fashion">👗 Fashion</option>
@@ -70,13 +139,13 @@
                         <label class="font-label-sm text-label-sm text-on-surface-variant">Random Seed</label>
                         <input id="seed-input" type="number" min="0" max="9999" value="42"
                             class="w-full border border-outline-variant rounded-lg p-sm text-body-base outline-none focus:ring-1 focus:ring-primary"
-                            style="background:#f5f5f0;color:#1a1a1a" />
+                            style="background:#20201b;color:#e5e2da;border-color:#353530" />
                     </div>
                 </div>
             </div>
             <button id="run-btn"
                 class="w-full primary-gradient text-white font-title-md text-title-md py-md rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-xs hover:scale-[0.98] transition-all duration-200 active:opacity-80">
-                <span class="material-symbols-outlined text-[20px]">play_arrow</span> Run Optimization
+                <span class="material-symbols-outlined text-[20px]">bolt</span> Run Optimization
             </button>
             <div class="pt-md space-y-xs">
                 <div class="nav-item active" data-page="dashboard"><span
@@ -218,72 +287,94 @@
 
                 <!-- ══ TECHNICAL VIEW (toggled) ══ -->
                 <div id="tech-view" class="hidden space-y-xl">
-                    <!-- 5 metric cards -->
-                    <section class="grid grid-cols-6 gap-gutter">
-                        <div class="glass-card p-md rounded-xl col-span-2">
-                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Recommended Algorithm</p>
-                            <div class="flex items-center gap-xs"><span id="m-algo"
-                                    class="font-title-md text-title-md text-on-surface">—</span><span
-                                    class="text-lg flex-shrink-0">🏆</span></div>
+
+                    <!-- 5 metric cards — equal 5-col grid, font sized to fit -->
+                    <section class="grid grid-cols-5 gap-gutter">
+                        <!-- Algorithm -->
+                        <div class="glass-card p-lg rounded-xl flex flex-col justify-between min-h-[96px]">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-sm">Recommended Algo</p>
+                            <div class="flex items-center gap-xs">
+                                <span id="m-algo" class="text-[18px] font-bold text-on-surface leading-tight">—</span>
+                                <span class="text-base flex-shrink-0">🏆</span>
+                            </div>
                         </div>
-                        <div class="glass-card p-md rounded-xl border-l-4 border-secondary">
-                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Predicted GMV</p>
-                            <p id="m-gmv" class="font-headline-lg text-headline-lg text-secondary font-bold">—</p>
+                        <!-- Predicted GMV — green highlight -->
+                        <div class="glass-card p-lg rounded-xl border-l-4 border-secondary min-w-0 flex flex-col justify-between min-h-[96px]">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-sm">Predicted GMV</p>
+                            <p id="m-gmv" class="text-[24px] font-extrabold text-secondary truncate">—</p>
                         </div>
-                        <div class="glass-card p-md rounded-xl">
-                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Budget Used</p>
-                            <p id="m-cost" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
-                            <p id="m-util" class="text-[10px] text-on-surface-variant mt-1">—</p>
+                        <!-- Budget Used — cyan highlight -->
+                        <div class="glass-card p-lg rounded-xl border-l-4 border-primary min-w-0 flex flex-col justify-between min-h-[96px]">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-sm">Budget Used</p>
+                            <div>
+                                <p id="m-cost" class="text-[24px] font-extrabold text-on-surface truncate">—</p>
+                                <p id="m-util" class="text-[10px] text-on-surface-variant mt-xs">—</p>
+                            </div>
                         </div>
-                        <div class="glass-card p-md rounded-xl">
-                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">KOLs Selected</p>
-                            <p id="m-kols" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
+                        <!-- KOLs Selected -->
+                        <div class="glass-card p-lg rounded-xl flex flex-col justify-between min-h-[96px]">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-sm">KOLs Selected</p>
+                            <p id="m-kols" class="text-[28px] font-extrabold text-on-surface">—</p>
                         </div>
-                        <div class="glass-card p-md rounded-xl">
-                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Candidates</p>
-                            <p id="m-cands" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
+                        <!-- Candidates -->
+                        <div class="glass-card p-lg rounded-xl flex flex-col justify-between min-h-[96px]">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-sm">Candidates</p>
+                            <p id="m-cands" class="text-[28px] font-extrabold text-on-surface">—</p>
                         </div>
                     </section>
+
                     <!-- Convergence + benchmark -->
                     <section class="grid grid-cols-12 gap-gutter items-stretch">
-                        <div class="col-span-7 glass-card rounded-xl p-lg">
+                        <div class="col-span-8 glass-card rounded-xl p-lg flex flex-col">
                             <div class="flex justify-between items-center mb-lg">
-                                <h3 class="font-title-md text-title-md text-on-surface flex items-center gap-xs"><span
-                                        class="material-symbols-outlined text-secondary">insights</span> Convergence
-                                    Curve</h3>
-                                <div class="flex gap-md">
-                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant"><span
-                                            class="w-2 h-2 rounded-full bg-secondary inline-block"></span> SA</span>
-                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant"><span
-                                            class="w-2 h-2 rounded-full bg-tertiary-container inline-block"></span>
-                                        HC</span>
-                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant"><span
-                                            class="w-2 h-2 rounded-full bg-outline inline-block"></span> Random</span>
+                                <h3 class="font-title-md text-title-md text-on-surface flex items-center gap-xs">
+                                    <span class="material-symbols-outlined text-secondary">monitoring</span>
+                                    Efficiency Convergence
+                                </h3>
+                                <div class="flex gap-lg">
+                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant font-bold uppercase">
+                                        <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style="background:#00C853"></span> SA (Rec)
+                                    </span>
+                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant font-bold uppercase">
+                                        <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style="background:#FB923C"></span> Hill Climber
+                                    </span>
+                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant font-bold uppercase">
+                                        <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0 border border-dashed" style="border-color:#4a4a45"></span> Random
+                                    </span>
                                 </div>
                             </div>
-                            <svg id="conv-svg" viewBox="0 0 850 260" preserveAspectRatio="none">
-                                <!-- Y-axis labels -->
-                                <g id="conv-ticks">
-                                    <text x="4" y="94" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
-                                    <text x="4" y="96" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
-                                    <text x="4" y="96" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
-                                    <text x="4" y="96" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
-                                </g>
-                                <path id="conv-rs" fill="none" stroke="#ad8889" stroke-width="2" stroke-dasharray="4" />
-                                <path id="conv-hc" fill="none" stroke="#ec683d" stroke-width="2.5" />
-                                <path id="conv-sa" fill="none" stroke="#68dbae" stroke-width="3.5" />
-                            </svg>
+                            <!-- SVG chart with proper viewBox -->
+                            <div class="relative flex-1" style="min-height:240px">
+                                <svg id="conv-svg" style="width:100%;height:100%;position:absolute;inset:0" viewBox="0 0 850 260" preserveAspectRatio="xMidYMid meet">
+                                    <g id="conv-ticks"></g>
+                                    <path id="conv-rs" fill="none" stroke="#4a4a45" stroke-width="2" stroke-dasharray="6" />
+                                    <path id="conv-hc" fill="none" stroke="#FB923C" stroke-width="2.5" />
+                                    <path id="conv-sa" fill="none" stroke="#00C853" stroke-width="3.5" />
+                                </svg>
+                            </div>
+                            <!-- X-axis labels -->
+                            <div class="flex justify-between text-[10px] text-on-surface-variant mt-sm px-lg opacity-60">
+                                <span>0 iterations</span><span>10k</span><span>20k</span><span>30k+</span>
+                            </div>
+                            <!-- Note -->
+                            <div class="mt-md p-md rounded-lg border" style="background:rgba(0,200,83,0.04);border-color:rgba(0,200,83,0.15)">
+                                <p class="text-[11px] text-on-surface-variant leading-relaxed">
+                                    <span class="font-bold" style="color:#00C853">Optimization Note:</span>
+                                    Even when Random Search shows lucky spikes, <span class="text-on-surface font-semibold">Simulated Annealing</span> consistently reaches higher global optima by exploring the landscape strategically.
+                                </p>
+                            </div>
                         </div>
-                        <div class="col-span-5 glass-card rounded-xl overflow-hidden flex flex-col">
+
+                        <div class="col-span-4 glass-card rounded-xl overflow-hidden flex flex-col">
                             <div class="p-lg border-b border-outline-variant">
                                 <h3 class="font-title-md text-title-md text-on-surface">Algorithm Benchmark</h3>
+                                <p class="text-[10px] text-on-surface-variant uppercase tracking-wider mt-xs">Benchmarking Candidates</p>
                             </div>
                             <div class="flex-1 overflow-x-auto">
-                                <table class="w-full text-left min-w-[280px]">
+                                <table class="w-full text-left">
                                     <thead>
-                                        <tr
-                                            class="text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low">
-                                            <th class="px-md py-sm">Strategy</th>
+                                        <tr class="text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low">
+                                            <th class="px-lg py-sm">Strategy</th>
                                             <th class="px-md py-sm text-right">GMV</th>
                                             <th class="px-md py-sm text-right">ROI</th>
                                         </tr>
@@ -291,16 +382,17 @@
                                     <tbody id="bench-body" class="divide-y divide-outline-variant/30"></tbody>
                                 </table>
                             </div>
-                            <div id="bench-note" class="p-md bg-surface-container-highest/30">
-                                <p class="text-[11px] text-on-surface-variant italic"></p>
+                            <div id="bench-note" class="p-md bg-surface-container-highest/30 border-t border-outline-variant">
+                                <p class="text-[11px] text-on-surface-variant italic leading-relaxed"></p>
                             </div>
                         </div>
                     </section>
+
                     <!-- KOL grid (technical) -->
-                    <section class="space-y-lg">
-                        <div>
-                            <h3 class="font-headline-lg text-headline-lg text-on-surface">Selected KOLs (Technical
-                                Detail)</h3>
+                    <section class="space-y-lg pb-xl">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-[20px] font-bold text-on-surface">Selected KOLs — Technical Detail</h3>
+                            <p class="text-[11px] text-on-surface-variant">Click any card for full profile</p>
                         </div>
                         <div id="tech-kol-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter"></div>
                     </section>
@@ -496,7 +588,8 @@
         const API = 'http://localhost:8000';
         const TIER_BADGE = { Mega: 'tier-mega', Macro: 'tier-macro', Micro: 'tier-micro', Nano: 'tier-nano' };
         const TIER_EMOJI = { Mega: '🟣', Macro: '🔵', Micro: '🟢', Nano: '🟡' };
-        const ALGO_COLORS = { 'Simulated Annealing': '#68dbae', 'Hill Climber': '#ec683d', 'Random Search': '#ad8889' };
+        const ALGO_COLORS = { 'Simulated Annealing': '#00C853', 'Hill Climber': '#FB923C', 'Random Search': '#4a4a45' };
+        const PLAN_COLORS = { Aggressive: '#FF0050', Balanced: '#00C853', Safe: '#f1c40f' };
         const fmt = n => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
         const fmtF = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : n;
         const PAGE_TITLES = { dashboard: 'Optimizer Dashboard', creators: 'Creator Management' };
@@ -563,8 +656,8 @@
             // Grid lines + labels
             const gridGroup = document.getElementById('conv-ticks');
             gridGroup.innerHTML = ticks.map((t, i) =>
-                '<text x="58" y="' + (yPositions[i] + 3) + '" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace" text-anchor="end">' + t + '</text>' +
-                '<line x1="65" y1="' + yPositions[i] + '" x2="835" y2="' + yPositions[i] + '" stroke="#2A2A3C" stroke-width="0.5" />'
+                '<text x="58" y="' + (yPositions[i] + 3) + '" fill="#4a4a45" font-size="10" font-family="JetBrains Mono, monospace" text-anchor="end">' + t + '</text>' +
+                '<line x1="65" y1="' + yPositions[i] + '" x2="835" y2="' + yPositions[i] + '" stroke="#353530" stroke-width="0.5" />'
             ).join('');
         }
         function getRecommendedResult(results) {
@@ -608,7 +701,7 @@
 
         function bizKolCard(kol, totalGmv) {
             const tier = kol.tier || 'Micro', reasons = (kol.reasons || []).slice(0, 3), contrib = totalGmv > 0 ? ((kol.expected_gmv / totalGmv) * 100).toFixed(1) : 0;
-            const reasonsHtml = reasons.map(r => `<div style="margin:4px 0;font-size:12px;color:#e6bcbd">✅ ${r}</div>`).join('');
+            const reasonsHtml = reasons.map(r => `<div style="margin:4px 0;font-size:12px;color:#a7a7a0">✅ ${r}</div>`).join('');
             // Enhanced fields from /kol/{id}
             const enh = enhancedKolMap[kol.id] || {};
             const rank = enh.cost_effectiveness_rank || '—';
@@ -628,7 +721,7 @@
         ${riskHtml ? `<div class="flex items-center gap-xs">${riskHtml}</div>` : ''}
         ${rankText ? `<div class="flex items-center gap-xs text-on-surface-variant"><span class="material-symbols-outlined text-[12px]">trending_up</span>${rankText}</div>` : ''}
     </div>
-    <div class="text-[11px]"><div style="font-weight:600;color:#68dbae;margin-bottom:6px">Why this creator?</div>${reasonsHtml}</div>
+    <div class="text-[11px]"><div style="font-weight:600;color:#00C853;margin-bottom:6px">Why this creator?</div>${reasonsHtml}</div>
   </div>`;
         }
 
@@ -656,7 +749,7 @@
 
         document.getElementById('run-btn').addEventListener('click', async () => {
             showPage('dashboard');
-            const btn = document.getElementById('run-btn'); btn.innerHTML = '<div class="spinner"></div>'; btn.disabled = true;
+            const btn = document.getElementById('run-btn'); btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">refresh</span>'; btn.disabled = true;
             const payload = { budget: parseInt(budgetSlider.value), country: document.getElementById('country-select').value, category: document.getElementById('category-select').value, seed: parseInt(document.getElementById('seed-input').value) || 42 };
             try {
                 const [optRes, plansRes] = await Promise.all([
@@ -678,8 +771,10 @@
                     }
                 } catch (_) { enhancedKolMap = {}; }
                 renderDashboard(data, payload);
+                // Sync header metrics to selected plan (overrides raw SA result)
+                if (allPlansData) selectPlan(selectedPlanName);
             } catch (e) { showError(e.message.includes('fetch') ? '⚠️ Backend unavailable — run: uvicorn backend.main:app --reload' : '⚠️ ' + e.message); }
-            finally { btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">play_arrow</span> Run Optimization'; btn.disabled = false; }
+            finally { btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">bolt</span> Run Optimization'; btn.disabled = false; }
         });
 
         function renderPlans(plans, optData) {
@@ -688,19 +783,17 @@
             document.getElementById('plans-section').classList.remove('hidden');
             const grid = document.getElementById('plans-grid');
             const icons = { Aggressive: 'rocket_launch', Balanced: 'tune', Safe: 'shield' };
-            const colors = { Aggressive: 'border-l-4 border-[#FE2C55]', Balanced: 'border-l-4 border-secondary', Safe: 'border-l-4 border-[#f1c40f]' };
             grid.innerHTML = plans.map((p, i) => {
                 const util = optData ? (p.total_cost / optData.budget * 100).toFixed(0) : '—';
                 const tb = p.tier_breakdown || { Mega: 0, Macro: 0, Micro: 0, Nano: 0 };
                 const warnings = (p.overlap_warnings || []).length;
-                const isSel = p.plan_name === selectedPlanName;
-                return `<div class="plan-card glass-card rounded-xl p-lg flex flex-col space-y-md ${colors[p.plan_name] || ''} ${isSel ? 'selected' : ''}" onclick="selectPlan('${p.plan_name}')">
+                return `<div class="plan-card glass-card rounded-xl p-lg flex flex-col space-y-md" onclick="selectPlan('${p.plan_name}')">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-sm">
-                    <span class="material-symbols-outlined text-[24px] text-on-surface-variant">${icons[p.plan_name] || 'campaign'}</span>
+                    <span class="material-symbols-outlined text-[24px] text-on-surface-variant plan-icon">${icons[p.plan_name] || 'campaign'}</span>
                     <h4 class="font-title-md text-title-md text-on-surface">${p.plan_name}</h4>
                 </div>
-                ${isSel ? '<span class="text-secondary text-[11px] font-bold">● Active</span>' : ''}
+                <span class="plan-active-badge text-[11px] font-bold" style="display:none">● Active</span>
             </div>
             <p class="text-[11px] text-on-surface-variant">${p.description}</p>
             <div class="grid grid-cols-2 gap-sm">
@@ -715,38 +808,59 @@
             ${warnings > 0 ? `<div class="flex items-center gap-xs text-[11px] text-[#f1c40f]"><span class="material-symbols-outlined text-[14px]">warning</span> ${warnings} audience overlap${warnings > 1 ? 's' : ''}</div>` : ''}
           </div>`;
             }).join('');
-            // Sync toggle buttons
-            document.querySelectorAll('.plan-toggle-btn').forEach(b => {
-                b.classList.toggle('active', b.textContent.trim() === selectedPlanName);
-            });
-            // Sync plan cards selected state
-            document.querySelectorAll('.plan-card').forEach(c => {
-                const name = c.querySelector('h4').textContent;
-                c.classList.toggle('selected', name === selectedPlanName);
-            });
+            // Apply initial selection via selectPlan (handles borders + badges)
+            selectPlan(selectedPlanName);
         }
 
         function selectPlan(name) {
             selectedPlanName = name;
-            // Re-render plan cards and toggle buttons
+            const col = PLAN_COLORS[name] || '#00F2EA';
+
+            // Update plan card borders — only selected card gets colored border
             document.querySelectorAll('.plan-card').forEach(c => {
                 const cardName = c.querySelector('h4').textContent;
-                c.classList.toggle('selected', cardName === name);
+                const isSelected = cardName === name;
+                c.classList.toggle('selected', isSelected);
+                // Active badge
+                const badge = c.querySelector('.plan-active-badge');
+                if (badge) {
+                    badge.style.display = isSelected ? 'inline' : 'none';
+                    badge.style.color = col;
+                }
+                if (isSelected) {
+                    // Plan-specific border color + subtle glow
+                    c.style.borderColor = col;
+                    c.style.boxShadow = `0 0 20px ${col}33`;
+                    // Icon color matches plan
+                    const icon = c.querySelector('.plan-icon');
+                    if (icon) icon.style.color = col;
+                } else {
+                    // Reset to default glass-card border
+                    c.style.borderColor = '#353530';
+                    c.style.boxShadow = '';
+                    const icon = c.querySelector('.plan-icon');
+                    if (icon) icon.style.color = '';
+                }
             });
+
+            // Sync toggle buttons
             document.querySelectorAll('.plan-toggle-btn').forEach(b => {
                 b.classList.toggle('active', b.textContent.trim() === name);
             });
-            // Update KOL grid with this plan's KOLs
+
+            // Update main metrics + KOL grid to match selected plan
             if (!allPlansData) return;
             const plan = allPlansData.find(p => p.plan_name === name);
             if (!plan) return;
             const sorted = [...plan.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
-            const totalGmv = plan.total_gmv;
             document.getElementById('biz-count').textContent = sorted.length;
-            document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, totalGmv)).join('');
+            document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, plan.total_gmv)).join('');
             document.getElementById('biz-gmv').textContent = fmt(plan.total_gmv);
             document.getElementById('biz-roi').textContent = plan.roi.toFixed(2) + 'x';
             document.getElementById('biz-cost').textContent = fmt(plan.total_cost);
+            // biz-util keeps its own text (set by renderDashboard with actual budget)
+            document.getElementById('biz-subtitle').textContent = document.getElementById('biz-subtitle').textContent
+                .replace(/\d+ creators$/, sorted.length + ' creators');
         }
 
         function renderDashboard(data, payload) {
@@ -861,7 +975,7 @@
         // ══════════ CREATORS: CRUD ══════════
         let currentPage = 0; const PG = 20; let editingId = null;
         async function loadTable() { const country = document.getElementById('f-country').value, category = document.getElementById('f-category').value, tier = document.getElementById('f-tier').value, params = new URLSearchParams({ limit: PG, offset: currentPage * PG }); if (country) params.set('country', country); if (category) params.set('category', category); if (tier) params.set('tier', tier); try { const r = await fetch(`${API}/kols?${params}`); const d = await r.json(); renderTable(d.kols, d.total); } catch (e) { toast('Backend unavailable', 'err'); } }
-        function renderTable(kols, total) { document.getElementById('count-badge').textContent = `${total} creators`; document.getElementById('page-info').textContent = total ? `${currentPage * PG + 1}–${Math.min((currentPage + 1) * PG, total)} of ${total}` : ''; document.getElementById('prev-btn').disabled = currentPage === 0; document.getElementById('next-btn').disabled = (currentPage + 1) * PG >= total; const tbody = document.getElementById('kol-tbody'); if (!kols.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center py-12 text-outline">No creators. Click <b>Add Creator</b> to get started.</td></tr>'; return; } tbody.innerHTML = kols.map(k => { const tier = k.tier || 'Micro'; return `<tr class="row-hover border-t border-[#2A2A3C]"><td class="px-4 py-3"><div class="font-semibold text-white">${k.name}</div><div class="text-[11px] text-outline font-mono">${k.category} · #${k.id}</div></td><td class="px-4 py-3">${k.country}</td><td class="px-4 py-3 capitalize">${k.category}</td><td class="px-4 py-3 text-right font-mono">${fmtF(k.followers)}</td><td class="px-4 py-3 text-right font-mono">${(k.engagement_rate * 100).toFixed(1)}%</td><td class="px-4 py-3 text-right font-mono">${fmt(k.cost)}</td><td class="px-4 py-3 text-center"><span class="${TIER_BADGE[tier]}" style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${tier}</span></td><td class="px-4 py-3 text-right font-mono text-secondary">${fmt(k.expected_gmv)}</td><td class="px-4 py-3 text-center"><button onclick="openEditModal(${k.id})" class="text-outline hover:text-secondary transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button><button onclick="deleteKol(${k.id},'${k.name.replace(/'/g, "\\'")}' )" class="text-outline hover:text-error transition-colors ml-1"><span class="material-symbols-outlined text-[18px]">delete</span></button></td></tr>`; }).join(''); }
+        function renderTable(kols, total) { document.getElementById('count-badge').textContent = `${total} creators`; document.getElementById('page-info').textContent = total ? `${currentPage * PG + 1}–${Math.min((currentPage + 1) * PG, total)} of ${total}` : ''; document.getElementById('prev-btn').disabled = currentPage === 0; document.getElementById('next-btn').disabled = (currentPage + 1) * PG >= total; const tbody = document.getElementById('kol-tbody'); if (!kols.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center py-12 text-outline">No creators. Click <b>Add Creator</b> to get started.</td></tr>'; return; } tbody.innerHTML = kols.map(k => { const tier = k.tier || 'Micro'; return `<tr class="row-hover border-t border-[#353530]"><td class="px-4 py-3"><div class="font-semibold text-white">${k.name}</div><div class="text-[11px] text-outline font-mono">${k.category} · #${k.id}</div></td><td class="px-4 py-3">${k.country}</td><td class="px-4 py-3 capitalize">${k.category}</td><td class="px-4 py-3 text-right font-mono">${fmtF(k.followers)}</td><td class="px-4 py-3 text-right font-mono">${(k.engagement_rate * 100).toFixed(1)}%</td><td class="px-4 py-3 text-right font-mono">${fmt(k.cost)}</td><td class="px-4 py-3 text-center"><span class="${TIER_BADGE[tier]}" style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${tier}</span></td><td class="px-4 py-3 text-right font-mono text-secondary">${fmt(k.expected_gmv)}</td><td class="px-4 py-3 text-center"><button onclick="openEditModal(${k.id})" class="text-outline hover:text-secondary transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button><button onclick="deleteKol(${k.id},'${k.name.replace(/'/g, "\\'")}' )" class="text-outline hover:text-error transition-colors ml-1"><span class="material-symbols-outlined text-[18px]">delete</span></button></td></tr>`; }).join(''); }
         function changePage(d) { currentPage = Math.max(0, currentPage + d); loadTable(); }
         function openAddModal() { editingId = null; document.getElementById('modal-title').textContent = 'Add New Creator'; document.getElementById('modal-submit').textContent = 'Save Creator'; document.getElementById('modal-submit').onclick = submitAdd; clearForm(); document.getElementById('modal').classList.remove('hidden'); }
         async function openEditModal(id) { editingId = id; document.getElementById('modal-title').textContent = 'Edit Creator'; document.getElementById('modal-submit').textContent = 'Update'; document.getElementById('modal-submit').onclick = submitEdit; try { const r = await fetch(`${API}/kol/${id}`); const k = await r.json(); document.getElementById('f-name').value = k.name || ''; document.getElementById('f-url').value = k.tiktok_url || ''; document.getElementById('f-m-country').value = k.country || 'MY'; document.getElementById('f-m-cat').value = k.category || 'beauty'; document.getElementById('f-followers').value = k.followers || ''; document.getElementById('f-eng').value = k.engagement_rate || ''; document.getElementById('f-cost').value = k.cost || ''; document.getElementById('f-fit').value = k.fit_score || ''; document.getElementById('f-views').value = k.avg_views || ''; document.getElementById('f-likes').value = k.avg_likes || ''; document.getElementById('f-gender').value = k.gender_ratio || ''; document.getElementById('f-age').value = k.age_group || '18-24'; document.getElementById('modal').classList.remove('hidden'); } catch (e) { toast('Failed to load', 'err'); } }
