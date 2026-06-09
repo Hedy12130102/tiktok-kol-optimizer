@@ -4,171 +4,34 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>TikTok Shop KOL Matrix Optimizer</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <title>tiko — TikTok Shop KOL Optimizer</title>
+    <link href="./dist/output.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap"
         rel="stylesheet" />
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "inverse-surface": "#e5e2da", "on-background": "#e5e2da", "on-error": "#690005",
-                        "primary-fixed-dim": "#ffb3b6", "outline-variant": "#5d3f40", "on-surface": "#e5e2da",
-                        "surface-tint": "#ffb3b6", "tertiary": "#ffb59e", "primary": "#ffb3b6", "on-tertiary": "#5e1700",
-                        "tertiary-container": "#ec683d", "secondary-fixed-dim": "#68dbae", "inverse-on-surface": "#31312b",
-                        "on-tertiary-fixed-variant": "#852400", "outline": "#ad8889", "surface-container-lowest": "#0e0f0a",
-                        "surface-bright": "#393934", "on-primary-fixed-variant": "#920027", "on-surface-variant": "#e6bcbd",
-                        "surface-variant": "#353530", "on-secondary-container": "#003121", "on-primary-fixed": "#40000c",
-                        "error-container": "#93000a", "secondary": "#68dbae", "secondary-fixed": "#86f8c9",
-                        "surface-container": "#20201b", "error": "#ffb4ab", "on-secondary-fixed-variant": "#00513a",
-                        "on-tertiary-fixed": "#3a0b00", "on-secondary": "#003827", "on-primary-container": "#5b0015",
-                        "on-error-container": "#ffdad6", "primary-container": "#ff5168", "surface-container-high": "#2a2a25",
-                        "surface": "#13140f", "tertiary-fixed": "#ffdbd0", "background": "#13140f", "on-primary": "#680019",
-                        "surface-container-low": "#1c1c17", "primary-fixed": "#ffdada", "inverse-primary": "#be0036",
-                        "on-tertiary-container": "#521300", "tertiary-fixed-dim": "#ffb59e", "surface-dim": "#13140f",
-                        "on-secondary-fixed": "#002115", "secondary-container": "#26a37a", "surface-container-highest": "#353530"
-                    },
-                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
-                    spacing: { "margin-desktop": "32px", "gutter": "20px", "xl": "40px", "lg": "24px", "md": "16px", "unit": "4px", "xs": "4px", "margin-mobile": "16px", "sm": "8px" },
-                    fontFamily: { "headline-lg-mobile": ["Inter"], "body-base": ["Inter"], "headline-lg": ["Inter"], "display-lg": ["Inter"], "title-md": ["Inter"], "label-sm": ["Inter"], "data-mono": ["JetBrains Mono"] },
-                    fontSize: {
-                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "700" }],
-                        "body-base": ["15px", { "lineHeight": "1.6", "fontWeight": "400" }],
-                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }],
-                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
-                        "title-md": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
-                        "label-sm": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
-                        "data-mono": ["14px", { "lineHeight": "1.4", "fontWeight": "500" }]
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            background-color: #0F0F1A;
-        }
-
-        .glass-card {
-            background: #1A1A2E;
-            border: 1px solid #2A2A3C;
-            backdrop-filter: blur(24px);
-        }
-
-        .primary-gradient {
-            background: linear-gradient(135deg, #FE2C55 0%, #FF6B6B 100%);
-        }
-
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-
-        .sa-highlight {
-            border: 1px solid #68dbae;
-            background: rgba(104, 219, 174, 0.05);
-        }
-
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #2A2A3C;
-            border-radius: 10px;
-        }
-
-        input[type=range] {
-            accent-color: #68dbae;
-        }
-
-        /* Loading spinner */
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, .3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin .7s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Tab active */
-        .tab-btn.active {
-            color: #68dbae;
-            border-bottom: 2px solid #68dbae;
-        }
-
-        .tab-btn {
-            color: #ad8889;
-            border-bottom: 2px solid transparent;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all .2s;
-        }
-
-        /* KOL card hover */
-        .kol-card:hover {
-            border-color: rgba(255, 177, 182, .5);
-            transform: translateY(-2px);
-            transition: all .25s;
-        }
-
-        /* Convergence SVG */
-        #conv-svg {
-            width: 100%;
-            height: 260px;
-        }
-
-        /* Scale chart */
-        .scale-svg {
-            width: 100%;
-            height: 200px;
-        }
-    </style>
 </head>
 
 <body class="font-body-base text-on-background antialiased overflow-hidden">
 
-    <!-- ═══════════════════════════════════════════════════
-     SIDEBAR
-════════════════════════════════════════════════════ -->
+    <!-- ═══════════ SIDEBAR ═══════════ -->
     <aside
         class="h-screen w-[280px] fixed left-0 top-0 border-r border-outline-variant bg-surface-container flex flex-col py-lg px-md z-50">
         <div class="flex items-center gap-sm mb-xl">
-            <div class="w-10 h-10 rounded-lg primary-gradient flex items-center justify-center">
-                <span class="material-symbols-outlined text-white text-[22px]">hub</span>
+            <div class="w-10 h-10 rounded-lg bg-[#000000] flex items-center justify-center">
+                <span class="text-[#00C853] font-extrabold text-[15px] tracking-tighter leading-none">tiko</span>
             </div>
             <div>
-                <h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary leading-none">KOL
-                    Matrix</h1>
+                <h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary leading-none">tiko</h1>
                 <p class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest mt-1">
-                    Optimization Engine</p>
+                    KOL Optimizer</p>
             </div>
         </div>
-
-        <!-- Campaign Settings -->
         <nav class="flex-1 space-y-md overflow-y-auto pr-1">
             <div class="space-y-sm">
                 <p class="text-on-surface-variant font-label-sm text-label-sm px-xs uppercase">Campaign Settings</p>
                 <div class="p-md glass-card rounded-xl space-y-md">
-
-                    <!-- Budget -->
                     <div class="space-y-xs">
                         <div class="flex justify-between items-end">
                             <label class="font-label-sm text-label-sm text-on-surface-variant">Marketing Budget</label>
@@ -181,86 +44,85 @@
                         <div class="flex justify-between text-[10px] text-on-surface-variant/50">
                             <span>$500</span><span>$20k</span></div>
                     </div>
-
-                    <!-- Country -->
                     <div class="space-y-xs">
                         <label class="font-label-sm text-label-sm text-on-surface-variant">Target Country</label>
                         <select id="country-select"
-                            class="w-full bg-background border border-outline-variant rounded-lg p-sm text-body-base focus:ring-1 focus:ring-primary outline-none">
+                            class="w-full border border-outline-variant rounded-lg p-sm text-body-base focus:ring-1 focus:ring-primary outline-none"
+                            style="background:#f5f5f0;color:#1a1a1a">
                             <option value="MY">🇲🇾 MY (Malaysia)</option>
                             <option value="ID">🇮🇩 ID (Indonesia)</option>
                             <option value="TH">🇹🇭 TH (Thailand)</option>
                             <option value="PH">🇵🇭 PH (Philippines)</option>
                         </select>
                     </div>
-
-                    <!-- Category -->
                     <div class="space-y-xs">
                         <label class="font-label-sm text-label-sm text-on-surface-variant">Product Category</label>
                         <select id="category-select"
-                            class="w-full bg-background border border-outline-variant rounded-lg p-sm text-body-base focus:ring-1 focus:ring-primary outline-none">
+                            class="w-full border border-outline-variant rounded-lg p-sm text-body-base focus:ring-1 focus:ring-primary outline-none"
+                            style="background:#f5f5f0;color:#1a1a1a">
                             <option value="beauty">💄 Beauty</option>
                             <option value="tech">📱 Tech</option>
                             <option value="fashion">👗 Fashion</option>
                         </select>
                     </div>
-
-                    <!-- Seed -->
                     <div class="space-y-xs">
                         <label class="font-label-sm text-label-sm text-on-surface-variant">Random Seed</label>
                         <input id="seed-input" type="number" min="0" max="9999" value="42"
-                            class="w-full bg-background border border-outline-variant rounded-lg p-sm text-body-base outline-none focus:ring-1 focus:ring-primary" />
+                            class="w-full border border-outline-variant rounded-lg p-sm text-body-base outline-none focus:ring-1 focus:ring-primary"
+                            style="background:#f5f5f0;color:#1a1a1a" />
                     </div>
                 </div>
             </div>
-
-            <!-- Run button -->
             <button id="run-btn"
                 class="w-full primary-gradient text-white font-title-md text-title-md py-md rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-xs hover:scale-[0.98] transition-all duration-200 active:opacity-80">
-                <span class="material-symbols-outlined text-[20px]">play_arrow</span>
-                Run Optimization
+                <span class="material-symbols-outlined text-[20px]">play_arrow</span> Run Optimization
             </button>
-
-            <!-- Nav -->
             <div class="pt-md space-y-xs">
-                <div class="tab-nav flex items-center gap-md p-sm rounded-lg text-primary bg-primary-container/10 border-r-2 border-primary transition-colors cursor-pointer"
-                    data-tab="dashboard">
-                    <span class="material-symbols-outlined">campaign</span>
-                    <span class="font-title-md text-title-md">Campaigns</span>
-                </div>
-                <div class="tab-nav flex items-center gap-md p-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
-                    data-tab="scalability">
-                    <span class="material-symbols-outlined">query_stats</span>
-                    <span class="font-title-md text-title-md">Scalability</span>
-                </div>
+                <div class="nav-item active" data-page="dashboard"><span
+                        class="material-symbols-outlined">campaign</span><span
+                        class="font-title-md text-title-md">Campaigns</span></div>
+                <div class="nav-item" data-page="creators"><span class="material-symbols-outlined">group</span><span
+                        class="font-title-md text-title-md">Creators</span></div>
             </div>
         </nav>
-
         <footer class="mt-auto pt-lg border-t border-outline-variant/30 text-center">
-            <p class="text-[10px] text-on-surface-variant/40 font-data-mono tracking-tighter">Powered by Simulated
-                Annealing</p>
+            <p class="text-[10px] text-on-surface-variant/40 font-data-mono tracking-tighter">tiko · AI-powered KOL optimization</p>
         </footer>
     </aside>
 
-    <!-- ═══════════════════════════════════════════════════
-     MAIN
-════════════════════════════════════════════════════ -->
+    <!-- ═══════════ MAIN ═══════════ -->
     <main class="ml-[280px] h-screen overflow-y-auto bg-background">
-        <!-- Top bar -->
         <header
             class="sticky top-0 z-40 flex justify-between items-center px-margin-desktop h-16 bg-background/80 backdrop-blur-xl border-b border-outline-variant">
             <h2 id="page-title" class="font-headline-lg text-headline-lg text-on-surface">Optimizer Dashboard</h2>
             <div class="flex items-center gap-md">
-                <!-- Error badge -->
                 <div id="error-banner"
                     class="hidden bg-error-container text-on-error-container px-md py-sm rounded-lg text-sm font-bold">
+                </div>
+                <!-- View toggle (dashboard only) -->
+                <div id="view-toggle" class="view-toggle hidden">
+                    <button class="active" onclick="setView('business')">Business</button>
+                    <button onclick="setView('technical')">Technical</button>
+                </div>
+                <!-- Creator actions (creators page only) -->
+                <div id="creator-actions" class="hidden flex items-center gap-3">
+                    <button onclick="openAddModal()" class="btn btn-primary flex items-center gap-1"><span
+                            class="material-symbols-outlined text-[18px]">person_add</span> Add Creator</button>
+                    <label class="btn btn-outline flex items-center gap-1 cursor-pointer"><span
+                            class="material-symbols-outlined text-[18px]">upload_file</span> Import CSV<input
+                            type="file" accept=".csv" onchange="importCSV(this)" class="hidden" /></label>
+                    <a href="http://localhost:8000/kols/template" class="btn btn-outline flex items-center gap-1"><span
+                            class="material-symbols-outlined text-[18px]">download</span> Template</a>
+                    <a href="http://localhost:8000/kols/export" class="btn btn-outline flex items-center gap-1"><span
+                            class="material-symbols-outlined text-[18px]">file_download</span> Export</a>
+                    <button onclick="resetDatabase()" class="btn btn-danger flex items-center gap-1"><span
+                            class="material-symbols-outlined text-[18px]">restart_alt</span> Reset All</button>
                 </div>
             </div>
         </header>
 
-        <!-- ── DASHBOARD PAGE ── -->
+        <!-- ════ PAGE: DASHBOARD ════ -->
         <div id="page-dashboard" class="p-margin-desktop space-y-xl">
-
             <!-- Empty state -->
             <div id="empty-state" class="flex flex-col items-center justify-center py-32 text-center">
                 <span class="material-symbols-outlined text-[64px] text-outline mb-lg">manage_search</span>
@@ -269,665 +131,678 @@
                     <span class="text-primary font-bold">Run Optimization</span> to find the best KOL matrix.</p>
             </div>
 
-            <!-- Results (hidden until API returns) -->
+            <!-- Results -->
             <div id="results-section" class="hidden space-y-xl">
 
-                <!-- Metrics row -->
-                <section class="grid grid-cols-5 gap-gutter">
-                    <div class="glass-card p-md rounded-xl">
-                        <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Best Algorithm</p>
-                        <div class="flex items-center gap-xs">
-                            <span id="m-algo" class="font-title-md text-title-md text-on-surface truncate">—</span>
-                            <span class="text-lg">🏆</span>
-                        </div>
-                    </div>
-                    <div class="glass-card p-md rounded-xl border-l-4 border-secondary">
-                        <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Predicted GMV</p>
-                        <p id="m-gmv" class="font-headline-lg text-headline-lg text-secondary font-bold">—</p>
-                    </div>
-                    <div class="glass-card p-md rounded-xl">
-                        <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Budget Used</p>
-                        <p id="m-cost" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
-                        <p id="m-util" class="text-[10px] text-on-surface-variant mt-1">—</p>
-                    </div>
-                    <div class="glass-card p-md rounded-xl">
-                        <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">KOLs Selected</p>
-                        <p id="m-kols" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
-                        <p class="text-[10px] text-on-surface-variant mt-1">Mixed tier strategy</p>
-                    </div>
-                    <div class="glass-card p-md rounded-xl">
-                        <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Candidates</p>
-                        <p id="m-cands" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
-                        <p class="text-[10px] text-on-surface-variant mt-1">Profiled pool size</p>
-                    </div>
-                </section>
-
-                <!-- Convergence + Benchmark -->
-                <section class="grid grid-cols-12 gap-gutter items-stretch">
-                    <!-- Convergence chart -->
-                    <div class="col-span-8 glass-card rounded-xl p-lg">
-                        <div class="flex justify-between items-center mb-lg">
-                            <h3 class="font-title-md text-title-md text-on-surface flex items-center gap-xs">
-                                <span class="material-symbols-outlined text-secondary">insights</span>
-                                Optimization Convergence Curve
-                            </h3>
-                            <div class="flex gap-md">
-                                <span class="flex items-center gap-xs text-[10px] text-on-surface-variant"><span
-                                        class="w-2 h-2 rounded-full bg-secondary inline-block"></span> SA</span>
-                                <span class="flex items-center gap-xs text-[10px] text-on-surface-variant"><span
-                                        class="w-2 h-2 rounded-full bg-tertiary-container inline-block"></span>
-                                    HC</span>
-                                <span class="flex items-center gap-xs text-[10px] text-on-surface-variant"><span
-                                        class="w-2 h-2 rounded-full bg-outline inline-block"></span> Random</span>
-                            </div>
-                        </div>
-                        <svg id="conv-svg" viewBox="0 0 800 240" preserveAspectRatio="none">
-                            <path id="conv-rs" fill="none" stroke="#ad8889" stroke-width="2" stroke-dasharray="4" />
-                            <path id="conv-hc" fill="none" stroke="#ec683d" stroke-width="2.5" />
-                            <path id="conv-sa" fill="none" stroke="#68dbae" stroke-width="3.5" />
-                        </svg>
-                        <div class="flex justify-between text-[10px] text-on-surface-variant/40 mt-1 px-1">
-                            <span>0</span><span>Iterations →</span>
-                        </div>
-                    </div>
-
-                    <!-- Algorithm benchmark -->
-                    <div class="col-span-4 glass-card rounded-xl overflow-hidden flex flex-col">
-                        <div class="p-lg border-b border-outline-variant">
-                            <h3 class="font-title-md text-title-md text-on-surface">Algorithm Benchmark</h3>
-                        </div>
-                        <div id="bench-table" class="flex-1">
-                            <table class="w-full text-left">
-                                <thead>
-                                    <tr
-                                        class="text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low">
-                                        <th class="px-lg py-md">Strategy</th>
-                                        <th class="px-lg py-md text-right">GMV</th>
-                                        <th class="px-lg py-md text-right">ROI</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="bench-body" class="divide-y divide-outline-variant/30"></tbody>
-                            </table>
-                        </div>
-                        <div id="bench-note" class="p-md bg-surface-container-highest/30">
-                            <p class="text-[11px] text-on-surface-variant italic"></p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- KOL Matrix -->
-                <section class="space-y-lg">
-                    <div class="flex justify-between items-end">
-                        <div>
-                            <h3 class="font-headline-lg text-headline-lg text-on-surface">Best KOL Matrix</h3>
-                            <p id="kol-subtitle" class="text-on-surface-variant text-body-base">Optimized portfolio</p>
-                        </div>
-                    </div>
-                    <div id="kol-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter"></div>
-                </section>
-
-                <!-- Footer banner -->
-                <footer class="pb-xl">
-                    <div id="footer-banner"
-                        class="p-lg glass-card rounded-xl border-dashed border-2 flex items-center justify-between">
-                        <div class="flex items-center gap-lg">
-                            <span class="material-symbols-outlined text-primary text-[40px]">bolt</span>
+                <!-- ══ BUSINESS VIEW (default) ══ -->
+                <div id="biz-view" class="space-y-xl">
+                    <!-- Hero metrics -->
+                    <section class="glass-card rounded-xl p-lg">
+                        <div class="flex items-center justify-between mb-lg">
                             <div>
-                                <h4 class="font-title-md text-title-md text-on-surface">Optimization Complete</h4>
-                                <p id="footer-msg" class="text-on-surface-variant text-body-base"></p>
+                                <h3 class="font-headline-lg text-headline-lg text-on-surface">Your Recommended KOL Team
+                                </h3>
+                                <p id="biz-subtitle" class="text-on-surface-variant text-body-base mt-1">Optimized
+                                    portfolio</p>
+                            </div>
+                            <div class="flex items-center gap-xs text-secondary">
+                                <span class="material-symbols-outlined text-[28px]">verified</span>
+                                <span class="font-label-sm text-label-sm uppercase">AI Optimized</span>
                             </div>
                         </div>
-                    </div>
-                </footer>
+                        <div class="grid grid-cols-3 gap-gutter">
+                            <div class="text-center p-md rounded-xl bg-surface-container-low">
+                                <p class="text-[10px] text-on-surface-variant uppercase tracking-wider mb-xs">Budget
+                                    Used</p>
+                                <p id="biz-cost" class="font-headline-lg text-headline-lg text-on-surface font-bold">—
+                                </p>
+                                <p id="biz-util" class="text-[11px] text-on-surface-variant mt-1">—</p>
+                            </div>
+                            <div class="text-center p-md rounded-xl bg-secondary/10 border border-secondary/20">
+                                <p class="text-[10px] text-secondary uppercase tracking-wider mb-xs">Predicted GMV</p>
+                                <p id="biz-gmv" class="font-headline-lg text-headline-lg text-secondary font-bold">—</p>
+                                <p class="text-[11px] text-on-surface-variant mt-1">Gross Merchandise Value</p>
+                            </div>
+                            <div class="text-center p-md rounded-xl bg-surface-container-low">
+                                <p class="text-[10px] text-on-surface-variant uppercase tracking-wider mb-xs">Return on
+                                    Investment</p>
+                                <p id="biz-roi" class="font-headline-lg text-headline-lg text-on-surface font-bold">—
+                                </p>
+                                <p class="text-[11px] text-on-surface-variant mt-1">GMV / Budget</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Plan comparison cards -->
+                    <section id="plans-section" class="hidden space-y-lg">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-title-md text-title-md text-on-surface">Strategy Plans</h3>
+                            <p class="text-[11px] text-on-surface-variant">Click a plan to view its creators</p>
+                        </div>
+                        <div id="plans-grid" class="grid grid-cols-3 gap-gutter"></div>
+                        <div class="flex justify-center gap-sm">
+                            <button class="plan-toggle-btn active" onclick="selectPlan('Aggressive')">Aggressive</button>
+                            <button class="plan-toggle-btn" onclick="selectPlan('Balanced')">Balanced</button>
+                            <button class="plan-toggle-btn" onclick="selectPlan('Safe')">Safe</button>
+                        </div>
+                    </section>
+
+                    <!-- KOL cards -->
+                    <section>
+                        <div class="flex items-center justify-between mb-lg">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant uppercase"><span
+                                    id="biz-count">0</span> creators selected</p>
+                            <p class="text-[11px] text-on-surface-variant">Sorted by GMV contribution</p>
+                        </div>
+                        <div id="biz-kol-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter"></div>
+                    </section>
+
+                    <!-- Apply CTA -->
+                    <footer class="pb-xl">
+                        <div class="p-lg glass-card rounded-xl flex items-center justify-between">
+                            <div class="flex items-center gap-lg">
+                                <span class="material-symbols-outlined text-secondary text-[40px]">rocket_launch</span>
+                                <div>
+                                    <h4 class="font-title-md text-title-md text-on-surface">Ready to Launch</h4>
+                                    <p id="biz-footer-msg" class="text-on-surface-variant text-body-base"></p>
+                                </div>
+                            </div>
+                            <button
+                                class="primary-gradient text-white px-lg py-md rounded-xl font-title-md shadow-lg shadow-primary/20 hover:scale-[0.98] transition-all">
+                                Apply to Campaign
+                            </button>
+                        </div>
+                    </footer>
+                </div>
+
+                <!-- ══ TECHNICAL VIEW (toggled) ══ -->
+                <div id="tech-view" class="hidden space-y-xl">
+                    <!-- 5 metric cards -->
+                    <section class="grid grid-cols-5 gap-gutter">
+                        <div class="glass-card p-md rounded-xl">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Best Algorithm</p>
+                            <div class="flex items-center gap-xs"><span id="m-algo"
+                                    class="font-title-md text-title-md text-on-surface truncate">—</span><span
+                                    class="text-lg">🏆</span></div>
+                        </div>
+                        <div class="glass-card p-md rounded-xl border-l-4 border-secondary">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Predicted GMV</p>
+                            <p id="m-gmv" class="font-headline-lg text-headline-lg text-secondary font-bold">—</p>
+                        </div>
+                        <div class="glass-card p-md rounded-xl">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Budget Used</p>
+                            <p id="m-cost" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
+                            <p id="m-util" class="text-[10px] text-on-surface-variant mt-1">—</p>
+                        </div>
+                        <div class="glass-card p-md rounded-xl">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">KOLs Selected</p>
+                            <p id="m-kols" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
+                        </div>
+                        <div class="glass-card p-md rounded-xl">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Candidates</p>
+                            <p id="m-cands" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
+                        </div>
+                    </section>
+                    <!-- Convergence + benchmark -->
+                    <section class="grid grid-cols-12 gap-gutter items-stretch">
+                        <div class="col-span-7 glass-card rounded-xl p-lg">
+                            <div class="flex justify-between items-center mb-lg">
+                                <h3 class="font-title-md text-title-md text-on-surface flex items-center gap-xs"><span
+                                        class="material-symbols-outlined text-secondary">insights</span> Convergence
+                                    Curve</h3>
+                                <div class="flex gap-md">
+                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant"><span
+                                            class="w-2 h-2 rounded-full bg-secondary inline-block"></span> SA</span>
+                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant"><span
+                                            class="w-2 h-2 rounded-full bg-tertiary-container inline-block"></span>
+                                        HC</span>
+                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant"><span
+                                            class="w-2 h-2 rounded-full bg-outline inline-block"></span> Random</span>
+                                </div>
+                            </div>
+                            <svg id="conv-svg" viewBox="0 0 850 260" preserveAspectRatio="none">
+                                <!-- Y-axis labels -->
+                                <g id="conv-ticks">
+                                    <text x="4" y="94" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
+                                    <text x="4" y="96" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
+                                    <text x="4" y="96" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
+                                    <text x="4" y="96" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace">$0</text>
+                                </g>
+                                <path id="conv-rs" fill="none" stroke="#ad8889" stroke-width="2" stroke-dasharray="4" />
+                                <path id="conv-hc" fill="none" stroke="#ec683d" stroke-width="2.5" />
+                                <path id="conv-sa" fill="none" stroke="#68dbae" stroke-width="3.5" />
+                            </svg>
+                        </div>
+                        <div class="col-span-5 glass-card rounded-xl overflow-hidden flex flex-col">
+                            <div class="p-lg border-b border-outline-variant">
+                                <h3 class="font-title-md text-title-md text-on-surface">Algorithm Benchmark</h3>
+                            </div>
+                            <div class="flex-1 overflow-x-auto">
+                                <table class="w-full text-left min-w-[280px]">
+                                    <thead>
+                                        <tr
+                                            class="text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low">
+                                            <th class="px-md py-sm">Strategy</th>
+                                            <th class="px-md py-sm text-right">GMV</th>
+                                            <th class="px-md py-sm text-right">ROI</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bench-body" class="divide-y divide-outline-variant/30"></tbody>
+                                </table>
+                            </div>
+                            <div id="bench-note" class="p-md bg-surface-container-highest/30">
+                                <p class="text-[11px] text-on-surface-variant italic"></p>
+                            </div>
+                        </div>
+                    </section>
+                    <!-- KOL grid (technical) -->
+                    <section class="space-y-lg">
+                        <div>
+                            <h3 class="font-headline-lg text-headline-lg text-on-surface">Selected KOLs (Technical
+                                Detail)</h3>
+                        </div>
+                        <div id="tech-kol-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter"></div>
+                    </section>
+                </div>
+
             </div>
         </div>
 
-        <!-- ── SCALABILITY PAGE ── -->
-        <div id="page-scalability" class="hidden p-margin-desktop space-y-xl">
-            <div class="mb-xl">
-                <h2 class="font-headline-lg text-headline-lg text-on-surface">Scalability Analysis</h2>
-                <p class="text-on-surface-variant font-body-base mt-1">How each algorithm performs as the KOL pool grows
-                </p>
+        <!-- ════ PAGE: CREATORS ════ -->
+        <div id="page-creators" class="hidden p-margin-desktop space-y-xl">
+            <div class="glass-card rounded-xl p-4 flex items-center gap-4 flex-wrap">
+                <div class="flex items-center gap-2"><span
+                        class="material-symbols-outlined text-outline">filter_list</span>
+                    <select id="f-country" onchange="loadTable()" class="form-input" style="width:160px">
+                        <option value="">All Countries</option>
+                        <option value="MY">🇲🇾 Malaysia</option>
+                        <option value="ID">🇮🇩 Indonesia</option>
+                        <option value="TH">🇹🇭 Thailand</option>
+                        <option value="PH">🇵🇭 Philippines</option>
+                    </select>
+                </div>
+                <select id="f-category" onchange="loadTable()" class="form-input" style="width:140px">
+                    <option value="">All Categories</option>
+                    <option value="beauty">💄 Beauty</option>
+                    <option value="tech">📱 Tech</option>
+                    <option value="fashion">👗 Fashion</option>
+                </select>
+                <select id="f-tier" onchange="loadTable()" class="form-input" style="width:130px">
+                    <option value="">All Tiers</option>
+                    <option value="Mega">🟣 Mega</option>
+                    <option value="Macro">🔵 Macro</option>
+                    <option value="Micro">🟢 Micro</option>
+                    <option value="Nano">🟡 Nano</option>
+                </select>
+                <span id="count-badge" class="ml-auto text-sm text-outline"></span>
             </div>
-
-            <!-- Controls -->
-            <div class="glass-card rounded-xl p-md flex items-center justify-between gap-lg">
-                <div class="flex items-center gap-lg w-full max-w-2xl">
-                    <label class="font-label-sm text-on-surface-variant whitespace-nowrap">POOL SIZE (N):</label>
-                    <input id="scale-slider"
-                        class="w-full h-1 bg-surface-container-highest rounded-lg appearance-none cursor-pointer"
-                        max="500" min="10" step="10" type="range" value="200" />
-                    <span id="scale-n-display"
-                        class="bg-secondary/15 text-secondary font-data-mono px-3 py-1 rounded border border-secondary/30 whitespace-nowrap">200</span>
-                </div>
-                <button id="scale-run-btn"
-                    class="flex items-center gap-sm bg-secondary text-on-secondary px-lg py-md rounded-lg font-title-md hover:brightness-110 active:scale-95 transition-all whitespace-nowrap">
-                    Run Test <span class="material-symbols-outlined">play_arrow</span>
-                </button>
+            <div class="glass-card rounded-xl overflow-hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-surface-container-low text-[12px] text-outline uppercase tracking-wider">
+                            <th class="px-4 py-3">Name</th>
+                            <th class="px-4 py-3">Country</th>
+                            <th class="px-4 py-3">Category</th>
+                            <th class="px-4 py-3 text-right">Followers</th>
+                            <th class="px-4 py-3 text-right">Engagement</th>
+                            <th class="px-4 py-3 text-right">Cost</th>
+                            <th class="px-4 py-3 text-center">Tier</th>
+                            <th class="px-4 py-3 text-right">Est. GMV</th>
+                            <th class="px-4 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kol-tbody"></tbody>
+                </table>
             </div>
-
-            <!-- Metric cards -->
-            <div id="scale-empty" class="flex flex-col items-center justify-center py-24 text-center">
-                <span class="material-symbols-outlined text-[48px] text-outline mb-lg">bar_chart</span>
-                <p class="text-on-surface-variant">Set a pool size and click <span class="text-secondary font-bold">Run
-                        Test</span></p>
-            </div>
-
-            <div id="scale-results" class="hidden space-y-xl">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-                    <!-- SA card -->
-                    <div class="glass-card rounded-xl p-lg border-l-4 border-l-secondary">
-                        <div class="flex justify-between items-start mb-md">
-                            <span class="font-label-sm text-on-surface-variant uppercase tracking-tighter">Simulated
-                                Annealing (SA)</span>
-                            <span class="material-symbols-outlined text-secondary">verified</span>
-                        </div>
-                        <div class="space-y-md">
-                            <div class="flex justify-between items-baseline"><span
-                                    class="text-on-surface-variant text-sm">Execution Time</span><span id="s-sa-time"
-                                    class="font-data-mono text-headline-lg text-on-surface">—</span></div>
-                            <div class="flex justify-between items-baseline"><span
-                                    class="text-on-surface-variant text-sm">Projected GMV</span><span id="s-sa-gmv"
-                                    class="font-data-mono text-headline-lg text-secondary">—</span></div>
-                            <div class="flex justify-between items-baseline"><span
-                                    class="text-on-surface-variant text-sm">Optimal KOLs</span><span id="s-sa-kols"
-                                    class="font-data-mono text-headline-lg text-on-surface">—</span></div>
-                        </div>
-                    </div>
-                    <!-- HC card -->
-                    <div class="glass-card rounded-xl p-lg border-l-4 border-l-tertiary-container">
-                        <div class="flex justify-between items-start mb-md">
-                            <span class="font-label-sm text-on-surface-variant uppercase tracking-tighter">Hill Climbing
-                                (HC)</span>
-                            <span class="material-symbols-outlined text-tertiary-container">speed</span>
-                        </div>
-                        <div class="space-y-md">
-                            <div class="flex justify-between items-baseline"><span
-                                    class="text-on-surface-variant text-sm">Execution Time</span><span id="s-hc-time"
-                                    class="font-data-mono text-headline-lg text-on-surface">—</span></div>
-                            <div class="flex justify-between items-baseline"><span
-                                    class="text-on-surface-variant text-sm">Projected GMV</span><span id="s-hc-gmv"
-                                    class="font-data-mono text-headline-lg text-tertiary-container">—</span></div>
-                            <div class="flex justify-between items-baseline"><span
-                                    class="text-on-surface-variant text-sm">Optimal KOLs</span><span id="s-hc-kols"
-                                    class="font-data-mono text-headline-lg text-on-surface">—</span></div>
-                        </div>
-                    </div>
-                    <!-- RS card -->
-                    <div class="glass-card rounded-xl p-lg border-l-4 border-l-outline">
-                        <div class="flex justify-between items-start mb-md">
-                            <span class="font-label-sm text-on-surface-variant uppercase tracking-tighter">Random Search
-                                (RS)</span>
-                            <span class="material-symbols-outlined text-outline">shuffle</span>
-                        </div>
-                        <div class="space-y-md">
-                            <div class="flex justify-between items-baseline"><span
-                                    class="text-on-surface-variant text-sm">Execution Time</span><span id="s-rs-time"
-                                    class="font-data-mono text-headline-lg text-on-surface">—</span></div>
-                            <div class="flex justify-between items-baseline"><span
-                                    class="text-on-surface-variant text-sm">Projected GMV</span><span id="s-rs-gmv"
-                                    class="font-data-mono text-headline-lg text-on-surface-variant">—</span></div>
-                            <div class="flex justify-between items-baseline"><span
-                                    class="text-on-surface-variant text-sm">Optimal KOLs</span><span id="s-rs-kols"
-                                    class="font-data-mono text-headline-lg text-on-surface">—</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
-                    <div class="glass-card rounded-xl p-lg">
-                        <div class="flex justify-between items-center mb-xl">
-                            <h3 class="font-title-md text-on-surface">Execution Time vs Pool Size</h3>
-                            <div class="flex gap-md">
-                                <div class="flex items-center gap-xs">
-                                    <div class="w-3 h-3 bg-secondary rounded-full"></div><span class="text-xs">SA</span>
-                                </div>
-                                <div class="flex items-center gap-xs">
-                                    <div class="w-3 h-3 bg-tertiary-container rounded-full"></div><span
-                                        class="text-xs">HC</span>
-                                </div>
-                                <div class="flex items-center gap-xs">
-                                    <div class="w-3 h-3 bg-outline rounded-full"></div><span class="text-xs">RS</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="relative border-l border-b border-outline-variant/30">
-                            <svg id="stime-svg" class="scale-svg" viewBox="0 0 400 200"></svg>
-                            <div id="stime-x"
-                                class="flex justify-between font-data-mono text-[10px] text-on-surface-variant mt-1">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="glass-card rounded-xl p-lg">
-                        <div class="flex justify-between items-center mb-xl">
-                            <h3 class="font-title-md text-on-surface">Solution Quality vs Pool Size</h3>
-                        </div>
-                        <div class="relative border-l border-b border-outline-variant/30">
-                            <svg id="sgmv-svg" class="scale-svg" viewBox="0 0 400 200"></svg>
-                            <div id="sgmv-x"
-                                class="flex justify-between font-data-mono text-[10px] text-on-surface-variant mt-1">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Insight -->
-                <div id="scale-insight"
-                    class="bg-surface-container-high rounded-xl p-lg flex gap-lg border border-outline-variant items-start">
-                    <div class="bg-secondary/10 p-md rounded-full text-secondary shrink-0">
-                        <span class="material-symbols-outlined">lightbulb</span>
-                    </div>
-                    <div>
-                        <h4 class="font-title-md text-on-surface mb-sm">Optimization Insight</h4>
-                        <p id="insight-text" class="text-on-surface-variant text-sm leading-relaxed max-w-4xl"></p>
-                    </div>
-                </div>
+            <div class="flex justify-between items-center"><span id="page-info" class="text-sm text-outline"></span>
+                <div class="flex gap-2"><button id="prev-btn" onclick="changePage(-1)" class="btn btn-outline">←
+                        Prev</button><button id="next-btn" onclick="changePage(1)" class="btn btn-outline">Next
+                        →</button></div>
             </div>
         </div>
+
     </main>
 
+    <!-- ═══════════ ADD/EDIT MODAL ═══════════ -->
+    <div id="modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal()">
+        <div class="glass-card rounded-xl p-6 w-[520px] max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modal-title" class="text-xl font-bold"></h3><button onclick="closeModal()"
+                    class="text-outline hover:text-white"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2"><label class="form-label">Creator Name *</label><input id="f-name"
+                        class="form-input" placeholder="e.g. Lisa Beauty" /></div>
+                <div class="col-span-2"><label class="form-label">TikTok URL</label><input id="f-url" class="form-input"
+                        placeholder="https://tiktok.com/@username" /></div>
+                <div><label class="form-label">Country *</label><select id="f-m-country" class="form-input">
+                        <option value="MY">🇲🇾 Malaysia</option>
+                        <option value="ID">🇮🇩 Indonesia</option>
+                        <option value="TH">🇹🇭 Thailand</option>
+                        <option value="PH">🇵🇭 Philippines</option>
+                    </select></div>
+                <div><label class="form-label">Category *</label><select id="f-m-cat" class="form-input">
+                        <option value="beauty">💄 Beauty</option>
+                        <option value="tech">📱 Tech</option>
+                        <option value="fashion">👗 Fashion</option>
+                    </select></div>
+                <div><label class="form-label">Followers *</label><input id="f-followers" type="number"
+                        class="form-input" placeholder="250000" /></div>
+                <div><label class="form-label">Engagement Rate * (0~1)</label><input id="f-eng" type="number"
+                        step="0.01" class="form-input" placeholder="0.08" /></div>
+                <div><label class="form-label">Hiring Cost (USD) *</label><input id="f-cost" type="number"
+                        class="form-input" placeholder="1200" /></div>
+                <div><label class="form-label">Fit Score (0~1)</label><input id="f-fit" type="number" step="0.01"
+                        class="form-input" placeholder="0.75" /></div>
+                <div><label class="form-label">Avg Views</label><input id="f-views" type="number" class="form-input"
+                        placeholder="Auto" /></div>
+                <div><label class="form-label">Avg Likes</label><input id="f-likes" type="number" class="form-input"
+                        placeholder="Auto" /></div>
+                <div><label class="form-label">Female Ratio (0~1)</label><input id="f-gender" type="number" step="0.01"
+                        class="form-input" placeholder="0.5" /></div>
+                <div><label class="form-label">Age Group</label><select id="f-age" class="form-input">
+                        <option value="18-24">18-24</option>
+                        <option value="25-34">25-34</option>
+                        <option value="35+">35+</option>
+                    </select></div>
+            </div>
+            <div class="flex gap-3 mt-6 justify-end"><button onclick="closeModal()"
+                    class="btn btn-outline">Cancel</button><button id="modal-submit" class="btn btn-primary">Save
+                    Creator</button></div>
+        </div>
+    </div>
+
+    <!-- ═══════════ KOL DETAIL MODAL ═══════════ -->
+    <div id="kol-detail-overlay" class="kol-detail-overlay hidden" onclick="if(event.target===this)closeKolDetail()">
+        <div class="kol-detail-card glass-card rounded-xl p-lg">
+            <div class="flex justify-between items-start mb-lg">
+                <div class="flex items-center gap-md">
+                    <div class="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[36px]">person</span>
+                    </div>
+                    <div>
+                        <h3 id="kd-name" class="font-headline-lg text-headline-lg text-on-surface">—</h3>
+                        <p id="kd-meta" class="text-on-surface-variant text-body-base">—</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-sm">
+                    <span id="kd-tier" class="tier-chip">—</span>
+                    <button onclick="closeKolDetail()" class="text-outline hover:text-white ml-md">
+                        <span class="material-symbols-outlined text-[28px]">close</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Key stats row -->
+            <div id="kd-stats" class="grid grid-cols-5 gap-md mb-lg"></div>
+
+            <!-- Demographics + Computed -->
+            <div class="grid grid-cols-2 gap-lg mb-lg">
+                <!-- Demographics -->
+                <div class="glass-card rounded-xl p-md">
+                    <h4 class="font-label-sm text-label-sm text-on-surface-variant mb-md uppercase">Audience Demographics</h4>
+                    <div class="space-y-md">
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1">
+                                <span class="text-on-surface-variant">Gender Ratio</span>
+                                <span id="kd-gender-label" class="text-on-surface font-bold">—</span>
+                            </div>
+                            <div class="demo-bar">
+                                <div id="kd-gender-bar" class="demo-fill female" style="width:50%"></div>
+                            </div>
+                            <div class="flex justify-between text-[9px] text-on-surface-variant/50 mt-1">
+                                <span>Female</span><span>Male</span>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-on-surface-variant uppercase">Age Group</span>
+                            <p id="kd-age" class="font-title-md text-on-surface mt-xs">—</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Computed metrics -->
+                <div class="glass-card rounded-xl p-md">
+                    <h4 class="font-label-sm text-label-sm text-on-surface-variant mb-md uppercase">Computed Metrics</h4>
+                    <div class="space-y-md">
+                        <div>
+                            <span class="text-[10px] text-on-surface-variant uppercase">Solo Predicted GMV</span>
+                            <p id="kd-solo-gmv" class="font-title-md text-secondary font-bold font-data-mono">—</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-on-surface-variant uppercase">Cost-Effectiveness Rank</span>
+                            <p id="kd-rank" class="font-title-md text-on-surface font-data-mono">—</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-on-surface-variant uppercase">Audience Overlap Risk</span>
+                            <div class="flex items-center gap-xs mt-xs">
+                                <span id="kd-risk-dot" class="risk-dot low"></span>
+                                <span id="kd-risk" class="font-title-md text-on-surface font-data-mono">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full reasons -->
+            <div class="glass-card rounded-xl p-md">
+                <h4 class="font-label-sm text-label-sm text-on-surface-variant mb-md uppercase">Why This Creator?</h4>
+                <div id="kd-reasons" class="space-y-sm"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ══════════════════════════════════════════════════════
-        //  CONFIG
-        // ══════════════════════════════════════════════════════
         const API = 'http://localhost:8000';
-
-        const TIER_BADGE = {
-            Mega: { bg: '#4A148C', label: 'MEGA' },
-            Macro: { bg: '#0D47A1', label: 'MACRO' },
-            Micro: { bg: '#1B5E20', label: 'MICRO' },
-            Nano: { bg: '#E65100', label: 'NANO' },
-        };
-
+        const TIER_BADGE = { Mega: 'tier-mega', Macro: 'tier-macro', Micro: 'tier-micro', Nano: 'tier-nano' };
+        const TIER_EMOJI = { Mega: '🟣', Macro: '🔵', Micro: '🟢', Nano: '🟡' };
+        const ALGO_COLORS = { 'Simulated Annealing': '#68dbae', 'Hill Climber': '#ec683d', 'Random Search': '#ad8889' };
         const fmt = n => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+        const fmtF = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : n;
+        const PAGE_TITLES = { dashboard: 'Optimizer Dashboard', creators: 'Creator Management' };
+        let currentView = 'business';
+        let selectedPlanName = 'Aggressive';
+        let allPlansData = null;
+        let enhancedKolMap = {};
 
-        // ══════════════════════════════════════════════════════
-        //  SIDEBAR INTERACTIONS
-        // ══════════════════════════════════════════════════════
-        const budgetSlider = document.getElementById('budget-slider');
-        const budgetDisplay = document.getElementById('budget-display');
-        budgetSlider.addEventListener('input', () => {
-            const v = parseInt(budgetSlider.value);
-            budgetDisplay.textContent = v >= 1000 ? '$' + (v / 1000).toFixed(0) + 'k' : '$' + v;
-        });
+        // ══════════ VIEW TOGGLE ══════════
+        function setView(v) {
+            currentView = v;
+            document.getElementById('biz-view').classList.toggle('hidden', v !== 'business');
+            document.getElementById('tech-view').classList.toggle('hidden', v !== 'technical');
+            document.querySelectorAll('#view-toggle button').forEach(b => {
+                b.classList.toggle('active', b.textContent.toLowerCase() === v);
+            });
+        }
 
-        // Scale page slider
-        const scaleSlider = document.getElementById('scale-slider');
-        const scaleDisplay = document.getElementById('scale-n-display');
-        scaleSlider.addEventListener('input', () => { scaleDisplay.textContent = scaleSlider.value; });
-
-        // ══════════════════════════════════════════════════════
-        //  PAGE NAVIGATION
-        // ══════════════════════════════════════════════════════
+        // ══════════ NAVIGATION ══════════
         function showPage(name) {
-            document.getElementById('page-dashboard').classList.toggle('hidden', name !== 'dashboard');
-            document.getElementById('page-scalability').classList.toggle('hidden', name !== 'scalability');
-            document.getElementById('page-title').textContent =
-                name === 'dashboard' ? 'Optimizer Dashboard' : 'Scalability Analysis';
-            document.querySelectorAll('.tab-nav').forEach(el => {
-                const active = el.dataset.tab === name;
-                el.classList.toggle('text-primary', active);
-                el.classList.toggle('bg-primary-container/10', active);
-                el.classList.toggle('border-r-2', active);
-                el.classList.toggle('border-primary', active);
-                el.classList.toggle('text-on-surface-variant', !active);
-            });
+            ['dashboard', 'creators'].forEach(p => document.getElementById('page-' + p).classList.toggle('hidden', p !== name));
+            document.getElementById('page-title').textContent = PAGE_TITLES[name] || 'Dashboard';
+            document.getElementById('creator-actions').classList.toggle('hidden', name !== 'creators');
+            document.getElementById('view-toggle').classList.toggle('hidden', name !== 'dashboard' || document.getElementById('results-section').classList.contains('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === name));
+            if (name === 'creators') loadTable();
         }
-        document.querySelectorAll('.tab-nav').forEach(el => {
-            el.addEventListener('click', () => showPage(el.dataset.tab));
-        });
+        document.querySelectorAll('.nav-item').forEach(el => el.addEventListener('click', () => showPage(el.dataset.page)));
 
-        // ══════════════════════════════════════════════════════
-        //  ERROR BANNER
-        // ══════════════════════════════════════════════════════
-        function showError(msg) {
-            const b = document.getElementById('error-banner');
-            b.textContent = msg;
-            b.classList.remove('hidden');
-            setTimeout(() => b.classList.add('hidden'), 5000);
-        }
+        // ══════════ SIDEBAR ══════════
+        const budgetSlider = document.getElementById('budget-slider'), budgetDisplay = document.getElementById('budget-display');
+        budgetSlider.addEventListener('input', () => { const v = parseInt(budgetSlider.value); budgetDisplay.textContent = v >= 1000 ? '$' + (v / 1000).toFixed(0) + 'k' : '$' + v; });
 
-        // ══════════════════════════════════════════════════════
-        //  CONVERGENCE CHART (SVG)
-        // ══════════════════════════════════════════════════════
-        function historyToPath(hist, W, H, maxY) {
-            if (!hist || hist.length === 0) return '';
-            const step = W / (hist.length - 1);
-            return hist.map((v, i) => {
-                const x = i * step;
-                const y = H - (v / maxY) * H * 0.9;
-                return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
-            }).join(' ');
-        }
+        function showError(msg) { const b = document.getElementById('error-banner'); b.textContent = msg; b.classList.remove('hidden'); setTimeout(() => b.classList.add('hidden'), 5000); }
+        function toast(msg, type = 'ok') { const t = document.createElement('div'); t.className = 'toast ' + type; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3000); }
 
-        function renderConvergence(results) {
-            const W = 800, H = 240;
-            const sa = results.simulated_annealing.history;
-            const hc = results.hill_climber.history;
-            const rs = results.random_search.history;
-            const maxY = Math.max(...sa, ...hc, ...rs, 1);
-            document.getElementById('conv-sa').setAttribute('d', historyToPath(sa, W, H, maxY));
-            document.getElementById('conv-hc').setAttribute('d', historyToPath(hc, W, H, maxY));
-            document.getElementById('conv-rs').setAttribute('d', historyToPath(rs, W, H, maxY));
-        }
+        // ══════════ DASHBOARD ══════════
+        function historyToPath(hist, maxY) { if (!hist || !hist.length) return ''; const PLOT_W = 770, PLOT_H = 220, PLOT_X = 65, PLOT_Y = 15; const step = PLOT_W / (hist.length - 1); return hist.map((v, i) => { const x = PLOT_X + i * step; const y = PLOT_Y + PLOT_H - (v / maxY) * PLOT_H; return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) }).join(' '); }
+        function renderConvergence(results) { const sa = results.simulated_annealing.history, hc = results.hill_climber.history, rs = results.random_search.history; if (!sa || !sa.length) return; const maxY = Math.max(...sa, ...hc, ...rs, 1); document.getElementById('conv-sa').setAttribute('d', historyToPath(sa, maxY)); document.getElementById('conv-hc').setAttribute('d', historyToPath(hc, maxY)); document.getElementById('conv-rs').setAttribute('d', historyToPath(rs, maxY)); // Update Y-axis ticks const PLOT_Y = 15, PLOT_H = 220; const ticks = ['$0', '$' + (maxY * 0.25 / 1000).toFixed(0) + 'K', '$' + (maxY * 0.5 / 1000).toFixed(0) + 'K', '$' + (maxY * 0.75 / 1000).toFixed(0) + 'K', '$' + (maxY / 1000).toFixed(0) + 'K']; const yPositions = [PLOT_Y + PLOT_H, PLOT_Y + PLOT_H * 0.75, PLOT_Y + PLOT_H * 0.5, PLOT_Y + PLOT_H * 0.25, PLOT_Y]; // Also add light grid lines const gridGroup = document.getElementById('conv-ticks'); gridGroup.innerHTML = ticks.map((t, i) => `<text x="58" y="${yPositions[i] + 3}" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace" text-anchor="end">${t}</text><line x1="65" y1="${yPositions[i]}" x2="835" y2="${yPositions[i]}" stroke="#2A2A3C" stroke-width="0.5" />`).join(''); }
+        function renderBenchmark(results, bestAlgo) { const order = ['simulated_annealing', 'hill_climber', 'random_search'], descs = { simulated_annealing: 'Probabilistic Global Max', hill_climber: 'Local Optimum Search', random_search: 'Stochastic Selection' }, tbody = document.getElementById('bench-body'); tbody.innerHTML = ''; order.sort((a, b) => results[b].total_gmv - results[a].total_gmv).forEach(key => { const r = results[key], isBest = r.algorithm === bestAlgo, tr = document.createElement('tr'); tr.className = isBest ? 'sa-highlight' : ''; tr.innerHTML = `<td class="px-md py-md"><div class="font-bold text-on-surface text-sm">${r.algorithm}</div><div class="text-[10px] text-on-surface-variant/70">${descs[key]}</div></td><td class="px-md py-md text-right font-data-mono ${isBest ? 'text-secondary' : 'text-on-surface-variant'}">${fmt(r.total_gmv)}</td><td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.roi.toFixed(2)}x</td>`; tbody.appendChild(tr); }); const note = results.hill_climber.total_gmv > 0 ? ((results.simulated_annealing.total_gmv / results.hill_climber.total_gmv - 1) * 100).toFixed(0) : 0; document.querySelector('#bench-note p').textContent = `"SA outperformed HC by ${note}% in this run."`; }
 
-        // ══════════════════════════════════════════════════════
-        //  BENCHMARK TABLE
-        // ══════════════════════════════════════════════════════
-        function renderBenchmark(results, bestAlgo) {
-            const order = ['simulated_annealing', 'hill_climber', 'random_search'];
-            const names = {
-                simulated_annealing: 'Simulated Annealing',
-                hill_climber: 'Hill Climber',
-                random_search: 'Random Search',
-            };
-            const descs = {
-                simulated_annealing: 'Probabilistic Global Max',
-                hill_climber: 'Local Optimum Search',
-                random_search: 'Stochastic Selection',
-            };
-            const tbody = document.getElementById('bench-body');
-            tbody.innerHTML = '';
-            const sorted = order.sort((a, b) => results[b].total_gmv - results[a].total_gmv);
-            sorted.forEach(key => {
-                const r = results[key];
-                const isBest = r.algorithm === bestAlgo;
-                const tr = document.createElement('tr');
-                tr.className = isBest ? 'sa-highlight' : '';
-                tr.innerHTML = `
-      <td class="px-lg py-lg">
-        <div class="font-bold text-on-surface">${r.algorithm}</div>
-        <div class="text-[10px] text-on-surface-variant/70">${descs[key]}</div>
-      </td>
-      <td class="px-lg py-lg text-right font-data-mono ${isBest ? 'text-secondary' : 'text-on-surface-variant'}">${fmt(r.total_gmv)}</td>
-      <td class="px-lg py-lg text-right font-data-mono text-on-surface-variant">${r.roi.toFixed(2)}x</td>
-    `;
-                tbody.appendChild(tr);
-            });
-            const bestR = results[Object.keys(results).find(k => results[k].algorithm === bestAlgo)];
-            document.querySelector('#bench-note p').textContent =
-                `"SA outperformed others by ${((bestR.total_gmv / results.hill_climber.total_gmv - 1) * 100).toFixed(0)}% in this run."`;
-        }
-
-        // ══════════════════════════════════════════════════════
-        //  KOL CARDS
-        // ══════════════════════════════════════════════════════
-        function tierBadge(tier) {
-            const t = TIER_BADGE[tier] || TIER_BADGE.Micro;
-            return `<span style="background:${t.bg}" class="text-white px-1.5 py-0.5 rounded-full text-[9px] font-bold">${t.label}</span>`;
-        }
-
-        function fmtFollowers(n) {
-            if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-            if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
-            return n;
-        }
-
-        function kolCard(kol) {
-            const tier = kol.tier || 'Micro';
-            const reasons = (kol.reasons || []).slice(0, 3);
-            const reasonsHtml = reasons.length ? `
-    <div class="mt-md text-[11px] text-on-surface-variant/80 bg-surface-container-low p-md rounded-lg leading-relaxed border border-outline-variant/30">
-      ${reasons.map(r => `<div class="mb-1">✅ ${r}</div>`).join('')}
-    </div>` : '';
-
-            return `
-  <div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer">
-    <div class="flex justify-between items-start">
-      <div class="flex items-center gap-md">
-        <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center">
-          <span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span>
-        </div>
-        <div>
-          <h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4>
-          <p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p>
-        </div>
-      </div>
-      ${tierBadge(tier)}
+        function bizKolCard(kol, totalGmv) {
+            const tier = kol.tier || 'Micro', reasons = (kol.reasons || []).slice(0, 3), contrib = totalGmv > 0 ? ((kol.expected_gmv / totalGmv) * 100).toFixed(1) : 0;
+            const reasonsHtml = reasons.map(r => `<div style="margin:4px 0;font-size:12px;color:#e6bcbd">✅ ${r}</div>`).join('');
+            // Enhanced fields from /kol/{id}
+            const enh = enhancedKolMap[kol.id] || {};
+            const rank = enh.cost_effectiveness_rank || '—';
+            const risk = enh.audience_overlap_risk != null ? enh.audience_overlap_risk : null;
+            let riskHtml = '';
+            if (risk !== null) {
+                const level = risk < 0.3 ? 'low' : risk < 0.6 ? 'med' : 'high';
+                const label = risk < 0.3 ? 'Low' : risk < 0.6 ? 'Medium' : 'High';
+                riskHtml = `<span class="risk-dot ${level}"></span><span class="risk-${level}">${label} overlap risk</span>`;
+            }
+            const rankText = rank !== '—' ? `#${rank} cost-effective` : '';
+            return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer" onclick="openKolDetail(${kol.id})">
+    <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
+    <div class="grid grid-cols-3 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-center"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Est. GMV</p><p class="font-title-md text-secondary font-data-mono font-bold">${fmt(kol.expected_gmv)}</p></div></div>
+    <div><div class="flex justify-between text-[10px] mb-1"><span class="text-on-surface-variant uppercase">GMV contribution</span><span class="text-secondary font-bold">${contrib}%</span></div><div class="contrib-bar"><div class="contrib-fill" style="width:${contrib}%"></div></div></div>
+    <div class="flex items-center gap-md text-[11px]">
+        ${riskHtml ? `<div class="flex items-center gap-xs">${riskHtml}</div>` : ''}
+        ${rankText ? `<div class="flex items-center gap-xs text-on-surface-variant"><span class="material-symbols-outlined text-[12px]">trending_up</span>${rankText}</div>` : ''}
     </div>
-
-    <div class="grid grid-cols-2 gap-sm py-md border-y border-outline-variant/30">
-      <div>
-        <p class="text-[10px] text-on-surface-variant uppercase">Followers</p>
-        <p class="font-title-md text-title-md text-on-surface font-data-mono">${fmtFollowers(kol.followers)}</p>
-      </div>
-      <div class="text-right">
-        <p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p>
-        <p class="font-title-md text-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p>
-      </div>
-    </div>
-
-    <div class="space-y-xs">
-      <div class="flex justify-between items-center text-[10px]">
-        <span class="text-on-surface-variant uppercase">Fit Score</span>
-        <span class="text-secondary font-bold">${(kol.fit_score * 100).toFixed(0)}%</span>
-      </div>
-      <div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
-        <div class="h-full bg-secondary rounded-full shadow-[0_0_8px_rgba(104,219,174,0.4)]"
-             style="width:${(kol.fit_score * 100).toFixed(0)}%"></div>
-      </div>
-    </div>
-
-    <div class="flex justify-between items-center pt-xs">
-      <div class="bg-secondary/15 px-md py-sm rounded-lg border border-secondary/20">
-        <p class="text-[9px] text-secondary uppercase font-bold tracking-wider">Est. GMV</p>
-        <p class="text-title-md font-bold text-secondary font-data-mono">${fmt(kol.expected_gmv)}</p>
-      </div>
-      <button class="text-on-surface-variant hover:text-primary flex items-center gap-xs text-[11px] transition-colors why-btn">
-        Why? <span class="material-symbols-outlined text-[14px]">expand_more</span>
-      </button>
-    </div>
-    <div class="why-panel hidden">${reasonsHtml}</div>
+    <div class="text-[11px]"><div style="font-weight:600;color:#68dbae;margin-bottom:6px">Why this creator?</div>${reasonsHtml}</div>
   </div>`;
         }
 
-        // ══════════════════════════════════════════════════════
-        //  RUN OPTIMIZATION
-        // ══════════════════════════════════════════════════════
-        document.getElementById('run-btn').addEventListener('click', async () => {
-            const btn = document.getElementById('run-btn');
-            btn.innerHTML = '<div class="spinner"></div>';
-            btn.disabled = true;
-
-            const payload = {
-                budget: parseInt(budgetSlider.value),
-                country: document.getElementById('country-select').value,
-                category: document.getElementById('category-select').value,
-                seed: parseInt(document.getElementById('seed-input').value) || 42,
-            };
-
-            try {
-                const res = await fetch(API + '/optimize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'Request failed');
-                }
-                const data = await res.json();
-                renderDashboard(data, payload);
-            } catch (e) {
-                showError(e.message.includes('fetch') ? '⚠️ Backend unavailable — run: uvicorn backend.main:app --reload' : '⚠️ ' + e.message);
-            } finally {
-                btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">play_arrow</span> Run Optimization';
-                btn.disabled = false;
+        function techKolCard(kol) {
+            const tier = kol.tier || 'Micro', reasons = (kol.reasons || []).slice(0, 3);
+            const reasonsHtml = reasons.length ? `<div class="mt-md text-[11px] text-on-surface-variant/80 bg-surface-container-low p-md rounded-lg border border-outline-variant/30">${reasons.map(r => `<div class="mb-1">✅ ${r}</div>`).join('')}</div>` : '';
+            const enh = enhancedKolMap[kol.id] || {};
+            const rank = enh.cost_effectiveness_rank || '—';
+            const risk = enh.audience_overlap_risk != null ? enh.audience_overlap_risk : null;
+            let riskBadge = '';
+            if (risk !== null) {
+                const level = risk < 0.3 ? 'low' : risk < 0.6 ? 'med' : 'high';
+                const label = risk < 0.3 ? 'Low' : risk < 0.6 ? 'Med' : 'High';
+                riskBadge = `<div class="flex items-center gap-xs"><span class="risk-dot ${level}"></span><span class="risk-${level}">${label} overlap</span></div>`;
             }
+            const rankText = rank !== '—' ? `<span class="text-on-surface-variant">#${rank} cost-effective</span>` : '';
+            return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer" onclick="openKolDetail(${kol.id})">
+    <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
+    <div class="grid grid-cols-2 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div></div>
+    <div class="space-y-xs"><div class="flex justify-between items-center text-[10px]"><span class="text-on-surface-variant uppercase">Fit Score</span><span class="text-secondary font-bold">${(kol.fit_score * 100).toFixed(0)}%</span></div><div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary rounded-full" style="width:${(kol.fit_score * 100).toFixed(0)}%"></div></div></div>
+    ${riskBadge || rankText ? `<div class="flex items-center gap-md text-[11px]">${riskBadge}${rankText}</div>` : ''}
+    <div class="flex justify-between items-center pt-xs"><div class="bg-secondary/15 px-md py-sm rounded-lg border border-secondary/20"><p class="text-[9px] text-secondary uppercase font-bold tracking-wider">Est. GMV</p><p class="text-title-md font-bold text-secondary font-data-mono">${fmt(kol.expected_gmv)}</p></div><button class="text-on-surface-variant hover:text-primary flex items-center gap-xs text-[11px] why-btn" onclick="event.stopPropagation()">Why? <span class="material-symbols-outlined text-[14px]">expand_more</span></button></div>
+    <div class="why-panel hidden">${reasonsHtml}</div></div>`;
+        }
+
+        document.getElementById('run-btn').addEventListener('click', async () => {
+            showPage('dashboard');
+            const btn = document.getElementById('run-btn'); btn.innerHTML = '<div class="spinner"></div>'; btn.disabled = true;
+            const payload = { budget: parseInt(budgetSlider.value), country: document.getElementById('country-select').value, category: document.getElementById('category-select').value, seed: parseInt(document.getElementById('seed-input').value) || 42 };
+            try {
+                const [optRes, plansRes] = await Promise.all([
+                    fetch(API + '/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+                    fetch(API + '/optimize-plans', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                ]);
+                if (!optRes.ok) { const err = await optRes.json(); throw new Error(err.detail || 'Request failed'); }
+                const data = await optRes.json();
+                if (plansRes.ok) { const plansData = await plansRes.json(); renderPlans(plansData.plans, data); }
+                else { allPlansData = null; }
+                // Pre-fetch enhanced KOL data for enriched cards
+                try {
+                    const kolParams = new URLSearchParams({ limit: 200, country: payload.country, category: payload.category });
+                    const kolRes = await fetch(`${API}/kols?${kolParams}`);
+                    if (kolRes.ok) {
+                        const kolData = await kolRes.json();
+                        enhancedKolMap = {};
+                        kolData.kols.forEach(k => { enhancedKolMap[k.id] = k; });
+                    }
+                } catch (_) { enhancedKolMap = {}; }
+                renderDashboard(data, payload);
+            } catch (e) { showError(e.message.includes('fetch') ? '⚠️ Backend unavailable — run: uvicorn backend.main:app --reload' : '⚠️ ' + e.message); }
+            finally { btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">play_arrow</span> Run Optimization'; btn.disabled = false; }
         });
 
-        function renderDashboard(data, payload) {
-            if (data.candidates === 0) {
-                showError('No KOL candidates found for this filter.');
-                return;
-            }
+        function renderPlans(plans, optData) {
+            if (!plans || !plans.length) { document.getElementById('plans-section').classList.add('hidden'); return; }
+            allPlansData = plans;
+            document.getElementById('plans-section').classList.remove('hidden');
+            const grid = document.getElementById('plans-grid');
+            const icons = { Aggressive: 'rocket_launch', Balanced: 'tune', Safe: 'shield' };
+            const colors = { Aggressive: 'border-l-4 border-[#FE2C55]', Balanced: 'border-l-4 border-secondary', Safe: 'border-l-4 border-[#f1c40f]' };
+            grid.innerHTML = plans.map((p, i) => {
+                const util = optData ? (p.total_cost / optData.budget * 100).toFixed(0) : '—';
+                const tb = p.tier_breakdown || { Mega: 0, Macro: 0, Micro: 0, Nano: 0 };
+                const warnings = (p.overlap_warnings || []).length;
+                const isSel = p.plan_name === selectedPlanName;
+                return `<div class="plan-card glass-card rounded-xl p-lg flex flex-col space-y-md ${colors[p.plan_name] || ''} ${isSel ? 'selected' : ''}" onclick="selectPlan('${p.plan_name}')">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-[24px] text-on-surface-variant">${icons[p.plan_name] || 'campaign'}</span>
+                    <h4 class="font-title-md text-title-md text-on-surface">${p.plan_name}</h4>
+                </div>
+                ${isSel ? '<span class="text-secondary text-[11px] font-bold">● Active</span>' : ''}
+            </div>
+            <p class="text-[11px] text-on-surface-variant">${p.description}</p>
+            <div class="grid grid-cols-2 gap-sm">
+                <div><p class="text-[10px] text-on-surface-variant uppercase">GMV</p><p class="font-title-md text-secondary font-bold font-data-mono">${fmt(p.total_gmv)}</p></div>
+                <div><p class="text-[10px] text-on-surface-variant uppercase">ROI</p><p class="font-title-md text-on-surface font-data-mono">${p.roi.toFixed(2)}x</p></div>
+                <div><p class="text-[10px] text-on-surface-variant uppercase">Creators</p><p class="font-title-md text-on-surface font-data-mono">${p.selected_kols.length}</p></div>
+                <div><p class="text-[10px] text-on-surface-variant uppercase">Budget Use</p><p class="font-title-md text-on-surface font-data-mono ${util > 100 ? 'text-error' : ''}">${util}%</p></div>
+            </div>
+            <div class="flex flex-wrap gap-1">
+                ${['Mega','Macro','Micro','Nano'].map(t => tb[t] > 0 ? `<span class="tier-chip ${TIER_BADGE[t] || ''}" style="font-size:10px">${TIER_EMOJI[t] || ''} ${tb[t]}</span>` : '').join('')}
+            </div>
+            ${warnings > 0 ? `<div class="flex items-center gap-xs text-[11px] text-[#f1c40f]"><span class="material-symbols-outlined text-[14px]">warning</span> ${warnings} audience overlap${warnings > 1 ? 's' : ''}</div>` : ''}
+          </div>`;
+            }).join('');
+            // Sync toggle buttons
+            document.querySelectorAll('.plan-toggle-btn').forEach(b => {
+                b.classList.toggle('active', b.textContent.trim() === selectedPlanName);
+            });
+            // Sync plan cards selected state
+            document.querySelectorAll('.plan-card').forEach(c => {
+                const name = c.querySelector('h4').textContent;
+                c.classList.toggle('selected', name === selectedPlanName);
+            });
+        }
 
+        function selectPlan(name) {
+            selectedPlanName = name;
+            // Re-render plan cards and toggle buttons
+            document.querySelectorAll('.plan-card').forEach(c => {
+                const cardName = c.querySelector('h4').textContent;
+                c.classList.toggle('selected', cardName === name);
+            });
+            document.querySelectorAll('.plan-toggle-btn').forEach(b => {
+                b.classList.toggle('active', b.textContent.trim() === name);
+            });
+            // Update KOL grid with this plan's KOLs
+            if (!allPlansData) return;
+            const plan = allPlansData.find(p => p.plan_name === name);
+            if (!plan) return;
+            const sorted = [...plan.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
+            const totalGmv = plan.total_gmv;
+            document.getElementById('biz-count').textContent = sorted.length;
+            document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, totalGmv)).join('');
+            document.getElementById('biz-gmv').textContent = fmt(plan.total_gmv);
+            document.getElementById('biz-roi').textContent = plan.roi.toFixed(2) + 'x';
+            document.getElementById('biz-cost').textContent = fmt(plan.total_cost);
+        }
+
+        function renderDashboard(data, payload) {
+            if (data.candidates === 0) { showError('No creators in the pool. Go to Creators page to add your KOLs first.'); return; }
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('results-section').classList.remove('hidden');
+            document.getElementById('view-toggle').classList.remove('hidden');
 
-            // Metrics
+            const catN = { beauty: 'Beauty & Cosmetics', tech: 'Consumer Electronics', fashion: 'Fashion & Lifestyle' };
+            const coN = { MY: 'Malaysia', ID: 'Indonesia', TH: 'Thailand', PH: 'Philippines' };
+            const sorted = [...data.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
+
+            // ── Business view ──
+            document.getElementById('biz-subtitle').textContent = `${catN[payload.category] || payload.category} campaign · ${coN[payload.country] || payload.country} · ${sorted.length} creators`;
+            document.getElementById('biz-cost').textContent = fmt(data.total_cost);
+            document.getElementById('biz-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% of ' + fmt(payload.budget) + ' budget';
+            document.getElementById('biz-gmv').textContent = fmt(data.total_gmv);
+            document.getElementById('biz-roi').textContent = data.roi.toFixed(2) + 'x';
+            document.getElementById('biz-count').textContent = sorted.length;
+            document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, data.total_gmv)).join('');
+            document.getElementById('biz-footer-msg').textContent = `This portfolio is predicted to generate ${fmt(data.total_gmv)} in GMV with an ROI of ${data.roi.toFixed(2)}x on your ${fmt(payload.budget)} budget.`;
+
+            // ── Technical view ──
             document.getElementById('m-algo').textContent = data.best_algorithm;
             document.getElementById('m-gmv').textContent = fmt(data.total_gmv);
             document.getElementById('m-cost').textContent = fmt(data.total_cost);
             document.getElementById('m-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% Utilization';
-            document.getElementById('m-kols').textContent = data.selected_kols.length;
+            document.getElementById('m-kols').textContent = sorted.length;
             document.getElementById('m-cands').textContent = data.candidates;
-
-            // Convergence
             renderConvergence(data.results);
-
-            // Benchmark
             renderBenchmark(data.results, data.best_algorithm);
+            const techGrid = document.getElementById('tech-kol-grid');
+            techGrid.innerHTML = sorted.map(techKolCard).join('');
+            techGrid.querySelectorAll('.why-btn').forEach(btn => { btn.addEventListener('click', () => { btn.closest('.kol-card').querySelector('.why-panel').classList.toggle('hidden'); }); });
 
-            // KOL subtitle
-            const catNames = { beauty: 'Beauty & Cosmetics', tech: 'Consumer Electronics', fashion: 'Fashion & Lifestyle' };
-            const countryNames = { MY: 'Malaysia', ID: 'Indonesia', TH: 'Thailand', PH: 'Philippines' };
-            document.getElementById('kol-subtitle').textContent =
-                `Optimized portfolio for ${catNames[payload.category] || payload.category} · ${countryNames[payload.country] || payload.country}`;
-
-            // KOL cards
-            const grid = document.getElementById('kol-grid');
-            const sorted = [...data.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
-            grid.innerHTML = sorted.map(kolCard).join('');
-            grid.querySelectorAll('.why-btn').forEach(btn => {
-                btn.addEventListener('click', e => {
-                    const panel = btn.closest('.kol-card').querySelector('.why-panel');
-                    panel.classList.toggle('hidden');
-                });
-            });
-
-            // Footer
-            document.getElementById('footer-msg').textContent =
-                `'${data.best_algorithm}' reached best GMV of ${fmt(data.total_gmv)} with ROI ${data.roi.toFixed(2)}x.`;
+            setView('business');
         }
 
-        // ══════════════════════════════════════════════════════
-        //  SCALABILITY
-        // ══════════════════════════════════════════════════════
-        // Store results for multi-point charts
-        const scaleHistory = { sa_time: [], hc_time: [], rs_time: [], sa_gmv: [], hc_gmv: [], rs_gmv: [], ns: [] };
-
-        document.getElementById('scale-run-btn').addEventListener('click', async () => {
-            const btn = document.getElementById('scale-run-btn');
-            const n = parseInt(scaleSlider.value);
-            const budget = parseInt(budgetSlider.value);
-            const seed = parseInt(document.getElementById('seed-input').value) || 42;
-
-            btn.innerHTML = '<div class="spinner"></div>';
-            btn.disabled = true;
-
+        // ══════════ KOL DETAIL MODAL ══════════
+        async function openKolDetail(id) {
+            const overlay = document.getElementById('kol-detail-overlay');
+            overlay.classList.remove('hidden');
+            // Show loading state
+            document.getElementById('kd-name').textContent = 'Loading...';
+            document.getElementById('kd-meta').textContent = '';
+            document.getElementById('kd-tier').textContent = '...';
+            document.getElementById('kd-stats').innerHTML = '';
+            document.getElementById('kd-solo-gmv').textContent = '—';
+            document.getElementById('kd-rank').textContent = '—';
+            document.getElementById('kd-risk').textContent = '—';
+            document.getElementById('kd-gender-label').textContent = '—';
+            document.getElementById('kd-gender-bar').style.width = '50%';
+            document.getElementById('kd-age').textContent = '—';
+            document.getElementById('kd-reasons').innerHTML = '';
+            document.getElementById('kd-risk-dot').className = 'risk-dot low';
             try {
-                const res = await fetch(API + '/scalability', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ n, budget, seed }),
-                });
-                if (!res.ok) { const e = await res.json(); throw new Error(e.detail); }
-                const data = await res.json();
-                renderScalability(data, n);
+                const r = await fetch(`${API}/kol/${id}`);
+                if (!r.ok) throw new Error('Not found');
+                const d = await r.json();
+                renderKolDetail(d);
             } catch (e) {
-                showError(e.message.includes('fetch') ? '⚠️ Backend unavailable' : '⚠️ ' + e.message);
-            } finally {
-                btn.innerHTML = 'Run Test <span class="material-symbols-outlined">play_arrow</span>';
-                btn.disabled = false;
+                document.getElementById('kd-name').textContent = 'Error loading creator';
             }
-        });
-
-        function renderScalability(data, n) {
-            document.getElementById('scale-empty').classList.add('hidden');
-            document.getElementById('scale-results').classList.remove('hidden');
-
-            const sa = data.simulated_annealing, hc = data.hill_climber, rs = data.random_search;
-
-            document.getElementById('s-sa-time').textContent = sa.time_seconds.toFixed(2) + 's';
-            document.getElementById('s-sa-gmv').textContent = fmt(sa.total_gmv);
-            document.getElementById('s-sa-kols').textContent = sa.selected_count;
-            document.getElementById('s-hc-time').textContent = hc.time_seconds.toFixed(2) + 's';
-            document.getElementById('s-hc-gmv').textContent = fmt(hc.total_gmv);
-            document.getElementById('s-hc-kols').textContent = hc.selected_count;
-            document.getElementById('s-rs-time').textContent = rs.time_seconds.toFixed(2) + 's';
-            document.getElementById('s-rs-gmv').textContent = fmt(rs.total_gmv);
-            document.getElementById('s-rs-kols').textContent = rs.selected_count;
-
-            // Accumulate history
-            if (!scaleHistory.ns.includes(n)) {
-                scaleHistory.ns.push(n);
-                scaleHistory.sa_time.push(sa.time_seconds);
-                scaleHistory.hc_time.push(hc.time_seconds);
-                scaleHistory.rs_time.push(rs.time_seconds);
-                scaleHistory.sa_gmv.push(sa.total_gmv);
-                scaleHistory.hc_gmv.push(hc.total_gmv);
-                scaleHistory.rs_gmv.push(rs.total_gmv);
-                // Sort by N
-                const idx = [...scaleHistory.ns.keys()].sort((a, b) => scaleHistory.ns[a] - scaleHistory.ns[b]);
-                ['ns', 'sa_time', 'hc_time', 'rs_time', 'sa_gmv', 'hc_gmv', 'rs_gmv'].forEach(k => {
-                    scaleHistory[k] = idx.map(i => scaleHistory[k][i]);
-                });
-            }
-
-            renderScaleChart('stime-svg', 'stime-x',
-                [scaleHistory.sa_time, scaleHistory.hc_time, scaleHistory.rs_time],
-                ['#68dbae', '#ec683d', '#ad8889'], scaleHistory.ns, v => v.toFixed(2) + 's');
-            renderScaleChart('sgmv-svg', 'sgmv-x',
-                [scaleHistory.sa_gmv, scaleHistory.hc_gmv, scaleHistory.rs_gmv],
-                ['#68dbae', '#ec683d', '#ad8889'], scaleHistory.ns, v => '$' + (v / 1000).toFixed(0) + 'K');
-
-            const adv = hc.total_gmv > 0 ? ((sa.total_gmv / hc.total_gmv - 1) * 100).toFixed(1) : '—';
-            document.getElementById('insight-text').innerHTML =
-                `At N=${n}, <strong style="color:#68dbae">Simulated Annealing</strong> outperforms
-     <strong style="color:#ec683d">Hill Climber</strong> by <strong>${adv}%</strong> in predicted GMV
-     (${fmt(sa.total_gmv)} vs ${fmt(hc.total_gmv)}).
-     HC takes ${hc.time_seconds.toFixed(2)}s but gets trapped in local optima.
-     SA takes ${sa.time_seconds.toFixed(2)}s and escapes by accepting worse solutions temporarily.`;
         }
 
-        function renderScaleChart(svgId, xId, series, colors, ns, labelFn) {
-            const W = 400, H = 200, pad = 10;
-            const svg = document.getElementById(svgId);
-            const xDiv = document.getElementById(xId);
-            if (!ns.length) return;
+        function renderKolDetail(d) {
+            document.getElementById('kd-name').textContent = d.name;
+            document.getElementById('kd-meta').textContent = `${d.category} · ${d.country} · ${fmtF(d.followers)} followers`;
+            const tier = d.tier || 'Micro';
+            const tierSpan = document.getElementById('kd-tier');
+            tierSpan.textContent = `${TIER_EMOJI[tier] || ''} ${tier}`;
+            tierSpan.className = `tier-chip ${TIER_BADGE[tier] || 'tier-micro'}`;
 
-            const allVals = series.flat();
-            const maxV = Math.max(...allVals, 0.001);
-            const minV = 0;
+            // Stats
+            document.getElementById('kd-stats').innerHTML = [
+                { label: 'Followers', v: fmtF(d.followers) },
+                { label: 'Engagement', v: (d.engagement_rate * 100).toFixed(1) + '%' },
+                { label: 'Fit Score', v: (d.fit_score * 100).toFixed(0) + '%' },
+                { label: 'Hiring Cost', v: fmt(d.cost) },
+                { label: 'Est. GMV', v: fmt(d.expected_gmv), cls: 'text-secondary font-bold' },
+            ].map(s => `<div class="text-center p-sm rounded-lg bg-surface-container-low"><p class="text-[10px] text-on-surface-variant uppercase">${s.label}</p><p class="font-title-md font-data-mono ${s.cls || 'text-on-surface'}">${s.v}</p></div>`).join('');
 
-            const xScale = i => pad + (i / (ns.length - 1 || 1)) * (W - pad * 2);
-            const yScale = v => H - pad - ((v - minV) / (maxV - minV || 1)) * (H - pad * 2);
+            // Demographics
+            const gRatio = d.gender_ratio != null ? d.gender_ratio : 0.5;
+            document.getElementById('kd-gender-label').textContent = `${(gRatio * 100).toFixed(0)}% Female / ${((1 - gRatio) * 100).toFixed(0)}% Male`;
+            document.getElementById('kd-gender-bar').style.width = `${(gRatio * 100).toFixed(0)}%`;
+            document.getElementById('kd-gender-bar').className = `demo-fill ${gRatio > 0.5 ? 'female' : 'male'}`;
+            document.getElementById('kd-age').textContent = d.age_group || 'Unknown';
 
-            let html = '';
-            series.forEach((data, si) => {
-                if (data.length < 2) {
-                    if (data.length === 1) {
-                        html += `<circle cx="${xScale(0)}" cy="${yScale(data[0])}" r="5" fill="${colors[si]}"/>`;
-                    }
-                    return;
-                }
-                const d = data.map((v, i) => (i === 0 ? 'M' : 'L') + xScale(i).toFixed(1) + ',' + yScale(v).toFixed(1)).join(' ');
-                html += `<path d="${d}" fill="none" stroke="${colors[si]}" stroke-width="2.5"/>`;
-                data.forEach((v, i) => {
-                    html += `<circle cx="${xScale(i)}" cy="${yScale(v)}" r="4" fill="${colors[si]}"/>`;
-                    html += `<text x="${xScale(i)}" y="${yScale(v) - 8}" fill="${colors[si]}" font-size="9" text-anchor="middle">${labelFn(v)}</text>`;
-                });
-            });
-            svg.innerHTML = html;
-            xDiv.innerHTML = ns.map(n => `<span>${n}</span>`).join('');
+            // Computed
+            document.getElementById('kd-solo-gmv').textContent = fmt(d.predicted_gmv_solo || d.expected_gmv);
+            document.getElementById('kd-rank').textContent = d.cost_effectiveness_rank ? `#${d.cost_effectiveness_rank}` : '—';
+            const risk = d.audience_overlap_risk != null ? d.audience_overlap_risk : 0;
+            const riskLevel = risk < 0.3 ? 'low' : risk < 0.6 ? 'med' : 'high';
+            const riskLabel = risk < 0.3 ? 'Low' : risk < 0.6 ? 'Medium' : 'High';
+            document.getElementById('kd-risk').textContent = `${riskLabel} (${(risk * 100).toFixed(0)}%)`;
+            document.getElementById('kd-risk-dot').className = `risk-dot ${riskLevel}`;
+
+            // Reasons
+            const reasons = d.reasons || [];
+            document.getElementById('kd-reasons').innerHTML = reasons.length
+                ? reasons.map((r, i) => `<div class="flex items-start gap-sm text-body-base text-on-surface-variant"><span class="text-secondary font-bold">${i + 1}.</span><span>${r}</span></div>`).join('')
+                : '<p class="text-on-surface-variant">No reasons available.</p>';
         }
 
-        // ══════════════════════════════════════════════════════
-        //  CARD HOVER EFFECT
-        // ══════════════════════════════════════════════════════
-        document.querySelectorAll('.glass-card').forEach(card => {
-            card.addEventListener('mouseenter', () => {
-                card.style.transform = 'translateY(-2px)';
-                card.style.boxShadow = '0 10px 30px -10px rgba(0,0,0,0.5)';
-                card.style.transition = 'all 0.3s ease-out';
-            });
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = 'translateY(0)';
-                card.style.boxShadow = 'none';
-            });
-        });
+        function closeKolDetail() {
+            document.getElementById('kol-detail-overlay').classList.add('hidden');
+        }
+
+        // ══════════ CREATORS: CRUD ══════════
+        let currentPage = 0; const PG = 20; let editingId = null;
+        async function loadTable() { const country = document.getElementById('f-country').value, category = document.getElementById('f-category').value, tier = document.getElementById('f-tier').value, params = new URLSearchParams({ limit: PG, offset: currentPage * PG }); if (country) params.set('country', country); if (category) params.set('category', category); if (tier) params.set('tier', tier); try { const r = await fetch(`${API}/kols?${params}`); const d = await r.json(); renderTable(d.kols, d.total); } catch (e) { toast('Backend unavailable', 'err'); } }
+        function renderTable(kols, total) { document.getElementById('count-badge').textContent = `${total} creators`; document.getElementById('page-info').textContent = total ? `${currentPage * PG + 1}–${Math.min((currentPage + 1) * PG, total)} of ${total}` : ''; document.getElementById('prev-btn').disabled = currentPage === 0; document.getElementById('next-btn').disabled = (currentPage + 1) * PG >= total; const tbody = document.getElementById('kol-tbody'); if (!kols.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center py-12 text-outline">No creators. Click <b>Add Creator</b> to get started.</td></tr>'; return; } tbody.innerHTML = kols.map(k => { const tier = k.tier || 'Micro'; return `<tr class="row-hover border-t border-[#2A2A3C]"><td class="px-4 py-3"><div class="font-semibold text-white">${k.name}</div><div class="text-[11px] text-outline font-mono">${k.category} · #${k.id}</div></td><td class="px-4 py-3">${k.country}</td><td class="px-4 py-3 capitalize">${k.category}</td><td class="px-4 py-3 text-right font-mono">${fmtF(k.followers)}</td><td class="px-4 py-3 text-right font-mono">${(k.engagement_rate * 100).toFixed(1)}%</td><td class="px-4 py-3 text-right font-mono">${fmt(k.cost)}</td><td class="px-4 py-3 text-center"><span class="${TIER_BADGE[tier]}" style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${tier}</span></td><td class="px-4 py-3 text-right font-mono text-secondary">${fmt(k.expected_gmv)}</td><td class="px-4 py-3 text-center"><button onclick="openEditModal(${k.id})" class="text-outline hover:text-secondary transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button><button onclick="deleteKol(${k.id},'${k.name.replace(/'/g, "\\'")}' )" class="text-outline hover:text-error transition-colors ml-1"><span class="material-symbols-outlined text-[18px]">delete</span></button></td></tr>`; }).join(''); }
+        function changePage(d) { currentPage = Math.max(0, currentPage + d); loadTable(); }
+        function openAddModal() { editingId = null; document.getElementById('modal-title').textContent = 'Add New Creator'; document.getElementById('modal-submit').textContent = 'Save Creator'; document.getElementById('modal-submit').onclick = submitAdd; clearForm(); document.getElementById('modal').classList.remove('hidden'); }
+        async function openEditModal(id) { editingId = id; document.getElementById('modal-title').textContent = 'Edit Creator'; document.getElementById('modal-submit').textContent = 'Update'; document.getElementById('modal-submit').onclick = submitEdit; try { const r = await fetch(`${API}/kol/${id}`); const k = await r.json(); document.getElementById('f-name').value = k.name || ''; document.getElementById('f-url').value = k.tiktok_url || ''; document.getElementById('f-m-country').value = k.country || 'MY'; document.getElementById('f-m-cat').value = k.category || 'beauty'; document.getElementById('f-followers').value = k.followers || ''; document.getElementById('f-eng').value = k.engagement_rate || ''; document.getElementById('f-cost').value = k.cost || ''; document.getElementById('f-fit').value = k.fit_score || ''; document.getElementById('f-views').value = k.avg_views || ''; document.getElementById('f-likes').value = k.avg_likes || ''; document.getElementById('f-gender').value = k.gender_ratio || ''; document.getElementById('f-age').value = k.age_group || '18-24'; document.getElementById('modal').classList.remove('hidden'); } catch (e) { toast('Failed to load', 'err'); } }
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        function clearForm() { ['f-name', 'f-url', 'f-followers', 'f-eng', 'f-cost', 'f-fit', 'f-views', 'f-likes', 'f-gender'].forEach(id => { document.getElementById(id).value = ''; }); document.getElementById('f-m-country').value = 'MY'; document.getElementById('f-m-cat').value = 'beauty'; document.getElementById('f-age').value = '18-24'; }
+        function getFormData() { const d = { name: document.getElementById('f-name').value.trim(), country: document.getElementById('f-m-country').value, category: document.getElementById('f-m-cat').value, followers: parseInt(document.getElementById('f-followers').value), engagement_rate: parseFloat(document.getElementById('f-eng').value), cost: parseFloat(document.getElementById('f-cost').value) }; const fit = document.getElementById('f-fit').value; if (fit) d.fit_score = parseFloat(fit); const url = document.getElementById('f-url').value.trim(); if (url) d.tiktok_url = url; const views = document.getElementById('f-views').value; if (views) d.avg_views = parseInt(views); const likes = document.getElementById('f-likes').value; if (likes) d.avg_likes = parseInt(likes); const gender = document.getElementById('f-gender').value; if (gender) d.gender_ratio = parseFloat(gender); d.age_group = document.getElementById('f-age').value; if (!d.name || isNaN(d.followers) || isNaN(d.engagement_rate) || isNaN(d.cost)) { toast('Please fill all required fields', 'err'); return null; } return d; }
+        async function submitAdd() { const d = getFormData(); if (!d) return; try { const r = await fetch(`${API}/kols/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }); if (!r.ok) { const e = await r.json(); toast(e.detail || 'Error', 'err'); return; } const res = await r.json(); toast(`${d.name} added (ID: ${res.id})`); closeModal(); loadTable(); } catch (e) { toast('Failed', 'err'); } }
+        async function submitEdit() { const d = getFormData(); if (!d) return; try { const r = await fetch(`${API}/kols/${editingId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }); if (!r.ok) { const e = await r.json(); toast(e.detail || 'Error', 'err'); return; } toast(`${d.name} updated`); closeModal(); loadTable(); } catch (e) { toast('Failed', 'err'); } }
+        async function deleteKol(id, name) { if (!confirm(`Delete "${name}"?`)) return; try { const r = await fetch(`${API}/kols/${id}`, { method: 'DELETE' }); if (!r.ok) { toast('Delete failed', 'err'); return; } toast(`${name} deleted`); loadTable(); } catch (e) { toast('Failed', 'err'); } }
+        async function importCSV(input) { const file = input.files[0]; if (!file) return; const form = new FormData(); form.append('file', file); try { const r = await fetch(`${API}/kols/import-csv`, { method: 'POST', body: form }); const d = await r.json(); if (!r.ok) { toast(d.detail || 'Import failed', 'err'); return; } toast(`Imported ${d.added} creators` + (d.errors.length ? ` (${d.errors.length} errors)` : '')); loadTable(); } catch (e) { toast('Import failed', 'err'); } input.value = ''; }
+        async function resetDatabase() { if (!confirm('⚠️ Clear ALL creator data?\nThis cannot be undone.')) return; if (!confirm('Final confirmation?')) return; try { const r = await fetch(`${API}/kols/reset`, { method: 'POST' }); if (!r.ok) { toast('Reset failed', 'err'); return; } toast('Database cleared'); currentPage = 0; loadTable(); } catch (e) { toast('Failed', 'err'); } }
+
     </script>
 </body>
 
