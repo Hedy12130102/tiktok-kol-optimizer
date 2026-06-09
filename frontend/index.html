@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>tiko — TikTok Shop KOL Optimizer</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23000000'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Inter,sans-serif' font-weight='800' font-size='38' fill='%2300C853'>tiko</text></svg>" />
     <link href="./dist/output.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
@@ -49,10 +50,10 @@
                         <select id="country-select"
                             class="w-full border border-outline-variant rounded-lg p-sm text-body-base focus:ring-1 focus:ring-primary outline-none"
                             style="background:#f5f5f0;color:#1a1a1a">
-                            <option value="MY">🇲🇾 MY (Malaysia)</option>
-                            <option value="ID">🇮🇩 ID (Indonesia)</option>
-                            <option value="TH">🇹🇭 TH (Thailand)</option>
-                            <option value="PH">🇵🇭 PH (Philippines)</option>
+                            <option value="MY">🇲🇾 Malaysia</option>
+                            <option value="ID">🇮🇩 Indonesia</option>
+                            <option value="TH">🇹🇭 Thailand</option>
+                            <option value="PH">🇵🇭 Philippines</option>
                         </select>
                     </div>
                     <div class="space-y-xs">
@@ -218,12 +219,12 @@
                 <!-- ══ TECHNICAL VIEW (toggled) ══ -->
                 <div id="tech-view" class="hidden space-y-xl">
                     <!-- 5 metric cards -->
-                    <section class="grid grid-cols-5 gap-gutter">
-                        <div class="glass-card p-md rounded-xl">
-                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Best Algorithm</p>
+                    <section class="grid grid-cols-6 gap-gutter">
+                        <div class="glass-card p-md rounded-xl col-span-2">
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Recommended Algorithm</p>
                             <div class="flex items-center gap-xs"><span id="m-algo"
-                                    class="font-title-md text-title-md text-on-surface truncate">—</span><span
-                                    class="text-lg">🏆</span></div>
+                                    class="font-title-md text-title-md text-on-surface">—</span><span
+                                    class="text-lg flex-shrink-0">🏆</span></div>
                         </div>
                         <div class="glass-card p-md rounded-xl border-l-4 border-secondary">
                             <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Predicted GMV</p>
@@ -534,8 +535,76 @@
 
         // ══════════ DASHBOARD ══════════
         function historyToPath(hist, maxY) { if (!hist || !hist.length) return ''; const PLOT_W = 770, PLOT_H = 220, PLOT_X = 65, PLOT_Y = 15; const step = PLOT_W / (hist.length - 1); return hist.map((v, i) => { const x = PLOT_X + i * step; const y = PLOT_Y + PLOT_H - (v / maxY) * PLOT_H; return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) }).join(' '); }
-        function renderConvergence(results) { const sa = results.simulated_annealing.history, hc = results.hill_climber.history, rs = results.random_search.history; if (!sa || !sa.length) return; const maxY = Math.max(...sa, ...hc, ...rs, 1); document.getElementById('conv-sa').setAttribute('d', historyToPath(sa, maxY)); document.getElementById('conv-hc').setAttribute('d', historyToPath(hc, maxY)); document.getElementById('conv-rs').setAttribute('d', historyToPath(rs, maxY)); // Update Y-axis ticks const PLOT_Y = 15, PLOT_H = 220; const ticks = ['$0', '$' + (maxY * 0.25 / 1000).toFixed(0) + 'K', '$' + (maxY * 0.5 / 1000).toFixed(0) + 'K', '$' + (maxY * 0.75 / 1000).toFixed(0) + 'K', '$' + (maxY / 1000).toFixed(0) + 'K']; const yPositions = [PLOT_Y + PLOT_H, PLOT_Y + PLOT_H * 0.75, PLOT_Y + PLOT_H * 0.5, PLOT_Y + PLOT_H * 0.25, PLOT_Y]; // Also add light grid lines const gridGroup = document.getElementById('conv-ticks'); gridGroup.innerHTML = ticks.map((t, i) => `<text x="58" y="${yPositions[i] + 3}" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace" text-anchor="end">${t}</text><line x1="65" y1="${yPositions[i]}" x2="835" y2="${yPositions[i]}" stroke="#2A2A3C" stroke-width="0.5" />`).join(''); }
-        function renderBenchmark(results, bestAlgo) { const order = ['simulated_annealing', 'hill_climber', 'random_search'], descs = { simulated_annealing: 'Probabilistic Global Max', hill_climber: 'Local Optimum Search', random_search: 'Stochastic Selection' }, tbody = document.getElementById('bench-body'); tbody.innerHTML = ''; order.sort((a, b) => results[b].total_gmv - results[a].total_gmv).forEach(key => { const r = results[key], isBest = r.algorithm === bestAlgo, tr = document.createElement('tr'); tr.className = isBest ? 'sa-highlight' : ''; tr.innerHTML = `<td class="px-md py-md"><div class="font-bold text-on-surface text-sm">${r.algorithm}</div><div class="text-[10px] text-on-surface-variant/70">${descs[key]}</div></td><td class="px-md py-md text-right font-data-mono ${isBest ? 'text-secondary' : 'text-on-surface-variant'}">${fmt(r.total_gmv)}</td><td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.roi.toFixed(2)}x</td>`; tbody.appendChild(tr); }); const note = results.hill_climber.total_gmv > 0 ? ((results.simulated_annealing.total_gmv / results.hill_climber.total_gmv - 1) * 100).toFixed(0) : 0; document.querySelector('#bench-note p').textContent = `"SA outperformed HC by ${note}% in this run."`; }
+        function renderConvergence(results) {
+            const sa = results.simulated_annealing.history,
+                  hc = results.hill_climber.history,
+                  rs = results.random_search.history;
+            if (!sa || !sa.length) return;
+            const maxY = Math.max(...sa, ...hc, ...rs, 1);
+            document.getElementById('conv-sa').setAttribute('d', historyToPath(sa, maxY));
+            document.getElementById('conv-hc').setAttribute('d', historyToPath(hc, maxY));
+            document.getElementById('conv-rs').setAttribute('d', historyToPath(rs, maxY));
+            // Y-axis ticks
+            const PLOT_Y = 15, PLOT_H = 220;
+            const ticks = [
+                '$0',
+                '$' + (maxY * 0.25 / 1000).toFixed(0) + 'K',
+                '$' + (maxY * 0.5 / 1000).toFixed(0) + 'K',
+                '$' + (maxY * 0.75 / 1000).toFixed(0) + 'K',
+                '$' + (maxY / 1000).toFixed(0) + 'K'
+            ];
+            const yPositions = [
+                PLOT_Y + PLOT_H,
+                PLOT_Y + PLOT_H * 0.75,
+                PLOT_Y + PLOT_H * 0.5,
+                PLOT_Y + PLOT_H * 0.25,
+                PLOT_Y
+            ];
+            // Grid lines + labels
+            const gridGroup = document.getElementById('conv-ticks');
+            gridGroup.innerHTML = ticks.map((t, i) =>
+                '<text x="58" y="' + (yPositions[i] + 3) + '" fill="#ad8889" font-size="10" font-family="JetBrains Mono, monospace" text-anchor="end">' + t + '</text>' +
+                '<line x1="65" y1="' + yPositions[i] + '" x2="835" y2="' + yPositions[i] + '" stroke="#2A2A3C" stroke-width="0.5" />'
+            ).join('');
+        }
+        function getRecommendedResult(results) {
+            const candidates = [results.simulated_annealing, results.hill_climber].filter(Boolean);
+            return candidates.sort((a, b) => b.total_gmv - a.total_gmv)[0];
+        }
+
+        function renderBenchmark(results, recommendedAlgo) {
+            const order = ['simulated_annealing', 'hill_climber', 'random_search'];
+            const descs = {
+                simulated_annealing: 'Recommendation candidate',
+                hill_climber: 'Recommendation candidate',
+                random_search: 'Stochastic baseline only'
+            };
+            const tbody = document.getElementById('bench-body');
+            tbody.innerHTML = '';
+
+            order
+                .sort((a, b) => {
+                    const aBaseline = a === 'random_search' ? 1 : 0;
+                    const bBaseline = b === 'random_search' ? 1 : 0;
+                    if (aBaseline !== bBaseline) return aBaseline - bBaseline;
+                    return results[b].total_gmv - results[a].total_gmv;
+                })
+                .forEach(key => {
+                    const r = results[key];
+                    const isRecommended = r.algorithm === recommendedAlgo;
+                    const isBaseline = key === 'random_search';
+                    const tr = document.createElement('tr');
+                    tr.className = isRecommended ? 'sa-highlight' : '';
+                    tr.innerHTML = `<td class="px-md py-md"><div class="font-bold text-on-surface text-sm">${r.algorithm}${isBaseline ? ' <span class="text-[10px] text-outline">(baseline)</span>' : ''}</div><div class="text-[10px] text-on-surface-variant/70">${descs[key]}</div></td><td class="px-md py-md text-right font-data-mono ${isRecommended ? 'text-secondary' : 'text-on-surface-variant'}">${fmt(r.total_gmv)}</td><td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.roi.toFixed(2)}x</td>`;
+                    tbody.appendChild(tr);
+                });
+
+            const saGain = results.hill_climber.total_gmv > 0 ? ((results.simulated_annealing.total_gmv / results.hill_climber.total_gmv - 1) * 100).toFixed(0) : 0;
+            const randomHigher = results.random_search.total_gmv > results.simulated_annealing.total_gmv;
+            document.querySelector('#bench-note p').textContent = randomHigher
+                ? `Random Search sampled a higher portfolio in this single run, but it remains the baseline; SA is the recommended local-search method and outperformed HC by ${saGain}%.`
+                : `SA outperformed HC by ${saGain}% in this run. Random Search is kept as a stochastic baseline.`;
+        }
 
         function bizKolCard(kol, totalGmv) {
             const tier = kol.tier || 'Micro', reasons = (kol.reasons || []).slice(0, 3), contrib = totalGmv > 0 ? ((kol.expected_gmv / totalGmv) * 100).toFixed(1) : 0;
@@ -701,14 +770,16 @@
             document.getElementById('biz-footer-msg').textContent = `This portfolio is predicted to generate ${fmt(data.total_gmv)} in GMV with an ROI of ${data.roi.toFixed(2)}x on your ${fmt(payload.budget)} budget.`;
 
             // ── Technical view ──
-            document.getElementById('m-algo').textContent = data.best_algorithm;
+            const recommended = getRecommendedResult(data.results);
+            const recommendedName = recommended ? recommended.algorithm : data.best_algorithm;
+            document.getElementById('m-algo').textContent = recommendedName;
             document.getElementById('m-gmv').textContent = fmt(data.total_gmv);
             document.getElementById('m-cost').textContent = fmt(data.total_cost);
             document.getElementById('m-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% Utilization';
             document.getElementById('m-kols').textContent = sorted.length;
             document.getElementById('m-cands').textContent = data.candidates;
             renderConvergence(data.results);
-            renderBenchmark(data.results, data.best_algorithm);
+            renderBenchmark(data.results, recommendedName);
             const techGrid = document.getElementById('tech-kol-grid');
             techGrid.innerHTML = sorted.map(techKolCard).join('');
             techGrid.querySelectorAll('.why-btn').forEach(btn => { btn.addEventListener('click', () => { btn.closest('.kol-card').querySelector('.why-panel').classList.toggle('hidden'); }); });

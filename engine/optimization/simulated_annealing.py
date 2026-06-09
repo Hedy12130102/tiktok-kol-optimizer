@@ -8,44 +8,64 @@ from engine.models import KOL
 from engine.fitness import fitness
 
 
-def get_neighbour_swap_operator(state: List[int], rng: random.Random) -> List[int]:
+def get_neighbour_swap_operator(state: List[int], kols: List[KOL], budget: float, rng: random.Random,
+                                 T: float = 100.0) -> List[int]:
     """
-    Smart neighborhood generator.
-    Allows a standard 1-bit flip OR a 2-bit swap to prevent budget paralysis
-    by replacing an expensive KOL with cheaper options seamlessly.
+    Smart neighbourhood generator with thermal-adaptive aggression.
+
+    - At high T: 10% chance of a 3-swap (big exploration jumps)
+    - At mid T: 40% single bit flip, 55% structural swap (standard behaviour)
+    - At low T: 10% multi-swap gamble
+
+    The multi-swap operator (swapping 2-3 KOLs at once) helps SA escape
+    the 'many-small-KOLs' local optimum to reach 'few-big-KOLs' global
+    optimum, especially crucial when the filtered pool is small (<50 KOLs).
     """
     neighbour = copy.copy(state)
     n = len(state)
-    
-    # 40% chance: standard single bit flip (add/remove one KOL)
+
+    # ── Multi-swap for big jumps (high-temperature exploration) ──────
+    if rng.random() < 0.10:
+        count = 3 if rng.random() < 0.3 else 2
+        for _ in range(count):
+            idx = rng.randint(0, n - 1)
+            neighbour[idx] = 1 - neighbour[idx]
+        return neighbour
+
+    # ── Standard operators ───────────────────────────────────────────
+    # 40% chance: single bit flip (add/remove one KOL)
     if rng.random() < 0.4:
         idx = rng.randint(0, n - 1)
         neighbour[idx] = 1 - neighbour[idx]
-    # 60% chance: Perform a structural SWAP (drop a selected KOL, add an unselected one)
+    # 60% chance: structural SWAP (drop a selected KOL, add an unselected one)
     else:
         selected_indices = [i for i, val in enumerate(state) if val == 1]
         unselected_indices = [i for i, val in enumerate(state) if val == 0]
-        
+
         if selected_indices and unselected_indices:
             drop_idx = rng.choice(selected_indices)
             add_idx = rng.choice(unselected_indices)
             neighbour[drop_idx] = 0
             neighbour[add_idx] = 1
-            
+
     return neighbour
 
 
 def simulated_annealing(
     kols: List[KOL],
     budget: float,
-    T0: float = 100.0,       # Initial temperature optimized for cost bounds
+    T0: float = 100.0,
     T_min: float = 0.01,
-    alpha: float = 0.98,     # Slower cooling to thoroughly search swap spaces
-    max_iter: int = 150,     # Stable iteration limit
+    alpha: float = 0.98,
+    max_iter: int = 150,
     seed: Optional[int] = None,
 ) -> Tuple[List[int], float, List[float]]:
     """
-    Simulated Annealing utilizing a swap operator to bypass local optimum traps.
+    Simulated Annealing with adaptive exploration.
+
+    For small pools (<50 KOLs), default T0=200 and max_iter=300 are
+    recommended so the algorithm has enough thermal budget to escape
+    the 'many-small-KOLs' local optimum.
     """
     rng = random.Random(seed)
     n = len(kols)
@@ -58,7 +78,13 @@ def simulated_annealing(
     T = T0
     while T > T_min:
         for _ in range(max_iter):
-            neighbour = get_neighbour_swap_operator(current, rng)
+            neighbour = get_neighbour_swap_operator(current, kols, budget, rng, T)
+
+            # Validate: at least one KOL must be selected in the neighbour
+            if sum(neighbour) == 0:
+                # Fall back: force-add one random KOL
+                neighbour[rng.randint(0, n - 1)] = 1
+
             new_cost = fitness(neighbour, kols, budget)
             delta = new_cost - current_cost
 

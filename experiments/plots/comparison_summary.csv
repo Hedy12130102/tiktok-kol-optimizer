@@ -1,4 +1,4 @@
 algorithm,selected_count,total_cost,total_gmv,roi
-Simulated Annealing,4,5000,104330.0,20.866
-Hill Climber,1,5000,90000.0,18.0
-Random Search,2,5000,129000.0,25.8
+Simulated Annealing,5,4450,41782.42,9.3893
+Hill Climber,1,5000,11156.52,2.2313
+Random Search,3,4600,35296.5,7.6732
