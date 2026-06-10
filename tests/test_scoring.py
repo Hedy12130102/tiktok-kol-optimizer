@@ -8,8 +8,7 @@ from engine.fitness import summarize_state
 @pytest.fixture
 def sample_kols() -> list[KOL]:
     """
-    Fixture: Initialize KOL objects with all native fields,
-    including default attributes.
+    Fixture: Initialize KOL objects covering all 4 tiers and a mix of categories.
     """
     return [
         KOL(
@@ -36,7 +35,7 @@ def sample_kols() -> list[KOL]:
             id=3,
             name="Influencer_C",
             country="ID",
-            category="tech",
+            category="fashion",
             followers=12000,
             engagement_rate=0.048,
             fit_score=0.68,
@@ -51,7 +50,27 @@ def sample_kols() -> list[KOL]:
             engagement_rate=0.035,
             fit_score=0.61,
             cost=260.0
-        )
+        ),
+        KOL(
+            id=5,
+            name="Influencer_E",
+            country="MY",
+            category="fmcg",
+            followers=75000,
+            engagement_rate=0.12,
+            fit_score=0.78,
+            cost=600.0
+        ),
+        KOL(
+            id=6,
+            name="Influencer_F",
+            country="TH",
+            category="home",
+            followers=280000,
+            engagement_rate=0.07,
+            fit_score=0.82,
+            cost=2100.0
+        ),
     ]
 
 
@@ -98,8 +117,25 @@ def test_state_roi_calculate(sample_kols):
     """
     ALG-06 Test 5: Verify ROI calculation for a selected state.
     """
-    test_state = [1, 0, 1, 0]
+    test_state = [1, 0, 1, 0, 0, 0]
     summary = summarize_state(test_state, sample_kols)
     assert isinstance(summary["total_gmv"], float)
     assert isinstance(summary["roi"], float)
     assert summary["roi"] >= 0
+
+
+def test_new_categories_have_positive_gmv():
+    """All 4 categories must produce positive GMV."""
+    for cat in ["beauty", "fashion", "home", "fmcg"]:
+        k = KOL(id=1, name="T", country="MY", category=cat,
+                followers=100000, engagement_rate=0.08, fit_score=0.7, cost=1000)
+        gmv = k.expected_gmv()
+        assert gmv > 0, f"Category {cat} produced non-positive GMV: {gmv}"
+
+
+def test_creator_score_includes_new_category_kols(sample_kols):
+    """Creator scores should be computed for all 6 KOLs including fmcg and home."""
+    scores = compute_creator_score(sample_kols)
+    assert len(scores) == 6
+    for i, s in enumerate(scores):
+        assert 0.0 <= s <= 1.0, f"Score {i} out of range: {s}"
