@@ -219,6 +219,10 @@
             <!-- Results -->
             <div id="results-section" class="hidden space-y-xl">
 
+                <!-- ══ Small-pool warning banner ══ -->
+                <div id="pool-size-warning" class="hidden rounded-xl px-lg py-md text-sm font-medium"
+                     style="background:rgba(255,160,0,0.12);border:1px solid rgba(255,160,0,0.4);color:#FFA000;"></div>
+
                 <!-- ══ BUSINESS VIEW (default) ══ -->
                 <div id="biz-view" class="space-y-xl">
                     <!-- Hero metrics -->
@@ -1230,6 +1234,17 @@
             document.getElementById('results-section').classList.remove('hidden');
             document.getElementById('view-toggle').classList.remove('hidden');
 
+            // ── Small-pool warning ──────────────────────────────────────────
+            const poolWarn = document.getElementById('pool-size-warning');
+            if (poolWarn) {
+                if (data.candidates < 20) {
+                    poolWarn.textContent = `⚠️ Small pool (${data.candidates} creators). With fewer than 20 candidates the search space is tiny — all stochastic algorithms may converge to the same solution. Consider widening your country/category filter or adding more KOLs.`;
+                    poolWarn.classList.remove('hidden');
+                } else {
+                    poolWarn.classList.add('hidden');
+                }
+            }
+
             const catN = { beauty: 'Beauty & Cosmetics', fashion: 'Fashion & Lifestyle', home: 'Home & Living', fmcg: 'FMCG' };
             const coN = { MY: 'Malaysia', ID: 'Indonesia', TH: 'Thailand', PH: 'Philippines', SG: 'Singapore', VN: 'Vietnam' };
             const sorted = [...data.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
@@ -1870,6 +1885,15 @@ kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono upper
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('results-section').classList.remove('hidden');
             document.getElementById('view-toggle').classList.remove('hidden');
+            const poolWarn = document.getElementById('pool-size-warning');
+            if (poolWarn) {
+                if (data.candidates < 20) {
+                    poolWarn.textContent = `⚠️ Small pool (${data.candidates} creators). With fewer than 20 candidates the search space is tiny — all stochastic algorithms may converge to the same solution. Consider widening your country/category filter or adding more KOLs.`;
+                    poolWarn.classList.remove('hidden');
+                } else {
+                    poolWarn.classList.add('hidden');
+                }
+            }
             const catN = { beauty: 'Beauty & Cosmetics', fashion: 'Fashion & Lifestyle', home: 'Home & Living', fmcg: 'FMCG' };
             const coN = { MY: 'Malaysia', ID: 'Indonesia', TH: 'Thailand', PH: 'Philippines', SG: 'Singapore', VN: 'Vietnam' };
             const sorted = [...data.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
