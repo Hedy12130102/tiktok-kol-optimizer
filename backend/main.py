@@ -1,15 +1,15 @@
 """
 TikTok Shop KOL Matrix Optimizer — FastAPI backend.
- 
+
 Endpoints
 ---------
   GET  /health           Health check
-  POST /optimize         Run all 3 algorithms, return best KOL matrix
+  POST /optimize         Run all 6 algorithms, return best KOL matrix
   GET  /kols             Filtered & paginated KOL list
   GET  /kol/{id}         Single KOL detail with scores & reasons
   GET  /top-kols         Top 10 KOLs by creator score
   POST /scalability      Algorithm performance at different pool sizes
- 
+
 Run:  uvicorn backend.main:app --reload
 Docs: http://localhost:8000/docs
 """
@@ -23,23 +23,27 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
- 
+
 # ── Make project root importable ──────────────────────────────────
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
- 
+
 from engine.models import KOL
 from engine.fitness import summarize_state
 from engine.optimization.simulated_annealing import simulated_annealing
 from engine.optimization.hill_climber import hill_climber
 from engine.optimization.random_search import random_search
+from engine.optimization.genetic_algorithm import genetic_algorithm
+from engine.optimization.tabu_search import tabu_search
+from engine.optimization.greedy_ranking import greedy_ranking
 from engine.scoring.creator_score import compute_creator_score
 from engine.scoring.explainer import generate_reasons, get_tier
 from backend.crud import router as crud_router
- 
+from backend.campaigns import router as campaigns_router
+
 app = FastAPI(
     title="TikTok Shop KOL Matrix Optimizer API",
     description="Local search optimizer for selecting a KOL portfolio under a marketing budget.",
-    version="1.0",
+    version="2.0",
 )
 
 app.add_middleware(
@@ -50,19 +54,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(crud_router)
- 
+app.include_router(campaigns_router)
+
 # ── Enum constants ────────────────────────────────────────────────
-VALID_COUNTRIES = ["MY", "ID", "TH", "PH"]
-VALID_CATEGORIES = ["beauty", "tech", "fashion"]
+VALID_COUNTRIES = ["MY", "ID", "TH", "PH", "SG", "VN"]
+VALID_CATEGORIES = ["beauty", "fashion", "home", "fmcg"]
 VALID_TIERS = ["Mega", "Macro", "Micro", "Nano"]
- 
+
 DATA_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "data",
     "sample_kols.json",
 )
- 
- 
+
+
 # ════════════════════════════════════════════════════════════════
 #  Pydantic models
 # ════════════════════════════════════════════════════════════════
@@ -71,14 +76,14 @@ class OptimizeRequest(BaseModel):
     country: str = "MY"
     category: str = "beauty"
     seed: int = 42
- 
- 
+
+
 class ScalabilityRequest(BaseModel):
     n: int
     budget: float
     seed: int = 42
- 
- 
+
+
 class KOLResult(BaseModel):
     id: int
     name: str
@@ -92,8 +97,8 @@ class KOLResult(BaseModel):
     tier: str = ""
     creator_score: float = 0.0
     reasons: List[str] = []
- 
- 
+
+
 class KOLDetail(KOLResult):
     avg_views: Optional[int] = None
     avg_likes: Optional[int] = None
@@ -102,8 +107,8 @@ class KOLDetail(KOLResult):
     predicted_gmv_solo: float = 0.0
     audience_overlap_risk: float = 0.0
     cost_effectiveness_rank: int = 0
- 
- 
+
+
 class AlgorithmResult(BaseModel):
     algorithm: str
     selected_kols: List[KOLResult]
@@ -112,14 +117,14 @@ class AlgorithmResult(BaseModel):
     total_gmv: float
     roi: float
     history: List[float]
- 
- 
+
+
 class OverlapWarning(BaseModel):
     kol_id_1: int
     kol_name_1: str
     kol_id_2: int
     kol_name_2: str
-    overlap_score: float  # 0~1, higher = more audience overlap
+    overlap_score: float
     reason: str
 
 
@@ -146,9 +151,9 @@ class OptimizeResponse(BaseModel):
 
 
 class PlanResult(BaseModel):
-    plan_name: str          # "Aggressive", "Balanced", "Safe"
+    plan_name: str
     description: str
-    budget_limit: float     # effective budget used for this plan
+    budget_limit: float
     selected_kols: List[KOLResult]
     total_cost: float
     total_gmv: float
@@ -163,70 +168,61 @@ class OptimizePlansResponse(BaseModel):
     category: str
     candidates: int
     plans: List[PlanResult]
- 
- 
+
+
 class KOLListResponse(BaseModel):
     total: int
     limit: int
     offset: int
     kols: List[KOLResult]
- 
- 
+
+
 class TopKOLResponse(BaseModel):
     country: Optional[str]
     category: Optional[str]
     top_kols: List[KOLResult]
- 
- 
+
+
 class ScalabilityEntry(BaseModel):
     time_seconds: float
     total_gmv: float
     roi: float
     selected_count: int
- 
- 
+
+
 class ScalabilityResponse(BaseModel):
     n: int
     budget: float
     simulated_annealing: ScalabilityEntry
     hill_climber: ScalabilityEntry
     random_search: ScalabilityEntry
- 
- 
+    genetic_algorithm: ScalabilityEntry
+    tabu_search: ScalabilityEntry
+    greedy_ranking: ScalabilityEntry
+
+
 # ════════════════════════════════════════════════════════════════
 #  Helpers
 # ════════════════════════════════════════════════════════════════
 def load_kols() -> List[KOL]:
-    """
-    Load KOLs from the JSON data file.
- 
-    The data file may contain extra fields (avg_views, avg_likes,
-    gender_ratio, age_group) that the KOL dataclass does not accept,
-    so we only pass the fields KOL knows about, and keep the raw dict
-    for endpoints that need the extra fields.
-    """
     with open(DATA_PATH, encoding="utf-8") as f:
         return [_dict_to_kol(d) for d in json.load(f)]
- 
- 
+
+
 def load_raw_kols() -> List[dict]:
-    """Load the raw dicts (including extra fields) for detail endpoints."""
     with open(DATA_PATH, encoding="utf-8") as f:
         return json.load(f)
- 
- 
-# Only these keys are passed into the KOL dataclass constructor.
+
+
 _KOL_FIELDS = {"id", "name", "country", "category",
                "followers", "engagement_rate", "fit_score", "cost"}
- 
- 
+
+
 def _dict_to_kol(d: dict) -> KOL:
-    """Build a KOL from a dict, ignoring any extra fields."""
     return KOL(**{k: v for k, v in d.items() if k in _KOL_FIELDS})
- 
- 
+
+
 def to_kol_result(k: KOL, score: float, all_kols: List[KOL]) -> KOLResult:
-    """Convert a KOL into a KOLResult, enriched with tier, score and reasons."""
     return KOLResult(
         id=k.id,
         name=k.name,
@@ -241,8 +237,8 @@ def to_kol_result(k: KOL, score: float, all_kols: List[KOL]) -> KOLResult:
         creator_score=score,
         reasons=generate_reasons(k, all_kols),
     )
- 
- 
+
+
 def build_algorithm_result(
     name: str,
     state: List[int],
@@ -250,11 +246,8 @@ def build_algorithm_result(
     kols: List[KOL],
     scores: List[float],
 ) -> AlgorithmResult:
-    """Build an AlgorithmResult from an algorithm's output state."""
     selected_idx = [i for i, x in enumerate(state) if x == 1]
-    selected = [
-        to_kol_result(kols[i], scores[i], kols) for i in selected_idx
-    ]
+    selected = [to_kol_result(kols[i], scores[i], kols) for i in selected_idx]
     summary = summarize_state(state, kols)
     return AlgorithmResult(
         algorithm=name,
@@ -265,10 +258,9 @@ def build_algorithm_result(
         roi=round(summary["roi"], 4),
         history=history,
     )
- 
- 
+
+
 def compute_tier_breakdown(kols: List[KOLResult]) -> TierBreakdown:
-    """Count KOLs by tier."""
     counts = {"Mega": 0, "Macro": 0, "Micro": 0, "Nano": 0}
     for k in kols:
         t = k.tier or get_tier_from_followers(k.followers)
@@ -288,42 +280,27 @@ def get_tier_from_followers(followers: int) -> str:
 
 
 def detect_audience_overlap(selected_kols: List[KOLResult], all_kols: List[KOL]) -> List[OverlapWarning]:
-    """
-    Detect KOL pairs in the selected portfolio that have high audience overlap.
-
-    Overlap is computed as a combination of:
-    - Same country + same category → high overlap risk
-    - Similar follower range → medium overlap risk
-    A pair is flagged when overlap_score > 0.5.
-    """
     warnings: List[OverlapWarning] = []
     n = len(selected_kols)
     if n < 2:
         return warnings
 
-    # Build a dict for quick follower lookup
     follower_map = {k.id: k.followers for k in all_kols}
 
     for i in range(n):
         for j in range(i + 1, n):
             a = selected_kols[i]
             b = selected_kols[j]
-
-            # Calculate overlap score (0~1)
             score = 0.0
             reasons: List[str] = []
 
-            # Same country → +0.4
             if a.country == b.country:
                 score += 0.4
                 reasons.append("same country")
-
-            # Same category → +0.3
             if a.category == b.category:
                 score += 0.3
                 reasons.append("same category")
 
-            # Similar follower range (within 20%) → +0.3
             fa = follower_map.get(a.id, a.followers)
             fb = follower_map.get(b.id, b.followers)
             if fa > 0 and fb > 0:
@@ -342,20 +319,14 @@ def detect_audience_overlap(selected_kols: List[KOLResult], all_kols: List[KOL])
                     reason=", ".join(reasons),
                 ))
 
-    # Sort by overlap_score descending
     warnings.sort(key=lambda w: w.overlap_score, reverse=True)
     return warnings
 
 
 def compute_audience_overlap_risk(kol: KOL, all_kols: List[KOL]) -> float:
-    """
-    Compute how similar this KOL's audience is to other popular KOLs
-    (top 20% by followers). Returns 0~1 risk score.
-    """
     if len(all_kols) <= 1:
         return 0.0
 
-    # Top 20% KOLs by followers (the "popular" ones)
     sorted_by_followers = sorted(all_kols, key=lambda k: k.followers, reverse=True)
     top_n = max(1, len(all_kols) // 5)
     top_kols = sorted_by_followers[:top_n]
@@ -370,7 +341,6 @@ def compute_audience_overlap_risk(kol: KOL, all_kols: List[KOL]) -> float:
             overlap += 0.4
         if kol.category == other.category:
             overlap += 0.3
-        # Follower similarity within 50%
         if kol.followers > 0 and other.followers > 0:
             ratio = min(kol.followers, other.followers) / max(kol.followers, other.followers)
             if ratio > 0.5:
@@ -384,15 +354,10 @@ def compute_audience_overlap_risk(kol: KOL, all_kols: List[KOL]) -> float:
 
 
 def compute_cost_effectiveness_rank(kol: KOL, all_kols: List[KOL]) -> int:
-    """
-    Rank this KOL within the pool by GMV/cost ratio.
-    Rank 1 = best cost-effectiveness.
-    """
     if kol.cost <= 0:
-        return len(all_kols)  # put at the bottom if cost is 0
+        return len(all_kols)
 
     target_ratio = kol.expected_gmv() / kol.cost
-    # Count how many KOLs have a better ratio
     better_count = sum(
         1 for k in all_kols
         if k.cost > 0 and (k.expected_gmv() / k.cost) > target_ratio
@@ -400,26 +365,38 @@ def compute_cost_effectiveness_rank(kol: KOL, all_kols: List[KOL]) -> int:
     return better_count + 1
 
 
+def _downsample(history: List[float], target: int = 400) -> List[float]:
+    """Downsample history to at most `target` evenly-spaced points."""
+    n = len(history)
+    if n <= target:
+        return history
+    step = n / target
+    return [history[min(int(i * step), n - 1)] for i in range(target)]
+
+
 def run_single_optimization(
     filtered: List[KOL],
     budget: float,
     seed: int,
     scores: List[float],
-    sa_T0: float = 100.0,
+    sa_T0: float = 15000.0,
     sa_max_iter: int = 150,
 ) -> AlgorithmResult:
-    """Run all 3 algorithms with SA parameter presets and return the best one."""
+    """Run all 6 algorithms and return the best one."""
     sa_state, _, sa_hist = simulated_annealing(filtered, budget, seed=seed, T0=sa_T0, max_iter=sa_max_iter)
     hc_state, _, hc_hist = hill_climber(filtered, budget, seed=seed)
     rs_state, _, rs_hist = random_search(filtered, budget, seed=seed)
-
-    min_len = min(len(sa_hist), len(hc_hist), len(rs_hist))
-    sa_hist, hc_hist, rs_hist = sa_hist[:min_len], hc_hist[:min_len], rs_hist[:min_len]
+    ga_state, _, ga_hist = genetic_algorithm(filtered, budget, seed=seed)
+    ts_state, _, ts_hist = tabu_search(filtered, budget, seed=seed)
+    gr_state, _, gr_hist = greedy_ranking(filtered, budget, seed=seed)
 
     results = {
-        "simulated_annealing": build_algorithm_result("Simulated Annealing", sa_state, sa_hist, filtered, scores),
-        "hill_climber":        build_algorithm_result("Hill Climber",        hc_state, hc_hist, filtered, scores),
-        "random_search":       build_algorithm_result("Random Search",       rs_state, rs_hist, filtered, scores),
+        "simulated_annealing": build_algorithm_result("Simulated Annealing", sa_state, _downsample(sa_hist), filtered, scores),
+        "hill_climber":        build_algorithm_result("Hill Climber",        hc_state, _downsample(hc_hist), filtered, scores),
+        "random_search":       build_algorithm_result("Random Search",       rs_state, _downsample(rs_hist), filtered, scores),
+        "genetic_algorithm":   build_algorithm_result("Genetic Algorithm",   ga_state, _downsample(ga_hist), filtered, scores),
+        "tabu_search":         build_algorithm_result("Tabu Search",         ts_state, _downsample(ts_hist), filtered, scores),
+        "greedy_ranking":      build_algorithm_result("Greedy Ranking",      gr_state, _downsample(gr_hist), filtered, scores),
     }
 
     best_key = max(results, key=lambda k: results[k].total_gmv)
@@ -431,26 +408,23 @@ def run_single_optimization(
 # ════════════════════════════════════════════════════════════════
 @app.get("/health")
 def health():
-    """Health check — call this first to confirm the backend is running."""
     return {"status": "ok"}
- 
- 
+
+
 @app.post("/optimize", response_model=OptimizeResponse)
 def optimize(req: OptimizeRequest):
-    """Run all three algorithms and return the best KOL matrix."""
-    # ── Input validation ──────────────────────────────────────────
+    """Run all six algorithms and return the best KOL matrix."""
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
     if req.country not in VALID_COUNTRIES:
-        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH")
+        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH, SG, VN")
     if req.category not in VALID_CATEGORIES:
-        raise HTTPException(status_code=422, detail="category must be one of: beauty, tech, fashion")
- 
+        raise HTTPException(status_code=422, detail="category must be one of: beauty, fashion, home, fmcg")
+
     all_kols = load_kols()
     filtered = [k for k in all_kols
                 if k.country == req.country and k.category == req.category]
- 
-    # ── Empty pool → return empty result (not an error) ──────────
+
     if not filtered:
         return OptimizeResponse(
             budget=req.budget,
@@ -464,29 +438,28 @@ def optimize(req: OptimizeRequest):
             roi=0.0,
             results={},
         )
- 
-    # Compute creator scores once for the whole filtered pool
+
     scores = compute_creator_score(filtered)
- 
-    # ── Run all three algorithms ──────────────────────────────────
+
     sa_state, _, sa_hist = simulated_annealing(filtered, req.budget, seed=req.seed)
     hc_state, _, hc_hist = hill_climber(filtered, req.budget, seed=req.seed)
     rs_state, _, rs_hist = random_search(filtered, req.budget, seed=req.seed)
- 
-    # Truncate all histories to the same length for the convergence chart
-    min_len = min(len(sa_hist), len(hc_hist), len(rs_hist))
-    sa_hist, hc_hist, rs_hist = sa_hist[:min_len], hc_hist[:min_len], rs_hist[:min_len]
- 
+    ga_state, _, ga_hist = genetic_algorithm(filtered, req.budget, seed=req.seed)
+    ts_state, _, ts_hist = tabu_search(filtered, req.budget, seed=req.seed)
+    gr_state, _, gr_hist = greedy_ranking(filtered, req.budget, seed=req.seed)
+
     results = {
-        "simulated_annealing": build_algorithm_result("Simulated Annealing", sa_state, sa_hist, filtered, scores),
-        "hill_climber":        build_algorithm_result("Hill Climber",        hc_state, hc_hist, filtered, scores),
-        "random_search":       build_algorithm_result("Random Search",       rs_state, rs_hist, filtered, scores),
+        "simulated_annealing": build_algorithm_result("Simulated Annealing", sa_state, _downsample(sa_hist), filtered, scores),
+        "hill_climber":        build_algorithm_result("Hill Climber",        hc_state, _downsample(hc_hist), filtered, scores),
+        "random_search":       build_algorithm_result("Random Search",       rs_state, _downsample(rs_hist), filtered, scores),
+        "genetic_algorithm":   build_algorithm_result("Genetic Algorithm",   ga_state, _downsample(ga_hist), filtered, scores),
+        "tabu_search":         build_algorithm_result("Tabu Search",         ts_state, _downsample(ts_hist), filtered, scores),
+        "greedy_ranking":      build_algorithm_result("Greedy Ranking",      gr_state, _downsample(gr_hist), filtered, scores),
     }
- 
+
     best_key = max(results, key=lambda key: results[key].total_gmv)
     best = results[best_key]
 
-    # Compute tier breakdown and audience overlap for the best result
     tier_bd = compute_tier_breakdown(best.selected_kols)
     overlap_warnings = detect_audience_overlap(best.selected_kols, filtered)
 
@@ -505,16 +478,16 @@ def optimize(req: OptimizeRequest):
         overlap_warnings=overlap_warnings,
     )
 
+
 @app.post("/optimize-plans", response_model=OptimizePlansResponse)
 def optimize_plans(req: OptimizeRequest):
-    """Return 3 plans: Aggressive (max GMV), Balanced (current), Safe (80% budget, prioritize ROI)."""
-    # Input validation
+    """Return 3 plans: Aggressive (max GMV), Balanced, Safe (80% budget)."""
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
     if req.country not in VALID_COUNTRIES:
-        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH")
+        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH, SG, VN")
     if req.category not in VALID_CATEGORIES:
-        raise HTTPException(status_code=422, detail="category must be one of: beauty, tech, fashion")
+        raise HTTPException(status_code=422, detail="category must be one of: beauty, fashion, home, fmcg")
 
     all_kols = load_kols()
     filtered = [k for k in all_kols
@@ -531,23 +504,23 @@ def optimize_plans(req: OptimizeRequest):
 
     scores = compute_creator_score(filtered)
 
-    # ── Aggressive: high T₀ (200), more iterations (300), 120% budget ──
+    # Aggressive: 120% budget, higher T0 and more iterations
     aggressive_budget = req.budget * 1.2
     agg_result = run_single_optimization(filtered, aggressive_budget, req.seed, scores,
-                                         sa_T0=200.0, sa_max_iter=300)
+                                         sa_T0=20000.0, sa_max_iter=300)
     agg_tier = compute_tier_breakdown(agg_result.selected_kols)
     agg_overlap = detect_audience_overlap(agg_result.selected_kols, filtered)
 
-    # ── Balanced: current defaults (T₀=100, 150 iters), standard budget ──
+    # Balanced: standard budget and defaults
     bal_result = run_single_optimization(filtered, req.budget, req.seed + 1, scores,
-                                         sa_T0=100.0, sa_max_iter=150)
+                                         sa_T0=15000.0, sa_max_iter=150)
     bal_tier = compute_tier_breakdown(bal_result.selected_kols)
     bal_overlap = detect_audience_overlap(bal_result.selected_kols, filtered)
 
-    # ── Safe: lower T₀ (50), fewer iterations (100), 80% budget ──
+    # Safe: 80% budget, fewer iterations
     safe_budget = req.budget * 0.8
     safe_result = run_single_optimization(filtered, safe_budget, req.seed + 2, scores,
-                                          sa_T0=50.0, sa_max_iter=100)
+                                          sa_T0=8000.0, sa_max_iter=100)
     safe_tier = compute_tier_breakdown(safe_result.selected_kols)
     safe_overlap = detect_audience_overlap(safe_result.selected_kols, filtered)
 
@@ -581,7 +554,7 @@ def optimize_plans(req: OptimizeRequest):
             ),
             PlanResult(
                 plan_name="Safe",
-                description="Cap spending at 80% of budget, prioritizing ROI over raw GMV. Best for conservative campaigns.",
+                description="Cap spending at 80% of budget, prioritizing ROI over raw GMV.",
                 budget_limit=safe_budget,
                 selected_kols=safe_result.selected_kols,
                 total_cost=safe_result.total_cost,
@@ -593,8 +566,7 @@ def optimize_plans(req: OptimizeRequest):
         ],
     )
 
- 
- 
+
 @app.get("/kols", response_model=KOLListResponse)
 def get_kols(
     country: Optional[str] = Query(None),
@@ -605,38 +577,37 @@ def get_kols(
 ):
     """Return a filtered, paginated list of KOLs."""
     if country is not None and country not in VALID_COUNTRIES:
-        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH")
+        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH, SG, VN")
     if category is not None and category not in VALID_CATEGORIES:
-        raise HTTPException(status_code=422, detail="category must be one of: beauty, tech, fashion")
+        raise HTTPException(status_code=422, detail="category must be one of: beauty, fashion, home, fmcg")
     if tier is not None and tier not in VALID_TIERS:
         raise HTTPException(status_code=422, detail="tier must be one of: Mega, Macro, Micro, Nano")
- 
+
     all_kols = load_kols()
- 
+
     filtered = [
         k for k in all_kols
         if (country is None or k.country == country)
         and (category is None or k.category == category)
         and (tier is None or get_tier(k) == tier)
     ]
- 
-    # Score the filtered pool, then paginate
+
     scores = compute_creator_score(filtered)
     page = filtered[offset:offset + limit]
     page_scores = scores[offset:offset + limit]
- 
+
     kols_out = [
         to_kol_result(k, s, filtered) for k, s in zip(page, page_scores)
     ]
- 
+
     return KOLListResponse(
         total=len(filtered),
         limit=limit,
         offset=offset,
         kols=kols_out,
     )
- 
- 
+
+
 @app.get("/kol/{kol_id}", response_model=KOLDetail)
 def get_kol(kol_id: int):
     """Return full details for a single KOL, including extended fields."""
@@ -644,18 +615,16 @@ def get_kol(kol_id: int):
     raw = next((d for d in raw_kols if d["id"] == kol_id), None)
     if raw is None:
         raise HTTPException(status_code=404, detail=f"KOL with id {kol_id} not found")
- 
-    # Build a KOL object and compute its score relative to all KOLs
+
     all_kols = [_dict_to_kol(d) for d in raw_kols]
     target = _dict_to_kol(raw)
- 
-    # Find target's score within the full pool
+
     scores = compute_creator_score(all_kols)
     idx = next(i for i, k in enumerate(all_kols) if k.id == kol_id)
     score = scores[idx]
- 
+
     base = to_kol_result(target, score, all_kols)
- 
+
     return KOLDetail(
         **base.model_dump(),
         avg_views=raw.get("avg_views"),
@@ -666,8 +635,8 @@ def get_kol(kol_id: int):
         audience_overlap_risk=compute_audience_overlap_risk(target, all_kols),
         cost_effectiveness_rank=compute_cost_effectiveness_rank(target, all_kols),
     )
- 
- 
+
+
 @app.get("/top-kols", response_model=TopKOLResponse)
 def top_kols(
     country: Optional[str] = Query(None),
@@ -675,40 +644,38 @@ def top_kols(
 ):
     """Return the top 10 KOLs ranked by creator score."""
     if country is not None and country not in VALID_COUNTRIES:
-        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH")
+        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH, SG, VN")
     if category is not None and category not in VALID_CATEGORIES:
-        raise HTTPException(status_code=422, detail="category must be one of: beauty, tech, fashion")
- 
+        raise HTTPException(status_code=422, detail="category must be one of: beauty, fashion, home, fmcg")
+
     all_kols = load_kols()
     filtered = [
         k for k in all_kols
         if (country is None or k.country == country)
         and (category is None or k.category == category)
     ]
- 
+
     if not filtered:
         return TopKOLResponse(country=country, category=category, top_kols=[])
- 
+
     scores = compute_creator_score(filtered)
-    # Pair each KOL with its score, sort by score descending, take top 10
     paired = sorted(zip(filtered, scores), key=lambda p: p[1], reverse=True)[:10]
     top = [to_kol_result(k, s, filtered) for k, s in paired]
- 
+
     return TopKOLResponse(country=country, category=category, top_kols=top)
- 
- 
+
+
 @app.post("/scalability", response_model=ScalabilityResponse)
 def scalability(req: ScalabilityRequest):
     """
-    Run all three algorithms on a freshly generated pool of size n
+    Run all 6 algorithms on a freshly generated pool of size n
     and return execution time + final GMV for each.
     """
     if req.n < 10 or req.n > 500:
         raise HTTPException(status_code=422, detail="n must be between 10 and 500")
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
- 
-    # Generate a temporary pool of size n
+
     from data.generator import generate_kols
     tmp_json = os.path.join(os.path.dirname(DATA_PATH), f"_scalability_tmp_{req.n}_{req.seed}.json")
     tmp_csv = tmp_json.replace(".json", ".csv")
@@ -724,7 +691,7 @@ def scalability(req: ScalabilityRequest):
         for path in (tmp_json, tmp_csv):
             if os.path.exists(path):
                 os.remove(path)
- 
+
     def run(algo_fn) -> ScalabilityEntry:
         t0 = time.perf_counter()
         state, _, _hist = algo_fn(kols, req.budget, seed=req.seed)
@@ -736,13 +703,16 @@ def scalability(req: ScalabilityRequest):
             roi=round(summary["roi"], 4),
             selected_count=int(summary["selected_count"]),
         )
- 
+
     return ScalabilityResponse(
         n=req.n,
         budget=req.budget,
         simulated_annealing=run(simulated_annealing),
         hill_climber=run(hill_climber),
         random_search=run(random_search),
+        genetic_algorithm=run(genetic_algorithm),
+        tabu_search=run(tabu_search),
+        greedy_ranking=run(greedy_ranking),
     )
 
 

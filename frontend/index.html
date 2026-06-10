@@ -57,6 +57,9 @@
         #conv-sa { stroke: #00C853 !important; }
         #conv-hc { stroke: #FB923C !important; }
         #conv-rs { stroke: #4a4a45 !important; }
+        #conv-ga { stroke: #A855F7 !important; }
+        #conv-ts { stroke: #06B6D4 !important; }
+        #conv-gr { stroke: #F59E0B !important; }
         /* View toggle border */
         .view-toggle { border-color: #353530 !important; }
         .view-toggle button { color: #a7a7a0 !important; }
@@ -80,6 +83,8 @@
         #conv-svg { display: block; }
         /* Bench table row highlight */
         .sa-highlight td { background: rgba(0,200,83,0.04); }
+        /* Textarea inherits form-input styles */
+        textarea.form-input { resize: vertical; min-height: 72px; }
     </style>
 </head>
 
@@ -110,9 +115,9 @@
                         </div>
                         <input id="budget-slider"
                             class="w-full h-1 bg-surface-container-highest rounded-lg appearance-none cursor-pointer"
-                            max="20000" min="500" step="500" type="range" value="5000" />
+                            max="20000" min="100" step="100" type="range" value="5000" />
                         <div class="flex justify-between text-[10px] text-on-surface-variant/50">
-                            <span>$500</span><span>$20k</span></div>
+                            <span>$100</span><span>$20k</span></div>
                     </div>
                     <div class="space-y-xs">
                         <label class="font-label-sm text-label-sm text-on-surface-variant">Target Country</label>
@@ -123,6 +128,8 @@
                             <option value="ID">🇮🇩 Indonesia</option>
                             <option value="TH">🇹🇭 Thailand</option>
                             <option value="PH">🇵🇭 Philippines</option>
+                            <option value="SG">🇸🇬 Singapore</option>
+                            <option value="VN">🇻🇳 Vietnam</option>
                         </select>
                     </div>
                     <div class="space-y-xs">
@@ -131,8 +138,9 @@
                             class="w-full border border-outline-variant rounded-lg p-sm text-body-base focus:ring-1 focus:ring-primary outline-none"
                             style="background:#20201b;color:#e5e2da;border-color:#353530">
                             <option value="beauty">💄 Beauty</option>
-                            <option value="tech">📱 Tech</option>
                             <option value="fashion">👗 Fashion</option>
+                            <option value="home">🏠 Home & Living</option>
+                            <option value="fmcg">🛒 FMCG</option>
                         </select>
                     </div>
                     <div class="space-y-xs">
@@ -149,10 +157,12 @@
             </button>
             <div class="pt-md space-y-xs">
                 <div class="nav-item active" data-page="dashboard"><span
-                        class="material-symbols-outlined">campaign</span><span
-                        class="font-title-md text-title-md">Campaigns</span></div>
+                        class="material-symbols-outlined">bolt</span><span
+                        class="font-title-md text-title-md">Optimizer</span></div>
                 <div class="nav-item" data-page="creators"><span class="material-symbols-outlined">group</span><span
                         class="font-title-md text-title-md">Creators</span></div>
+                <div class="nav-item" data-page="campaigns"><span class="material-symbols-outlined">analytics</span><span
+                        class="font-title-md text-title-md">Campaigns</span></div>
             </div>
         </nav>
         <footer class="mt-auto pt-lg border-t border-outline-variant/30 text-center">
@@ -168,6 +178,11 @@
             <div class="flex items-center gap-md">
                 <div id="error-banner"
                     class="hidden bg-error-container text-on-error-container px-md py-sm rounded-lg text-sm font-bold">
+                </div>
+                <!-- Server algo-count badge -->
+                <div id="algo-status-badge" class="hidden flex items-center gap-xs px-sm py-xs rounded-full text-[10px] font-bold uppercase tracking-wider border" style="border-color:#353530;background:#20201b">
+                    <span id="algo-status-dot" class="w-2 h-2 rounded-full flex-shrink-0"></span>
+                    <span id="algo-status-text"></span>
                 </div>
                 <!-- View toggle (dashboard only) -->
                 <div id="view-toggle" class="view-toggle hidden">
@@ -243,6 +258,19 @@
                         </div>
                     </section>
 
+                    <!-- Algorithm Comparison mini-strip -->
+                    <section id="algo-compare-section" class="hidden">
+                        <div class="flex items-center justify-between mb-md">
+                            <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-xs">
+                                <span class="material-symbols-outlined text-[14px]">psychology</span> Algorithm Comparison
+                            </h3>
+                            <button onclick="setView('technical')" class="flex items-center gap-xs text-[11px] text-primary hover:opacity-80 transition-opacity">
+                                Full analysis <span class="material-symbols-outlined text-[12px]">arrow_forward</span>
+                            </button>
+                        </div>
+                        <div id="algo-compare-grid" class="grid gap-sm"></div>
+                    </section>
+
                     <!-- Plan comparison cards -->
                     <section id="plans-section" class="hidden space-y-lg">
                         <div class="flex items-center justify-between">
@@ -277,9 +305,9 @@
                                     <p id="biz-footer-msg" class="text-on-surface-variant text-body-base"></p>
                                 </div>
                             </div>
-                            <button
-                                class="primary-gradient text-white px-lg py-md rounded-xl font-title-md shadow-lg shadow-primary/20 hover:scale-[0.98] transition-all">
-                                Apply to Campaign
+                            <button onclick="openSaveCampaignModal()"
+                                class="primary-gradient text-white px-lg py-md rounded-xl font-title-md shadow-lg shadow-primary/20 hover:scale-[0.98] transition-all flex items-center gap-xs">
+                                <span class="material-symbols-outlined text-[18px]">save</span> Save Campaign
                             </button>
                         </div>
                     </footer>
@@ -331,15 +359,30 @@
                                     <span class="material-symbols-outlined text-secondary">monitoring</span>
                                     Efficiency Convergence
                                 </h3>
-                                <div class="flex gap-lg">
+                                <div class="flex flex-wrap gap-md">
                                     <span class="flex items-center gap-xs text-[10px] text-on-surface-variant font-bold uppercase">
-                                        <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style="background:#00C853"></span> SA (Rec)
+                                        <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style="background:#A855F7"></span> GA
+                                        <span id="lv-ga" class="font-data-mono text-on-surface opacity-60 normal-case font-medium"></span>
                                     </span>
                                     <span class="flex items-center gap-xs text-[10px] text-on-surface-variant font-bold uppercase">
-                                        <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style="background:#FB923C"></span> Hill Climber
+                                        <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style="background:#06B6D4"></span> Tabu
+                                        <span id="lv-ts" class="font-data-mono text-on-surface opacity-60 normal-case font-medium"></span>
+                                    </span>
+                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant font-bold uppercase">
+                                        <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style="background:#F59E0B"></span> Greedy
+                                        <span id="lv-gr" class="font-data-mono text-on-surface opacity-60 normal-case font-medium"></span>
+                                    </span>
+                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant font-bold uppercase">
+                                        <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style="background:#00C853"></span> SA
+                                        <span id="lv-sa" class="font-data-mono text-on-surface opacity-60 normal-case font-medium"></span>
+                                    </span>
+                                    <span class="flex items-center gap-xs text-[10px] text-on-surface-variant font-bold uppercase">
+                                        <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style="background:#FB923C"></span> HC
+                                        <span id="lv-hc" class="font-data-mono text-on-surface opacity-60 normal-case font-medium"></span>
                                     </span>
                                     <span class="flex items-center gap-xs text-[10px] text-on-surface-variant font-bold uppercase">
                                         <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0 border border-dashed" style="border-color:#4a4a45"></span> Random
+                                        <span id="lv-rs" class="font-data-mono text-on-surface opacity-60 normal-case font-medium"></span>
                                     </span>
                                 </div>
                             </div>
@@ -347,20 +390,20 @@
                             <svg id="conv-svg" viewBox="0 0 850 260" preserveAspectRatio="none"
                                 style="width:100%;height:250px;display:block;overflow:visible">
                                 <g id="conv-ticks"></g>
-                                <path id="conv-rs" fill="none" stroke="#4a4a45" stroke-width="2" stroke-dasharray="6" />
-                                <path id="conv-hc" fill="none" stroke="#FB923C" stroke-width="2.5" />
-                                <path id="conv-sa" fill="none" stroke="#00C853" stroke-width="3.5" />
+                                <path id="conv-rs" fill="none" stroke="#4a4a45" stroke-width="1.5" stroke-dasharray="5 4" />
+                                <path id="conv-hc" fill="none" stroke="#FB923C" stroke-width="2" />
+                                <path id="conv-sa" fill="none" stroke="#00C853" stroke-width="2" />
+                                <path id="conv-gr" fill="none" stroke="#F59E0B" stroke-width="2" stroke-dasharray="3 3" />
+                                <path id="conv-ts" fill="none" stroke="#06B6D4" stroke-width="2.5" />
+                                <path id="conv-ga" fill="none" stroke="#A855F7" stroke-width="3" />
                             </svg>
-                            <!-- X-axis labels -->
-                            <div class="flex justify-between text-[10px] text-on-surface-variant mt-sm px-lg opacity-60">
-                                <span>0 iterations</span><span>10k</span><span>20k</span><span>30k+</span>
+                            <!-- X-axis labels — all histories are normalised to 400 points -->
+                            <div class="flex justify-between text-[10px] text-on-surface-variant mt-sm opacity-60" style="padding-left:65px;padding-right:12px">
+                                <span>Start</span><span>25%</span><span>50%</span><span>75%</span><span>End</span>
                             </div>
                             <!-- Note -->
                             <div class="mt-md p-md rounded-lg border" style="background:rgba(0,200,83,0.04);border-color:rgba(0,200,83,0.15)">
-                                <p class="text-[11px] text-on-surface-variant leading-relaxed">
-                                    <span class="font-bold" style="color:#00C853">Optimization Note:</span>
-                                    Even when Random Search shows lucky spikes, <span class="text-on-surface font-semibold">Simulated Annealing</span> consistently reaches higher global optima by exploring the landscape strategically.
-                                </p>
+                                <p id="conv-note" class="text-[11px] text-on-surface-variant leading-relaxed"></p>
                             </div>
                         </div>
 
@@ -387,6 +430,58 @@
                         </div>
                     </section>
 
+                    <!-- Runtime Benchmark (all 6 algorithms) -->
+                    <section id="bench-section" class="glass-card rounded-xl p-lg space-y-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-title-md text-title-md text-on-surface flex items-center gap-xs">
+                                    <span class="material-symbols-outlined text-[#F59E0B]">timer</span>
+                                    Runtime Benchmark
+                                </h3>
+                                <p class="text-[10px] text-on-surface-variant uppercase tracking-wider mt-xs">Compare execution time &amp; quality across all 6 algorithms</p>
+                            </div>
+                            <div class="flex items-center gap-md">
+                                <div class="flex items-center gap-xs">
+                                    <label class="text-[10px] text-on-surface-variant uppercase">Pool size</label>
+                                    <input id="bench-n" type="number" min="10" max="500" value="50"
+                                        class="w-20 border border-outline-variant rounded-lg p-xs text-body-base outline-none focus:ring-1 focus:ring-primary text-center"
+                                        style="background:#20201b;color:#e5e2da;border-color:#353530" />
+                                </div>
+                                <button id="bench-run-btn"
+                                    class="btn btn-outline flex items-center gap-xs text-[11px]"
+                                    onclick="runBenchmark()">
+                                    <span class="material-symbols-outlined text-[16px]">play_arrow</span> Run Benchmark
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Results -->
+                        <div id="bench-results" class="hidden space-y-lg">
+                            <!-- Time bar chart -->
+                            <div class="space-y-sm">
+                                <h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase">Execution Time (seconds, lower is better)</h4>
+                                <div id="bench-time-chart" class="space-y-xs"></div>
+                            </div>
+                            <!-- Quality comparison -->
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead>
+                                        <tr class="text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low">
+                                            <th class="px-lg py-sm">Algorithm</th>
+                                            <th class="px-md py-sm text-right">Time</th>
+                                            <th class="px-md py-sm text-right">GMV</th>
+                                            <th class="px-md py-sm text-right">ROI</th>
+                                            <th class="px-md py-sm text-right">KOLs</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bench-time-body" class="divide-y divide-outline-variant/30"></tbody>
+                                </table>
+                            </div>
+                            <div id="bench-time-note" class="p-md rounded-lg border" style="background:rgba(245,158,11,0.04);border-color:rgba(245,158,11,0.15)">
+                                <p class="text-[11px] text-on-surface-variant leading-relaxed"></p>
+                            </div>
+                        </div>
+                    </section>
+
                     <!-- KOL grid (technical) -->
                     <section class="space-y-lg pb-xl">
                         <div class="flex items-center justify-between">
@@ -397,6 +492,53 @@
                     </section>
                 </div>
 
+            </div>
+        </div>
+
+        <!-- ════ PAGE: CAMPAIGNS (Attribution) ════ -->
+        <div id="page-campaigns" class="hidden p-margin-desktop space-y-xl">
+            <!-- Stats row -->
+            <div class="grid grid-cols-4 gap-gutter">
+                <div class="glass-card rounded-xl p-lg text-center">
+                    <p class="text-[10px] text-on-surface-variant uppercase tracking-wider mb-xs">Total Campaigns</p>
+                    <p id="c-total" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
+                </div>
+                <div class="glass-card rounded-xl p-lg text-center">
+                    <p class="text-[10px] text-on-surface-variant uppercase tracking-wider mb-xs">Completed</p>
+                    <p id="c-completed" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
+                </div>
+                <div class="glass-card rounded-xl p-lg text-center">
+                    <p class="text-[10px] text-on-surface-variant uppercase tracking-wider mb-xs">Avg Prediction Accuracy</p>
+                    <p id="c-accuracy" class="font-headline-lg text-headline-lg text-secondary font-bold">—</p>
+                </div>
+                <div class="glass-card rounded-xl p-lg text-center">
+                    <p class="text-[10px] text-on-surface-variant uppercase tracking-wider mb-xs">Total Predicted GMV</p>
+                    <p id="c-pred-gmv" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
+                </div>
+            </div>
+            <!-- Empty state -->
+            <div id="campaigns-empty" class="flex flex-col items-center justify-center py-20 text-center">
+                <span class="material-symbols-outlined text-[56px] text-outline mb-lg">analytics</span>
+                <h3 class="font-headline-lg text-headline-lg text-on-surface mb-sm">No Campaigns Yet</h3>
+                <p class="text-on-surface-variant max-w-md">Run an optimization, then click <span class="text-primary font-bold">Save Campaign</span> in the Optimizer to start tracking predicted vs actual results.</p>
+            </div>
+            <!-- Table -->
+            <div id="campaigns-table-wrap" class="glass-card rounded-xl overflow-hidden hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-surface-container-low text-[12px] text-outline uppercase tracking-wider">
+                            <th class="px-4 py-3">Campaign</th>
+                            <th class="px-4 py-3">Market</th>
+                            <th class="px-4 py-3 text-right">Budget</th>
+                            <th class="px-4 py-3 text-right">Predicted GMV</th>
+                            <th class="px-4 py-3 text-right">Actual GMV</th>
+                            <th class="px-4 py-3 text-right">Accuracy</th>
+                            <th class="px-4 py-3 text-center">Status</th>
+                            <th class="px-4 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="campaigns-tbody"></tbody>
+                </table>
             </div>
         </div>
 
@@ -411,13 +553,16 @@
                         <option value="ID">🇮🇩 Indonesia</option>
                         <option value="TH">🇹🇭 Thailand</option>
                         <option value="PH">🇵🇭 Philippines</option>
+                        <option value="SG">🇸🇬 Singapore</option>
+                        <option value="VN">🇻🇳 Vietnam</option>
                     </select>
                 </div>
                 <select id="f-category" onchange="loadTable()" class="form-input" style="width:140px">
                     <option value="">All Categories</option>
                     <option value="beauty">💄 Beauty</option>
-                    <option value="tech">📱 Tech</option>
                     <option value="fashion">👗 Fashion</option>
+                    <option value="home">🏠 Home</option>
+                    <option value="fmcg">🛒 FMCG</option>
                 </select>
                 <select id="f-tier" onchange="loadTable()" class="form-input" style="width:130px">
                     <option value="">All Tiers</option>
@@ -472,11 +617,14 @@
                         <option value="ID">🇮🇩 Indonesia</option>
                         <option value="TH">🇹🇭 Thailand</option>
                         <option value="PH">🇵🇭 Philippines</option>
+                        <option value="SG">🇸🇬 Singapore</option>
+                        <option value="VN">🇻🇳 Vietnam</option>
                     </select></div>
                 <div><label class="form-label">Category *</label><select id="f-m-cat" class="form-input">
                         <option value="beauty">💄 Beauty</option>
-                        <option value="tech">📱 Tech</option>
                         <option value="fashion">👗 Fashion</option>
+                        <option value="home">🏠 Home & Living</option>
+                        <option value="fmcg">🛒 FMCG</option>
                     </select></div>
                 <div><label class="form-label">Followers *</label><input id="f-followers" type="number"
                         class="form-input" placeholder="250000" /></div>
@@ -580,6 +728,165 @@
                 <h4 class="font-label-sm text-label-sm text-on-surface-variant mb-md uppercase">Why This Creator?</h4>
                 <div id="kd-reasons" class="space-y-sm"></div>
             </div>
+
+            <!-- Metric Trends / History -->
+            <div class="glass-card rounded-xl p-md mt-lg">
+                <div class="flex items-center justify-between mb-md">
+                    <h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase flex items-center gap-xs">
+                        <span class="material-symbols-outlined text-[14px]">trending_up</span> Metric Trends
+                    </h4>
+                    <button id="kd-simulate-btn" onclick="simulateKolUpdate()"
+                        class="btn btn-outline flex items-center gap-xs text-[11px]">
+                        <span class="material-symbols-outlined text-[14px]">refresh</span> Simulate Update
+                    </button>
+                </div>
+                <div id="kd-history-content">
+                    <p class="text-[11px] text-on-surface-variant">Loading history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ SAVE CAMPAIGN MODAL ═══════════ -->
+    <div id="save-campaign-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeSaveCampaignModal()">
+        <div class="glass-card rounded-xl p-6 w-[440px]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-on-surface">Save Campaign</h3>
+                <button onclick="closeSaveCampaignModal()" class="text-outline hover:text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="space-y-md mb-lg">
+                <div>
+                    <label class="form-label">Campaign Name *</label>
+                    <input id="sc-name" class="form-input" placeholder="e.g. Beauty MY June 2026" />
+                </div>
+                <div class="glass-card rounded-xl p-md space-y-sm">
+                    <div class="flex justify-between text-[12px]">
+                        <span class="text-on-surface-variant">Predicted GMV</span>
+                        <span id="sc-pred-gmv" class="font-data-mono text-secondary font-bold">—</span>
+                    </div>
+                    <div class="flex justify-between text-[12px]">
+                        <span class="text-on-surface-variant">Total Cost</span>
+                        <span id="sc-cost" class="font-data-mono text-on-surface">—</span>
+                    </div>
+                    <div class="flex justify-between text-[12px]">
+                        <span class="text-on-surface-variant">Best Algorithm</span>
+                        <span id="sc-algo" class="font-data-mono text-primary">—</span>
+                    </div>
+                    <div class="flex justify-between text-[12px]">
+                        <span class="text-on-surface-variant">KOLs Selected</span>
+                        <span id="sc-kols" class="font-data-mono text-on-surface">—</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeSaveCampaignModal()" class="btn btn-outline">Cancel</button>
+                <button onclick="saveCampaign()" class="btn btn-primary flex items-center gap-xs">
+                    <span class="material-symbols-outlined text-[16px]">save</span> Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ CAMPAIGN DETAIL MODAL ═══════════ -->
+    <div id="campaign-detail-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeCampaignDetail()">
+        <div class="glass-card rounded-xl p-6 w-[600px] max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 id="cd-name" class="text-xl font-bold text-on-surface">—</h3>
+                    <p id="cd-meta" class="text-on-surface-variant text-[12px] mt-1">—</p>
+                </div>
+                <div class="flex items-center gap-sm">
+                    <span id="cd-status" class="text-[11px] font-bold text-primary">—</span>
+                    <button onclick="closeCampaignDetail()" class="text-outline hover:text-white ml-sm">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Key stats -->
+            <div class="grid grid-cols-3 gap-md mb-lg">
+                <div class="text-center p-md rounded-xl bg-surface-container-low">
+                    <p class="text-[10px] text-on-surface-variant uppercase mb-xs">Budget</p>
+                    <p id="cd-budget" class="font-title-md font-data-mono text-on-surface font-bold">—</p>
+                </div>
+                <div class="text-center p-md rounded-xl bg-surface-container-low">
+                    <p class="text-[10px] text-on-surface-variant uppercase mb-xs">Total Cost</p>
+                    <p id="cd-cost" class="font-title-md font-data-mono text-on-surface">—</p>
+                </div>
+                <div class="text-center p-md rounded-xl bg-secondary/10 border border-secondary/20">
+                    <p class="text-[10px] text-secondary uppercase mb-xs">Accuracy</p>
+                    <p id="cd-accuracy" class="font-title-md font-data-mono font-bold text-secondary">—</p>
+                </div>
+            </div>
+            <!-- Predicted vs Actual bar chart -->
+            <div class="glass-card rounded-xl p-md mb-lg">
+                <h4 class="font-label-sm text-label-sm text-on-surface-variant mb-md uppercase">Predicted vs Actual GMV</h4>
+                <div class="flex justify-between text-[12px] mb-sm">
+                    <span class="text-on-surface-variant">Predicted: <span id="cd-pred" class="font-data-mono text-on-surface font-bold">—</span></span>
+                    <span class="text-on-surface-variant">Actual: <span id="cd-actual" class="font-data-mono text-secondary font-bold">—</span></span>
+                </div>
+                <div id="cd-bar-chart"></div>
+            </div>
+            <!-- KOL breakdown -->
+            <div class="glass-card rounded-xl overflow-hidden mb-lg">
+                <div class="px-4 py-3 bg-surface-container-low">
+                    <h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase">KOL Breakdown</h4>
+                </div>
+                <table class="w-full text-left text-[12px]">
+                    <thead>
+                        <tr class="bg-surface-container-low text-outline uppercase text-[11px]">
+                            <th class="px-4 py-2">Creator</th>
+                            <th class="px-4 py-2 text-right">Predicted GMV</th>
+                            <th class="px-4 py-2 text-right">Actual GMV</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cd-kol-body"></tbody>
+                </table>
+            </div>
+            <!-- Notes -->
+            <div id="cd-notes-section" class="glass-card rounded-xl p-md mb-lg hidden">
+                <h4 class="font-label-sm text-label-sm text-on-surface-variant mb-xs uppercase">Notes</h4>
+                <p id="cd-notes" class="text-body-base text-on-surface-variant"></p>
+            </div>
+            <div class="flex justify-end gap-sm">
+                <button onclick="closeCampaignDetail()" class="btn btn-outline">Close</button>
+                <button id="cd-record-btn" onclick="" class="btn btn-primary flex items-center gap-xs hidden">
+                    <span class="material-symbols-outlined text-[16px]">edit_note</span> Record Actual Results
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ ACTUAL RESULTS MODAL ═══════════ -->
+    <div id="actual-results-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeActualModal()">
+        <div class="glass-card rounded-xl p-6 w-[440px]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-on-surface">Record Actual Results</h3>
+                <button onclick="closeActualModal()" class="text-outline hover:text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="space-y-md mb-lg">
+                <div class="glass-card rounded-xl p-md flex justify-between items-center">
+                    <span class="text-[12px] text-on-surface-variant">Predicted GMV</span>
+                    <span id="ar-predicted" class="font-data-mono text-primary font-bold">—</span>
+                </div>
+                <div>
+                    <label class="form-label">Actual Total GMV (USD) *</label>
+                    <input id="ar-actual" type="number" min="0" class="form-input" placeholder="e.g. 48500" />
+                </div>
+                <div>
+                    <label class="form-label">Notes (optional)</label>
+                    <textarea id="ar-notes" class="form-input" rows="3" placeholder="Campaign observations, context..."></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeActualModal()" class="btn btn-outline">Cancel</button>
+                <button onclick="submitActualResults()" class="btn btn-primary flex items-center gap-xs">
+                    <span class="material-symbols-outlined text-[16px]">check_circle</span> Record Results
+                </button>
+            </div>
         </div>
     </div>
 
@@ -587,15 +894,19 @@
         const API = 'http://localhost:8000';
         const TIER_BADGE = { Mega: 'tier-mega', Macro: 'tier-macro', Micro: 'tier-micro', Nano: 'tier-nano' };
         const TIER_EMOJI = { Mega: '🟣', Macro: '🔵', Micro: '🟢', Nano: '🟡' };
-        const ALGO_COLORS = { 'Simulated Annealing': '#00C853', 'Hill Climber': '#FB923C', 'Random Search': '#4a4a45' };
+        const ALGO_COLORS = { 'Simulated Annealing': '#00C853', 'Hill Climber': '#FB923C', 'Random Search': '#4a4a45', 'Genetic Algorithm': '#A855F7', 'Tabu Search': '#06B6D4', 'Greedy Ranking': '#F59E0B' };
         const PLAN_COLORS = { Aggressive: '#FF0050', Balanced: '#00C853', Safe: '#f1c40f' };
         const fmt = n => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
         const fmtF = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : n;
-        const PAGE_TITLES = { dashboard: 'Optimizer Dashboard', creators: 'Creator Management' };
+        const PAGE_TITLES = { dashboard: 'Optimizer Dashboard', creators: 'Creator Management', campaigns: 'Campaign Attribution' };
         let currentView = 'business';
         let selectedPlanName = 'Aggressive';
         let allPlansData = null;
         let enhancedKolMap = {};
+        let lastOptimizeData = null;
+        let lastPayload = null;
+        let currentCampaignId = null;
+        let currentKolId = null;
 
         // ══════════ VIEW TOGGLE ══════════
         function setView(v) {
@@ -609,12 +920,13 @@
 
         // ══════════ NAVIGATION ══════════
         function showPage(name) {
-            ['dashboard', 'creators'].forEach(p => document.getElementById('page-' + p).classList.toggle('hidden', p !== name));
+            ['dashboard', 'creators', 'campaigns'].forEach(p => document.getElementById('page-' + p).classList.toggle('hidden', p !== name));
             document.getElementById('page-title').textContent = PAGE_TITLES[name] || 'Dashboard';
             document.getElementById('creator-actions').classList.toggle('hidden', name !== 'creators');
             document.getElementById('view-toggle').classList.toggle('hidden', name !== 'dashboard' || document.getElementById('results-section').classList.contains('hidden'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === name));
             if (name === 'creators') loadTable();
+            if (name === 'campaigns') loadCampaigns();
         }
         document.querySelectorAll('.nav-item').forEach(el => el.addEventListener('click', () => showPage(el.dataset.page)));
 
@@ -626,63 +938,97 @@
         function toast(msg, type = 'ok') { const t = document.createElement('div'); t.className = 'toast ' + type; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3000); }
 
         // ══════════ DASHBOARD ══════════
-        function historyToPath(hist, maxY) { if (!hist || !hist.length) return ''; const PLOT_W = 770, PLOT_H = 220, PLOT_X = 65, PLOT_Y = 15; const step = PLOT_W / (hist.length - 1); return hist.map((v, i) => { const x = PLOT_X + i * step; const y = PLOT_Y + PLOT_H - (v / maxY) * PLOT_H; return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) }).join(' '); }
+        function historyToPath(hist, maxY) {
+            if (!hist || hist.length === 0 || !maxY || maxY === 0) return '';
+            const PLOT_W = 770, PLOT_H = 220, PLOT_X = 65, PLOT_Y = 15;
+            if (hist.length === 1) {
+                const y = (PLOT_Y + PLOT_H - (hist[0] / maxY) * PLOT_H).toFixed(1);
+                return `M${PLOT_X},${y} L${PLOT_X + PLOT_W},${y}`;
+            }
+            const step = PLOT_W / (hist.length - 1);
+            return hist.map((v, i) => {
+                const x = PLOT_X + i * step;
+                const y = PLOT_Y + PLOT_H - (Math.max(0, v) / maxY) * PLOT_H;
+                return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+            }).join(' ');
+        }
         function renderConvergence(results) {
-            const sa = results.simulated_annealing.history,
-                  hc = results.hill_climber.history,
-                  rs = results.random_search.history;
-            if (!sa || !sa.length) return;
-            const maxY = Math.max(...sa, ...hc, ...rs, 1);
-            document.getElementById('conv-sa').setAttribute('d', historyToPath(sa, maxY));
-            document.getElementById('conv-hc').setAttribute('d', historyToPath(hc, maxY));
-            document.getElementById('conv-rs').setAttribute('d', historyToPath(rs, maxY));
-            // Y-axis ticks
+            const sa = (results.simulated_annealing && results.simulated_annealing.history) || [];
+            const hc = (results.hill_climber        && results.hill_climber.history)        || [];
+            const rs = (results.random_search       && results.random_search.history)       || [];
+            const ga = (results.genetic_algorithm   && results.genetic_algorithm.history)   || [];
+            const ts = (results.tabu_search         && results.tabu_search.history)         || [];
+            const gr = (results.greedy_ranking      && results.greedy_ranking.history)      || [];
+            // Use all available curves — don't bail out if one algo is missing
+            const allVals = [...sa, ...hc, ...rs, ...ga, ...ts, ...gr].filter(v => isFinite(v) && v > 0);
+            if (!allVals.length) return;
+            const maxY = Math.max(...allVals);
+            document.getElementById('conv-sa').setAttribute('d', sa.length ? historyToPath(sa, maxY) : '');
+            document.getElementById('conv-hc').setAttribute('d', hc.length ? historyToPath(hc, maxY) : '');
+            document.getElementById('conv-rs').setAttribute('d', rs.length ? historyToPath(rs, maxY) : '');
+            document.getElementById('conv-ga').setAttribute('d', ga.length ? historyToPath(ga, maxY) : '');
+            document.getElementById('conv-ts').setAttribute('d', ts.length ? historyToPath(ts, maxY) : '');
+            document.getElementById('conv-gr').setAttribute('d', gr.length ? historyToPath(gr, maxY) : '');
+            // Y-axis ticks — smart formatting
             const PLOT_Y = 15, PLOT_H = 220;
-            const ticks = [
-                '$0',
-                '$' + (maxY * 0.25 / 1000).toFixed(0) + 'K',
-                '$' + (maxY * 0.5 / 1000).toFixed(0) + 'K',
-                '$' + (maxY * 0.75 / 1000).toFixed(0) + 'K',
-                '$' + (maxY / 1000).toFixed(0) + 'K'
-            ];
-            const yPositions = [
-                PLOT_Y + PLOT_H,
-                PLOT_Y + PLOT_H * 0.75,
-                PLOT_Y + PLOT_H * 0.5,
-                PLOT_Y + PLOT_H * 0.25,
-                PLOT_Y
-            ];
-            // Grid lines + labels
+            const fmtTick = v => v === 0 ? '$0' : v >= 1000 ? '$' + Math.round(v / 1000) + 'K' : '$' + Math.round(v);
+            const fractions = [0, 0.25, 0.5, 0.75, 1.0];
             const gridGroup = document.getElementById('conv-ticks');
-            gridGroup.innerHTML = ticks.map((t, i) =>
-                '<text x="58" y="' + (yPositions[i] + 3) + '" fill="#a7a7a0" font-size="10" font-family="JetBrains Mono, monospace" text-anchor="end">' + t + '</text>' +
-                '<line x1="65" y1="' + yPositions[i] + '" x2="835" y2="' + yPositions[i] + '" stroke="#353530" stroke-width="1" stroke-dasharray="3 4" />'
-            ).join('');
+            gridGroup.innerHTML = fractions.map(f => {
+                const val = maxY * f;
+                const y = PLOT_Y + PLOT_H - f * PLOT_H;
+                return '<text x="58" y="' + (y + 3).toFixed(1) + '" fill="#a7a7a0" font-size="10" font-family="JetBrains Mono, monospace" text-anchor="end">' + fmtTick(val) + '</text>' +
+                       '<line x1="65" y1="' + y.toFixed(1) + '" x2="835" y2="' + y.toFixed(1) + '" stroke="#353530" stroke-width="1" stroke-dasharray="3 4" />';
+            }).join('');
+
+            // Update legend with final GMV values
+            const legendMap = { 'lv-ga': ga, 'lv-ts': ts, 'lv-gr': gr, 'lv-sa': sa, 'lv-hc': hc, 'lv-rs': rs };
+            Object.entries(legendMap).forEach(([id, hist]) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (hist && hist.length > 0) {
+                    const last = hist[hist.length - 1];
+                    el.textContent = last >= 1000 ? '$' + Math.round(last / 1000) + 'K' : (last > 0 ? '$' + Math.round(last) : '');
+                } else {
+                    el.textContent = '—';
+                }
+            });
         }
         function getRecommendedResult(results) {
-            const candidates = [results.simulated_annealing, results.hill_climber].filter(Boolean);
+            const candidates = [
+                results.genetic_algorithm,
+                results.tabu_search,
+                results.greedy_ranking,
+                results.simulated_annealing,
+                results.hill_climber,
+            ].filter(Boolean);
             return candidates.sort((a, b) => b.total_gmv - a.total_gmv)[0];
         }
 
         function renderBenchmark(results, recommendedAlgo) {
-            const order = ['simulated_annealing', 'hill_climber', 'random_search'];
+            const order = ['genetic_algorithm', 'tabu_search', 'greedy_ranking', 'simulated_annealing', 'hill_climber', 'random_search'];
             const descs = {
-                simulated_annealing: 'Recommendation candidate',
-                hill_climber: 'Recommendation candidate',
-                random_search: 'Stochastic baseline only'
+                genetic_algorithm:   'Population crossover + mutation',
+                tabu_search:         'Systematic memory-guided local search',
+                greedy_ranking:      'LP relaxation + 2-OPT swap (fastest)',
+                simulated_annealing: 'Thermal exploration, escapes local optima',
+                hill_climber:        'Greedy local search',
+                random_search:       'Stochastic baseline only',
             };
             const tbody = document.getElementById('bench-body');
             tbody.innerHTML = '';
 
             order
+                .filter(key => !!results[key])   // skip algorithms the server didn't return
                 .sort((a, b) => {
                     const aBaseline = a === 'random_search' ? 1 : 0;
                     const bBaseline = b === 'random_search' ? 1 : 0;
                     if (aBaseline !== bBaseline) return aBaseline - bBaseline;
-                    return results[b].total_gmv - results[a].total_gmv;
+                    return (results[b] ? results[b].total_gmv : 0) - (results[a] ? results[a].total_gmv : 0);
                 })
                 .forEach(key => {
                     const r = results[key];
+                    if (!r) return;
                     const isRecommended = r.algorithm === recommendedAlgo;
                     const isBaseline = key === 'random_search';
                     const tr = document.createElement('tr');
@@ -691,11 +1037,25 @@
                     tbody.appendChild(tr);
                 });
 
-            const saGain = results.hill_climber.total_gmv > 0 ? ((results.simulated_annealing.total_gmv / results.hill_climber.total_gmv - 1) * 100).toFixed(0) : 0;
-            const randomHigher = results.random_search.total_gmv > results.simulated_annealing.total_gmv;
-            document.querySelector('#bench-note p').textContent = randomHigher
-                ? `Random Search sampled a higher portfolio in this single run, but it remains the baseline; SA is the recommended local-search method and outperformed HC by ${saGain}%.`
-                : `SA outperformed HC by ${saGain}% in this run. Random Search is kept as a stochastic baseline.`;
+            const allResults = [
+                { key: 'genetic_algorithm', label: 'Genetic Algorithm',   color: '#A855F7', style: 'population-based evolution' },
+                { key: 'tabu_search',       label: 'Tabu Search',         color: '#06B6D4', style: 'memory-guided systematic search' },
+                { key: 'greedy_ranking',    label: 'Greedy Ranking',      color: '#F59E0B', style: 'LP relaxation + 2-OPT local swap' },
+                { key: 'simulated_annealing', label: 'Simulated Annealing', color: '#00C853', style: 'thermal exploration' },
+                { key: 'hill_climber',      label: 'Hill Climber',        color: '#FB923C', style: 'greedy descent' },
+            ].filter(a => !!results[a.key]).map(a => ({ ...a, gmv: results[a.key].total_gmv }));
+            if (!allResults.length) return;
+            const best = allResults.reduce((a, b) => b.gmv > a.gmv ? b : a);
+            const worst = allResults.reduce((a, b) => a.gmv < b.gmv ? a : b);
+            const hcGmv = results.hill_climber ? results.hill_climber.total_gmv : 0;
+            const hcGain = hcGmv > 0 ? ((best.gmv / hcGmv - 1) * 100).toFixed(0) : '—';
+            const spread = allResults.length >= 2 && worst.gmv > 0
+                ? ((best.gmv / worst.gmv - 1) * 100).toFixed(0) + '% spread between best and worst'
+                : '';
+            const noteHtml = `<span class="font-bold" style="color:${best.color}">Optimization Note:</span> <span class="text-on-surface font-semibold" style="color:${best.color}">${best.label}</span> found the best portfolio via ${best.style}${hcGain !== '—' && best.key !== 'hill_climber' ? ' — ' + hcGain + '% above Hill Climber' : ''}${spread ? '. ' + spread : ''}. <span class="text-[10px] text-on-surface-variant/70">${allResults.map(a=>a.label+' → '+fmt(a.gmv)).join(' · ')}</span>`;
+            document.querySelector('#bench-note p').innerHTML = noteHtml;
+            const convNote = document.getElementById('conv-note');
+            if (convNote) convNote.innerHTML = noteHtml;
         }
 
         function bizKolCard(kol, totalGmv) {
@@ -769,6 +1129,8 @@
                         kolData.kols.forEach(k => { enhancedKolMap[k.id] = k; });
                     }
                 } catch (_) { enhancedKolMap = {}; }
+                lastOptimizeData = data;
+                lastPayload = payload;
                 renderDashboard(data, payload);
                 // Sync header metrics to selected plan (overrides raw SA result)
                 if (allPlansData) selectPlan(selectedPlanName);
@@ -868,8 +1230,8 @@
             document.getElementById('results-section').classList.remove('hidden');
             document.getElementById('view-toggle').classList.remove('hidden');
 
-            const catN = { beauty: 'Beauty & Cosmetics', tech: 'Consumer Electronics', fashion: 'Fashion & Lifestyle' };
-            const coN = { MY: 'Malaysia', ID: 'Indonesia', TH: 'Thailand', PH: 'Philippines' };
+            const catN = { beauty: 'Beauty & Cosmetics', fashion: 'Fashion & Lifestyle', home: 'Home & Living', fmcg: 'FMCG' };
+            const coN = { MY: 'Malaysia', ID: 'Indonesia', TH: 'Thailand', PH: 'Philippines', SG: 'Singapore', VN: 'Vietnam' };
             const sorted = [...data.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
 
             // ── Business view ──
@@ -891,8 +1253,57 @@
             document.getElementById('m-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% Utilization';
             document.getElementById('m-kols').textContent = sorted.length;
             document.getElementById('m-cands').textContent = data.candidates;
+            // ── Server algo-count badge ──────────────────────────────
+            (function() {
+                const badge = document.getElementById('algo-status-badge');
+                const dot   = document.getElementById('algo-status-dot');
+                const txt   = document.getElementById('algo-status-text');
+                if (!badge || !data.results) return;
+                const total = 6, found = Object.keys(data.results).length;
+                const ok = found >= total;
+                dot.style.background  = ok ? '#00C853' : '#FF0050';
+                badge.style.borderColor = ok ? 'rgba(0,200,83,0.3)' : 'rgba(255,0,80,0.3)';
+                txt.textContent = ok ? `${found}/${total} algorithms` : `${found}/${total} — restart server`;
+                txt.style.color = ok ? '#00C853' : '#FF0050';
+                badge.classList.remove('hidden');
+            })();
             renderConvergence(data.results);
             renderBenchmark(data.results, recommendedName);
+            // ── Algorithm Comparison strip (Business view) ──────────────
+            try {
+                const acGrid = document.getElementById('algo-compare-grid');
+                const acSection = document.getElementById('algo-compare-section');
+                if (acGrid && acSection && data.results) {
+                    const algoMeta = [
+                        { key: 'genetic_algorithm',   short: 'GA',      color: '#A855F7' },
+                        { key: 'tabu_search',         short: 'Tabu',    color: '#06B6D4' },
+                        { key: 'greedy_ranking',      short: 'Greedy',  color: '#F59E0B' },
+                        { key: 'simulated_annealing', short: 'SA',      color: '#00C853' },
+                        { key: 'hill_climber',        short: 'HC',      color: '#FB923C' },
+                        { key: 'random_search',       short: 'Random',  color: '#4a4a45' },
+                    ].filter(a => !!data.results[a.key]);
+                    const bestGmv = algoMeta.reduce((m, a) => Math.max(m, data.results[a.key].total_gmv), 0);
+                    // Dynamic column count — adapts to however many algorithms the server returned
+                    acGrid.style.gridTemplateColumns = `repeat(${algoMeta.length}, minmax(0, 1fr))`;
+                    acGrid.innerHTML = algoMeta.map(a => {
+                        const r = data.results[a.key];
+                        const isBest = r.total_gmv >= bestGmv && bestGmv > 0;
+                        const pct = bestGmv > 0 ? (r.total_gmv / bestGmv * 100).toFixed(0) : 0;
+                        return `<div class="glass-card rounded-xl p-md flex flex-col gap-xs" style="${isBest ? 'box-shadow:0 0 14px ' + a.color + '44;border-color:' + a.color + '88' : ''}">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider" style="color:${a.color}">${a.short}</span>
+                                ${isBest ? '<span class="material-symbols-outlined text-[12px] text-secondary">star</span>' : ''}
+                            </div>
+                            <p class="font-data-mono font-bold text-[13px] text-on-surface leading-none">${fmt(r.total_gmv)}</p>
+                            <p class="text-[10px] text-on-surface-variant leading-snug">${r.roi.toFixed(2)}x &middot; ${r.selected_count} KOLs</p>
+                            <div class="h-[3px] w-full bg-surface-container-highest rounded-full overflow-hidden">
+                                <div class="h-full rounded-full" style="width:${pct}%;background:${a.color}"></div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                    acSection.classList.remove('hidden');
+                }
+            } catch(_) { /* silently skip */ }
             const techGrid = document.getElementById('tech-kol-grid');
             techGrid.innerHTML = sorted.map(techKolCard).join('');
             techGrid.querySelectorAll('.why-btn').forEach(btn => { btn.addEventListener('click', () => { btn.closest('.kol-card').querySelector('.why-panel').classList.toggle('hidden'); }); });
@@ -900,8 +1311,90 @@
             setView('business');
         }
 
+        // ══════════ RUNTIME BENCHMARK ══════════
+        async function runBenchmark() {
+            const btn = document.getElementById('bench-run-btn');
+            const n = parseInt(document.getElementById('bench-n').value) || 50;
+            const budget = parseInt(budgetSlider.value) || 5000;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">refresh</span> Running...';
+            btn.disabled = true;
+            try {
+                const r = await fetch(`${API}/scalability`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ n, budget, seed: parseInt(document.getElementById('seed-input').value) || 42 })
+                });
+                if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Benchmark failed'); }
+                const d = await r.json();
+                renderBenchmarkResults(d);
+            } catch (e) {
+                showError('⚠️ ' + e.message);
+            } finally {
+                btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">play_arrow</span> Run Benchmark';
+                btn.disabled = false;
+            }
+        }
+
+        function renderBenchmarkResults(d) {
+            document.getElementById('bench-results').classList.remove('hidden');
+
+            const algos = [
+                { key: 'greedy_ranking',      label: 'Greedy Ranking',      color: '#F59E0B' },
+                { key: 'tabu_search',         label: 'Tabu Search',         color: '#06B6D4' },
+                { key: 'simulated_annealing', label: 'Simulated Annealing', color: '#00C853' },
+                { key: 'genetic_algorithm',   label: 'Genetic Algorithm',   color: '#A855F7' },
+                { key: 'hill_climber',        label: 'Hill Climber',        color: '#FB923C' },
+                { key: 'random_search',       label: 'Random Search',       color: '#4a4a45' },
+            ].filter(a => !!d[a.key]);
+
+            const entries = algos.map(a => ({ ...a, entry: d[a.key] }));
+            const maxTime = Math.max(...entries.map(e => e.entry.time_seconds), 0.001);
+
+            // ── Time bar chart ──────────────────────────────────────
+            const chart = document.getElementById('bench-time-chart');
+            chart.innerHTML = entries.map(e => {
+                const pct = maxTime > 0 ? (e.entry.time_seconds / maxTime * 100).toFixed(0) : 0;
+                const w = Math.max(2, pct);
+                return `<div class="flex items-center gap-md">
+                    <span class="text-[10px] font-bold uppercase tracking-wider w-[110px] text-right flex-shrink-0" style="color:${e.color}">${e.label}</span>
+                    <div class="flex-1 h-5 bg-surface-container-highest rounded-full overflow-hidden relative">
+                        <div class="h-full rounded-full flex items-center justify-end pr-xs transition-all duration-500" style="width:${w}%;background:${e.color};min-width:${Math.max(24, w)}%">
+                            <span class="text-[9px] font-data-mono font-bold text-black" style="${w < 15 ? 'display:none' : ''}">${e.entry.time_seconds.toFixed(3)}s</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // ── Detail table ─────────────────────────────────────────
+            const tbody = document.getElementById('bench-time-body');
+            const bestGmv = entries.reduce((m, e) => Math.max(m, e.entry.total_gmv), 0);
+            tbody.innerHTML = entries.map(e => {
+                const r = e.entry;
+                const isBest = r.total_gmv >= bestGmv && bestGmv > 0;
+                return `<tr class="${isBest ? 'sa-highlight' : ''}">
+                    <td class="px-lg py-md">
+                        <div class="flex items-center gap-sm">
+                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${e.color}"></span>
+                            <span class="font-bold text-on-surface text-sm">${e.label}</span>
+                        </div>
+                    </td>
+                    <td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.time_seconds.toFixed(4)}s</td>
+                    <td class="px-md py-md text-right font-data-mono ${isBest ? 'text-secondary font-bold' : 'text-on-surface-variant'}">${fmt(r.total_gmv)}</td>
+                    <td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.roi.toFixed(2)}x</td>
+                    <td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.selected_count}</td>
+                </tr>`;
+            }).join('');
+
+            // ── Note ─────────────────────────────────────────────────
+            const fastest = entries.reduce((a, b) => a.entry.time_seconds < b.entry.time_seconds ? a : b);
+            const best = entries.reduce((a, b) => b.entry.total_gmv > a.entry.total_gmv ? b : a);
+            const note = document.getElementById('bench-time-note').querySelector('p');
+            note.innerHTML = `<span class="font-bold" style="color:${fastest.color}">${fastest.label}</span> was fastest at <span class="font-data-mono">${fastest.entry.time_seconds.toFixed(4)}s</span>. <span class="font-bold" style="color:${best.color}">${best.label}</span> achieved highest GMV (<span class="font-data-mono text-secondary">${fmt(best.entry.total_gmv)}</span>). Pool size: <span class="font-data-mono">${d.n}</span>, Budget: <span class="font-data-mono">${fmt(d.budget)}</span>.`;
+        }
+
         // ══════════ KOL DETAIL MODAL ══════════
         async function openKolDetail(id) {
+            currentKolId = id;
             const overlay = document.getElementById('kol-detail-overlay');
             overlay.classList.remove('hidden');
             // Show loading state
@@ -917,11 +1410,17 @@
             document.getElementById('kd-age').textContent = '—';
             document.getElementById('kd-reasons').innerHTML = '';
             document.getElementById('kd-risk-dot').className = 'risk-dot low';
+            document.getElementById('kd-history-content').innerHTML = '<p class="text-[11px] text-on-surface-variant">Loading history...</p>';
             try {
-                const r = await fetch(`${API}/kol/${id}`);
-                if (!r.ok) throw new Error('Not found');
-                const d = await r.json();
+                const [kolRes, histRes] = await Promise.all([
+                    fetch(`${API}/kol/${id}`),
+                    fetch(`${API}/kols/${id}/history`)
+                ]);
+                if (!kolRes.ok) throw new Error('Not found');
+                const d = await kolRes.json();
                 renderKolDetail(d);
+                if (histRes.ok) { const h = await histRes.json(); renderKolHistory(h); }
+                else { document.getElementById('kd-history-content').innerHTML = '<p class="text-[11px] text-on-surface-variant">No history yet. Edit the creator or click Simulate Update to start tracking.</p>'; }
             } catch (e) {
                 document.getElementById('kd-name').textContent = 'Error loading creator';
             }
@@ -986,6 +1485,914 @@
         async function deleteKol(id, name) { if (!confirm(`Delete "${name}"?`)) return; try { const r = await fetch(`${API}/kols/${id}`, { method: 'DELETE' }); if (!r.ok) { toast('Delete failed', 'err'); return; } toast(`${name} deleted`); loadTable(); } catch (e) { toast('Failed', 'err'); } }
         async function importCSV(input) { const file = input.files[0]; if (!file) return; const form = new FormData(); form.append('file', file); try { const r = await fetch(`${API}/kols/import-csv`, { method: 'POST', body: form }); const d = await r.json(); if (!r.ok) { toast(d.detail || 'Import failed', 'err'); return; } toast(`Imported ${d.added} creators` + (d.errors.length ? ` (${d.errors.length} errors)` : '')); loadTable(); } catch (e) { toast('Import failed', 'err'); } input.value = ''; }
         async function resetDatabase() { if (!confirm('⚠️ Clear ALL creator data?\nThis cannot be undone.')) return; if (!confirm('Final confirmation?')) return; try { const r = await fetch(`${API}/kols/reset`, { method: 'POST' }); if (!r.ok) { toast('Reset failed', 'err'); return; } toast('Database cleared'); currentPage = 0; loadTable(); } catch (e) { toast('Failed', 'err'); } }
+
+        // ══════════ CAMPAIGN ATTRIBUTION ══════════
+        function openSaveCampaignModal() {
+            if (!lastOptimizeData || !lastPayload) { toast('Run an optimization first', 'err'); return; }
+            const plan = allPlansData ? allPlansData.find(p => p.plan_name === selectedPlanName) : null;
+            const kols = plan ? plan.selected_kols : lastOptimizeData.selected_kols;
+            const totalGmv = plan ? plan.total_gmv : lastOptimizeData.total_gmv;
+            const totalCost = plan ? plan.total_cost : lastOptimizeData.total_cost;
+            const d = new Date();
+            const catNames = { beauty: 'Beauty', fashion: 'Fashion', home: 'Home', fmcg: 'FMCG' };
+            document.getElementById('sc-name').value = `${catNames[lastPayload.category] || lastPayload.category} ${lastPayload.country} ${d.toLocaleDateString('en-US', {month:'short', year:'numeric'})}`;
+            document.getElementById('sc-pred-gmv').textContent = fmt(totalGmv);
+            document.getElementById('sc-cost').textContent = fmt(totalCost);
+            document.getElementById('sc-algo').textContent = lastOptimizeData.best_algorithm;
+            document.getElementById('sc-kols').textContent = kols.length + ' creators';
+            document.getElementById('save-campaign-modal').classList.remove('hidden');
+        }
+        function closeSaveCampaignModal() { document.getElementById('save-campaign-modal').classList.add('hidden'); }
+
+        async function saveCampaign() {
+            const name = document.getElementById('sc-name').value.trim();
+            if (!name) { toast('Enter a campaign name', 'err'); return; }
+            const plan = allPlansData ? allPlansData.find(p => p.plan_name === selectedPlanName) : null;
+            const kols = plan ? plan.selected_kols : lastOptimizeData.selected_kols;
+            const totalGmv = plan ? plan.total_gmv : lastOptimizeData.total_gmv;
+            const totalCost = plan ? plan.total_cost : lastOptimizeData.total_cost;
+            const payload = {
+                name, country: lastPayload.country, category: lastPayload.category,
+                budget: lastPayload.budget, best_algorithm: lastOptimizeData.best_algorithm,
+                selected_kols: kols.map(k => ({ id: k.id, name: k.name, country: k.country, category: k.category, followers: k.followers, cost: k.cost, predicted_gmv: k.expected_gmv || 0, tier: k.tier || '' })),
+                total_cost: totalCost, predicted_gmv: totalGmv
+            };
+            try {
+                const r = await fetch(`${API}/campaigns`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Save failed'); }
+                toast('Campaign saved! View it in the Campaigns tab.');
+                closeSaveCampaignModal();
+            } catch (e) { toast(e.message, 'err'); }
+        }
+
+        async function loadCampaigns() {
+            try {
+                const r = await fetch(`${API}/campaigns`);
+                if (!r.ok) throw new Error('Failed');
+                const d = await r.json();
+                renderCampaigns(d.campaigns || []);
+            } catch (e) { toast('Failed to load campaigns', 'err'); }
+        }
+
+        function renderCampaigns(campaigns) {
+            const empty = document.getElementById('campaigns-empty');
+            const tableWrap = document.getElementById('campaigns-table-wrap');
+            const tbody = document.getElementById('campaigns-tbody');
+            if (!campaigns.length) {
+                empty.classList.remove('hidden'); tableWrap.classList.add('hidden');
+                document.getElementById('c-total').textContent = '0';
+                document.getElementById('c-completed').textContent = '0';
+                document.getElementById('c-accuracy').textContent = '—';
+                document.getElementById('c-pred-gmv').textContent = '$0';
+                return;
+            }
+            empty.classList.add('hidden'); tableWrap.classList.remove('hidden');
+            const completed = campaigns.filter(c => c.status === 'completed');
+            const accuracies = completed.filter(c => c.accuracy_pct != null).map(c => c.accuracy_pct);
+            document.getElementById('c-total').textContent = campaigns.length;
+            document.getElementById('c-completed').textContent = completed.length;
+            document.getElementById('c-accuracy').textContent = accuracies.length ? (accuracies.reduce((a,b)=>a+b,0)/accuracies.length).toFixed(1)+'%' : '—';
+            document.getElementById('c-pred-gmv').textContent = fmt(campaigns.reduce((s,c)=>s+(c.predicted_gmv||0),0));
+            const catFlag = {MY:'🇲🇾',ID:'🇮🇩',TH:'🇹🇭',PH:'🇵🇭',SG:'🇸🇬',VN:'🇻🇳'};
+            tbody.innerHTML = campaigns.map(c => {
+                const statusBadge = c.status === 'completed'
+                    ? '<span style="background:rgba(0,200,83,0.15);color:#00C853;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">✓ Completed</span>'
+                    : '<span style="background:rgba(0,242,234,0.1);color:#00F2EA;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">● Active</span>';
+                const accuracy = c.accuracy_pct != null
+                    ? `<span class="font-data-mono font-bold" style="color:${c.accuracy_pct>=90?'#00C853':c.accuracy_pct>=70?'#F59E0B':'#FF0050'}">${c.accuracy_pct}%</span>`
+                    : '<span class="text-on-surface-variant">—</span>';
+                const actualGmv = c.actual_gmv != null ? `<span class="font-data-mono text-secondary">${fmt(c.actual_gmv)}</span>` : '<span class="text-on-surface-variant">—</span>';
+                const date = new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+                return `<tr class="row-hover border-t border-[#353530]">
+                    <td class="px-4 py-3"><div class="font-semibold text-white">${c.name}</div><div class="text-[11px] text-outline font-mono">${date} · ${c.best_algorithm}</div></td>
+                    <td class="px-4 py-3 text-[12px]">${catFlag[c.country]||''} ${c.country} · ${c.category}</td>
+                    <td class="px-4 py-3 text-right font-mono">${fmt(c.budget)}</td>
+                    <td class="px-4 py-3 text-right font-mono text-primary">${fmt(c.predicted_gmv)}</td>
+                    <td class="px-4 py-3 text-right">${actualGmv}</td>
+                    <td class="px-4 py-3 text-right">${accuracy}</td>
+                    <td class="px-4 py-3 text-center">${statusBadge}</td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex gap-2 justify-center">
+                            <button onclick="openCampaignDetail(${c.id})" class="text-outline hover:text-primary transition-colors" title="View"><span class="material-symbols-outlined text-[18px]">visibility</span></button>
+                            ${c.status==='active'?`<button onclick="openActualModal(${c.id},${c.predicted_gmv})" class="text-outline hover:text-secondary transition-colors" title="Record Actual"><span class="material-symbols-outlined text-[18px]">edit_note</span></button>`:''}
+                            <button onclick="deleteCampaign(${c.id})" class="text-outline hover:text-error transition-colors" title="Delete"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function openCampaignDetail(id) {
+            currentCampaignId = id;
+            document.getElementById('cd-name').textContent = 'Loading...';
+            document.getElementById('campaign-detail-modal').classList.remove('hidden');
+            try {
+                const r = await fetch(`${API}/campaigns/${id}`);
+                if (!r.ok) throw new Error('Not found');
+                renderCampaignDetail(await r.json());
+            } catch (e) { toast('Failed to load campaign', 'err'); }
+        }
+        function closeCampaignDetail() { document.getElementById('campaign-detail-modal').classList.add('hidden'); }
+
+        function renderCampaignDetail(c) {
+            document.getElementById('cd-name').textContent = c.name;
+            document.getElementById('cd-meta').textContent = `${c.country} · ${c.category} · ${c.best_algorithm} · ${new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+            document.getElementById('cd-pred').textContent = fmt(c.predicted_gmv);
+            document.getElementById('cd-actual').textContent = c.actual_gmv != null ? fmt(c.actual_gmv) : '—';
+            const accEl = document.getElementById('cd-accuracy');
+            accEl.textContent = c.accuracy_pct != null ? c.accuracy_pct + '%' : '—';
+            accEl.style.color = c.accuracy_pct != null ? (c.accuracy_pct>=90?'#00C853':c.accuracy_pct>=70?'#F59E0B':'#FF0050') : '';
+            document.getElementById('cd-budget').textContent = fmt(c.budget);
+            document.getElementById('cd-cost').textContent = fmt(c.total_cost);
+            const statusEl = document.getElementById('cd-status');
+            statusEl.textContent = c.status === 'completed' ? '✓ Completed' : '● Active';
+            statusEl.style.color = c.status === 'completed' ? '#00C853' : '#00F2EA';
+            // Bar chart
+            const bar = document.getElementById('cd-bar-chart');
+            if (c.actual_gmv != null) {
+                const maxVal = Math.max(c.predicted_gmv, c.actual_gmv, 1);
+                bar.innerHTML = `<div class="space-y-sm"><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Predicted</span><span class="font-data-mono text-on-surface">${fmt(c.predicted_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${(c.predicted_gmv/maxVal*100).toFixed(0)}%;background:#00F2EA"></div></div></div><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Actual</span><span class="font-data-mono text-secondary">${fmt(c.actual_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full bg-secondary" style="width:${(c.actual_gmv/maxVal*100).toFixed(0)}%"></div></div></div></div>`;
+            } else {
+                bar.innerHTML = '<p class="text-[11px] text-on-surface-variant">No actual results yet. Click "Record Actual Results" after the campaign ends.</p>';
+            }
+            // KOL table
+            document.getElementById('cd-kol-body').innerHTML = (c.selected_kols||[]).map(k => {
+                const kActual = (c.kol_actuals||[]).find(a=>a.id===k.id);
+                return `<tr class="border-t border-[#353530]"><td class="px-4 py-2 text-[12px]">${k.name}<span class="text-outline text-[11px] ml-2">${k.tier||''}</span></td><td class="px-4 py-2 text-right font-mono text-[12px] text-primary">${fmt(k.predicted_gmv)}</td><td class="px-4 py-2 text-right font-mono text-[12px]">${kActual?`<span class="text-secondary">${fmt(kActual.actual_gmv)}</span>`:'—'}</td></tr>`;
+            }).join('');
+            // Notes
+            const notesSection = document.getElementById('cd-notes-section');
+            notesSection.classList.toggle('hidden', !c.notes);
+            if (c.notes) document.getElementById('cd-notes').textContent = c.notes;
+            // Record button
+            const recordBtn = document.getElementById('cd-record-btn');
+            recordBtn.classList.toggle('hidden', c.status !== 'active');
+            recordBtn.onclick = () => { closeCampaignDetail(); openActualModal(c.id, c.predicted_gmv); };
+        }
+
+        function openActualModal(campaignId, predictedGmv) {
+            currentCampaignId = campaignId;
+            document.getElementById('ar-predicted').textContent = fmt(predictedGmv);
+            document.getElementById('ar-actual').value = '';
+            document.getElementById('ar-notes').value = '';
+            document.getElementById('actual-results-modal').classList.remove('hidden');
+        }
+        function closeActualModal() { document.getElementById('actual-results-modal').classList.add('hidden'); }
+
+        async function submitActualResults() {
+            const actual = parseFloat(document.getElementById('ar-actual').value);
+            const notes = document.getElementById('ar-notes').value.trim();
+            if (isNaN(actual) || actual < 0) { toast('Enter a valid GMV amount', 'err'); return; }
+            try {
+                const payload = { actual_total_gmv: actual };
+                if (notes) payload.notes = notes;
+                const r = await fetch(`${API}/campaigns/${currentCampaignId}/actual`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if (!r.ok) throw new Error('Failed');
+                const d = await r.json();
+                toast(`Results recorded! Accuracy: ${d.campaign.accuracy_pct}%`);
+                closeActualModal();
+                loadCampaigns();
+            } catch (e) { toast(e.message, 'err'); }
+        }
+
+        async function deleteCampaign(id) {
+            if (!confirm('Delete this campaign?')) return;
+            try {
+                const r = await fetch(`${API}/campaigns/${id}`, { method: 'DELETE' });
+                if (!r.ok) throw new Error('Delete failed');
+                toast('Campaign deleted'); loadCampaigns();
+            } catch (e) { toast(e.message, 'err'); }
+        }
+
+        // ══════════ KOL HISTORY & SPARKLINES ══════════
+        function renderSparkline(values, color) {
+            if (!values || values.length < 2) return values && values.length === 1 ? '<span class="text-[10px] text-on-surface-variant">1 pt</span>' : '<span class="text-[10px] text-on-surface-variant">—</span>';
+            const W = 90, H = 32;
+            const min = Math.min(...values), max = Math.max(...values), range = max - min;
+            const step = W / (values.length - 1);
+            const pts = values.map((v, i) => {
+                const x = (i * step).toFixed(1);
+                const y = range > 0 ? (H - ((v - min) / range) * (H - 6) - 3).toFixed(1) : (H / 2).toFixed(1);
+                return `${x},${y}`;
+            }).join(' ');
+            const trend = values[values.length-1] >= values[0] ? '↑' : '↓';
+            const trendColor = values[values.length-1] >= values[0] ? '#00C853' : '#FF0050';
+            return `<span style="color:${trendColor};font-size:11px;font-weight:bold">${trend}</span><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:inline-block;vertical-align:middle;margin-left:4px"><polyline fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" points="${pts}"/></svg>`;
+        }
+
+        function renderKolHistory(data) {
+            const content = document.getElementById('kd-history-content');
+            if (!data || !data.snapshots || data.snapshots.length === 0) {
+                content.innerHTML = '<p class="text-[11px] text-on-surface-variant">No snapshots yet. Edit the creator or click <strong>Simulate Update</strong> to start tracking trends.</p>';
+                return;
+            }
+            const snaps = [...data.snapshots].reverse(); // oldest first
+            const engVals = snaps.map(s => s.engagement_rate).filter(v => v != null);
+            const fitVals = snaps.map(s => s.fit_score).filter(v => v != null);
+            const folVals = snaps.map(s => s.followers).filter(v => v != null);
+            const latestEng = engVals.length ? (engVals[engVals.length-1]*100).toFixed(1)+'%' : '—';
+            const latestFit = fitVals.length ? (fitVals[fitVals.length-1]*100).toFixed(0)+'%' : '—';
+            const latestFol = folVals.length ? fmtF(folVals[folVals.length-1]) : '—';
+            content.innerHTML = `
+                <div class="grid grid-cols-3 gap-md">
+                    <div class="text-center p-md rounded-lg bg-surface-container-low">
+                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Engagement Rate</p>
+                        <div class="flex items-center justify-center gap-xs">${renderSparkline(engVals,'#00F2EA')}</div>
+                        <p class="font-data-mono font-bold text-primary text-[14px] mt-xs">${latestEng}</p>
+                    </div>
+                    <div class="text-center p-md rounded-lg bg-surface-container-low">
+                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Fit Score</p>
+                        <div class="flex items-center justify-center gap-xs">${renderSparkline(fitVals,'#00C853')}</div>
+                        <p class="font-data-mono font-bold text-secondary text-[14px] mt-xs">${latestFit}</p>
+                    </div>
+                    <div class="text-center p-md rounded-lg bg-surface-container-low">
+                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Followers</p>
+                        <div class="flex items-center justify-center gap-xs">${renderSparkline(folVals,'#A855F7')}</div>
+                        <p class="font-data-mono font-bold text-on-surface text-[14px] mt-xs">${latestFol}</p>
+                    </div>
+                </div>
+                <p class="text-[10px] text-on-surface-variant mt-sm text-center">${data.count} snapshot${data.count!==1?'s':''} · latest: ${new Date(data.snapshots[0].recorded_at+'Z').toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+            `;
+        }
+
+        async function simulateKolUpdate() {
+            if (!currentKolId) return;
+            const btn = document.getElementById('kd-simulate-btn');
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[14px]">refresh</span> Simulating...';
+            btn.disabled = true;
+            try {
+                const r = await fetch(`${API}/kols/${currentKolId}/simulate-update`, { method: 'POST' });
+                if (!r.ok) throw new Error('Simulate failed');
+                const d = await r.json();
+                const ch = d.changes;
+                toast(`Metrics updated! Eng ${(ch.engagement_rate.before*100).toFixed(1)}%→${(ch.engagement_rate.after*100).toFixed(1)}%, Fit ${(ch.fit_score.before*100).toFixed(0)}%→${(ch.fit_score.after*100).toFixed(0)}%`);
+                const [histRes, kolRes] = await Promise.all([
+                    fetch(`${API}/kols/${currentKolId}/history`),
+                    fetch(`${API}/kol/${currentKolId}`)
+                ]);
+                if (histRes.ok) renderKolHistory(await histRes.json());
+                if (kolRes.ok) renderKolDetail(await kolRes.json());
+            } catch (e) { toast(e.message, 'err'); }
+            finally {
+                btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">refresh</span> Simulate Update';
+                btn.disabled = false;
+            }
+        }
+
+    </script>
+</body>
+
+</html>
+kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
+    <div class="grid grid-cols-3 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-center"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Est. GMV</p><p class="font-title-md text-secondary font-data-mono font-bold">${fmt(kol.expected_gmv)}</p></div></div>
+    <div><div class="flex justify-between text-[10px] mb-1"><span class="text-on-surface-variant uppercase">GMV contribution</span><span class="text-secondary font-bold">${contrib}%</span></div><div class="contrib-bar"><div class="contrib-fill" style="width:${contrib}%"></div></div></div>
+    <div class="flex items-center gap-md text-[11px]">
+        ${riskHtml ? `<div class="flex items-center gap-xs">${riskHtml}</div>` : ''}
+        ${rankText ? `<div class="flex items-center gap-xs text-on-surface-variant"><span class="material-symbols-outlined text-[12px]">trending_up</span>${rankText}</div>` : ''}
+    </div>
+    <div class="text-[11px]"><div style="font-weight:600;color:#00C853;margin-bottom:6px">Why this creator?</div>${reasonsHtml}</div>
+  </div>`;
+        }
+
+        function techKolCard(kol) {
+            const tier = kol.tier || 'Micro', reasons = (kol.reasons || []).slice(0, 3);
+            const reasonsHtml = reasons.length ? `<div class="mt-md text-[11px] text-on-surface-variant/80 bg-surface-container-low p-md rounded-lg border border-outline-variant/30">${reasons.map(r => `<div class="mb-1">✅ ${r}</div>`).join('')}</div>` : '';
+            const enh = enhancedKolMap[kol.id] || {};
+            const rank = enh.cost_effectiveness_rank || '—';
+            const risk = enh.audience_overlap_risk != null ? enh.audience_overlap_risk : null;
+            let riskBadge = '';
+            if (risk !== null) {
+                const level = risk < 0.3 ? 'low' : risk < 0.6 ? 'med' : 'high';
+                const label = risk < 0.3 ? 'Low' : risk < 0.6 ? 'Med' : 'High';
+                riskBadge = `<div class="flex items-center gap-xs"><span class="risk-dot ${level}"></span><span class="risk-${level}">${label} overlap</span></div>`;
+            }
+            const rankText = rank !== '—' ? `<span class="text-on-surface-variant">#${rank} cost-effective</span>` : '';
+            return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer" onclick="openKolDetail(${kol.id})">
+    <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
+    <div class="grid grid-cols-2 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div></div>
+    <div class="space-y-xs"><div class="flex justify-between items-center text-[10px]"><span class="text-on-surface-variant uppercase">Fit Score</span><span class="text-secondary font-bold">${(kol.fit_score * 100).toFixed(0)}%</span></div><div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary rounded-full" style="width:${(kol.fit_score * 100).toFixed(0)}%"></div></div></div>
+    ${riskBadge || rankText ? `<div class="flex items-center gap-md text-[11px]">${riskBadge}${rankText}</div>` : ''}
+    <div class="flex justify-between items-center pt-xs"><div class="bg-secondary/15 px-md py-sm rounded-lg border border-secondary/20"><p class="text-[9px] text-secondary uppercase font-bold tracking-wider">Est. GMV</p><p class="text-title-md font-bold text-secondary font-data-mono">${fmt(kol.expected_gmv)}</p></div><button class="text-on-surface-variant hover:text-primary flex items-center gap-xs text-[11px] why-btn" onclick="event.stopPropagation()">Why? <span class="material-symbols-outlined text-[14px]">expand_more</span></button></div>
+    <div class="why-panel hidden">${reasonsHtml}</div></div>`;
+        }
+
+        document.getElementById('run-btn').addEventListener('click', async () => {
+            showPage('dashboard');
+            const btn = document.getElementById('run-btn'); btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">refresh</span>'; btn.disabled = true;
+            const payload = { budget: parseInt(budgetSlider.value), country: document.getElementById('country-select').value, category: document.getElementById('category-select').value, seed: parseInt(document.getElementById('seed-input').value) || 42 };
+            try {
+                const [optRes, plansRes] = await Promise.all([
+                    fetch(API + '/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+                    fetch(API + '/optimize-plans', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                ]);
+                if (!optRes.ok) { const err = await optRes.json(); throw new Error(err.detail || 'Request failed'); }
+                const data = await optRes.json();
+                if (plansRes.ok) { const plansData = await plansRes.json(); renderPlans(plansData.plans, data); }
+                else { allPlansData = null; }
+                try {
+                    const kolParams = new URLSearchParams({ limit: 200, country: payload.country, category: payload.category });
+                    const kolRes = await fetch(`${API}/kols?${kolParams}`);
+                    if (kolRes.ok) {
+                        const kolData = await kolRes.json();
+                        enhancedKolMap = {};
+                        kolData.kols.forEach(k => { enhancedKolMap[k.id] = k; });
+                    }
+                } catch (_) { enhancedKolMap = {}; }
+                lastOptimizeData = data;
+                lastPayload = payload;
+                renderDashboard(data, payload);
+                if (allPlansData) selectPlan(selectedPlanName);
+            } catch (e) { showError(e.message.includes('fetch') ? '⚠️ Backend unavailable — run: uvicorn backend.main:app --reload' : '⚠️ ' + e.message); }
+            finally { btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">bolt</span> Run Optimization'; btn.disabled = false; }
+        });
+
+        function renderPlans(plans, optData) {
+            if (!plans || !plans.length) { document.getElementById('plans-section').classList.add('hidden'); return; }
+            allPlansData = plans;
+            document.getElementById('plans-section').classList.remove('hidden');
+            const grid = document.getElementById('plans-grid');
+            const icons = { Aggressive: 'rocket_launch', Balanced: 'tune', Safe: 'shield' };
+            grid.innerHTML = plans.map((p, i) => {
+                const util = optData ? (p.total_cost / optData.budget * 100).toFixed(0) : '—';
+                const tb = p.tier_breakdown || { Mega: 0, Macro: 0, Micro: 0, Nano: 0 };
+                const warnings = (p.overlap_warnings || []).length;
+                return `<div class="plan-card glass-card rounded-xl p-lg flex flex-col space-y-md" onclick="selectPlan('${p.plan_name}')">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-[24px] text-on-surface-variant plan-icon">${icons[p.plan_name] || 'campaign'}</span>
+                    <h4 class="font-title-md text-title-md text-on-surface">${p.plan_name}</h4>
+                </div>
+                <span class="plan-active-badge text-[11px] font-bold" style="display:none">● Active</span>
+            </div>
+            <p class="text-[11px] text-on-surface-variant">${p.description}</p>
+            <div class="grid grid-cols-2 gap-sm">
+                <div><p class="text-[10px] text-on-surface-variant uppercase">GMV</p><p class="font-title-md text-secondary font-bold font-data-mono">${fmt(p.total_gmv)}</p></div>
+                <div><p class="text-[10px] text-on-surface-variant uppercase">ROI</p><p class="font-title-md text-on-surface font-data-mono">${p.roi.toFixed(2)}x</p></div>
+                <div><p class="text-[10px] text-on-surface-variant uppercase">Creators</p><p class="font-title-md text-on-surface font-data-mono">${p.selected_kols.length}</p></div>
+                <div><p class="text-[10px] text-on-surface-variant uppercase">Budget Use</p><p class="font-title-md text-on-surface font-data-mono ${util > 100 ? 'text-error' : ''}">${util}%</p></div>
+            </div>
+            <div class="flex flex-wrap gap-1">
+                ${['Mega','Macro','Micro','Nano'].map(t => tb[t] > 0 ? `<span class="tier-chip ${TIER_BADGE[t] || ''}" style="font-size:10px">${TIER_EMOJI[t] || ''} ${tb[t]}</span>` : '').join('')}
+            </div>
+            ${warnings > 0 ? `<div class="flex items-center gap-xs text-[11px] text-[#f1c40f]"><span class="material-symbols-outlined text-[14px]">warning</span> ${warnings} audience overlap${warnings > 1 ? 's' : ''}</div>` : ''}
+          </div>`;
+            }).join('');
+            selectPlan(selectedPlanName);
+        }
+
+        function selectPlan(name) {
+            selectedPlanName = name;
+            const col = PLAN_COLORS[name] || '#00F2EA';
+            document.querySelectorAll('.plan-card').forEach(c => {
+                const cardName = c.querySelector('h4').textContent;
+                const isSelected = cardName === name;
+                c.classList.toggle('selected', isSelected);
+                const badge = c.querySelector('.plan-active-badge');
+                if (badge) { badge.style.display = isSelected ? 'inline' : 'none'; badge.style.color = col; }
+                if (isSelected) { c.style.borderColor = col; c.style.boxShadow = `0 0 20px ${col}33`; const icon = c.querySelector('.plan-icon'); if (icon) icon.style.color = col; }
+                else { c.style.borderColor = '#353530'; c.style.boxShadow = ''; const icon = c.querySelector('.plan-icon'); if (icon) icon.style.color = ''; }
+            });
+            document.querySelectorAll('.plan-toggle-btn').forEach(b => { b.classList.toggle('active', b.textContent.trim() === name); });
+            if (!allPlansData) return;
+            const plan = allPlansData.find(p => p.plan_name === name);
+            if (!plan) return;
+            const sorted = [...plan.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
+            document.getElementById('biz-count').textContent = sorted.length;
+            document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, plan.total_gmv)).join('');
+            document.getElementById('biz-gmv').textContent = fmt(plan.total_gmv);
+            document.getElementById('biz-roi').textContent = plan.roi.toFixed(2) + 'x';
+            document.getElementById('biz-cost').textContent = fmt(plan.total_cost);
+            document.getElementById('biz-subtitle').textContent = document.getElementById('biz-subtitle').textContent.replace(/\d+ creators$/, sorted.length + ' creators');
+        }
+
+        function renderDashboard(data, payload) {
+            if (data.candidates === 0) { showError('No creators in the pool. Go to Creators page to add your KOLs first.'); return; }
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('results-section').classList.remove('hidden');
+            document.getElementById('view-toggle').classList.remove('hidden');
+            const catN = { beauty: 'Beauty & Cosmetics', fashion: 'Fashion & Lifestyle', home: 'Home & Living', fmcg: 'FMCG' };
+            const coN = { MY: 'Malaysia', ID: 'Indonesia', TH: 'Thailand', PH: 'Philippines', SG: 'Singapore', VN: 'Vietnam' };
+            const sorted = [...data.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
+            document.getElementById('biz-subtitle').textContent = `${catN[payload.category] || payload.category} campaign · ${coN[payload.country] || payload.country} · ${sorted.length} creators`;
+            document.getElementById('biz-cost').textContent = fmt(data.total_cost);
+            document.getElementById('biz-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% of ' + fmt(payload.budget) + ' budget';
+            document.getElementById('biz-gmv').textContent = fmt(data.total_gmv);
+            document.getElementById('biz-roi').textContent = data.roi.toFixed(2) + 'x';
+            document.getElementById('biz-count').textContent = sorted.length;
+            document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, data.total_gmv)).join('');
+            document.getElementById('biz-footer-msg').textContent = `This portfolio is predicted to generate ${fmt(data.total_gmv)} in GMV with an ROI of ${data.roi.toFixed(2)}x on your ${fmt(payload.budget)} budget.`;
+            const recommended = getRecommendedResult(data.results);
+            const recommendedName = recommended ? recommended.algorithm : data.best_algorithm;
+            document.getElementById('m-algo').textContent = recommendedName;
+            document.getElementById('m-gmv').textContent = fmt(data.total_gmv);
+            document.getElementById('m-cost').textContent = fmt(data.total_cost);
+            document.getElementById('m-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% Utilization';
+            document.getElementById('m-kols').textContent = sorted.length;
+            document.getElementById('m-cands').textContent = data.candidates;
+            (function() {
+                const badge = document.getElementById('algo-status-badge');
+                const dot   = document.getElementById('algo-status-dot');
+                const txt   = document.getElementById('algo-status-text');
+                if (!badge || !data.results) return;
+                const total = 6, found = Object.keys(data.results).length;
+                const ok = found >= total;
+                dot.style.background  = ok ? '#00C853' : '#FF0050';
+                badge.style.borderColor = ok ? 'rgba(0,200,83,0.3)' : 'rgba(255,0,80,0.3)';
+                txt.textContent = ok ? `${found}/${total} algorithms` : `${found}/${total} — restart server`;
+                txt.style.color = ok ? '#00C853' : '#FF0050';
+                badge.classList.remove('hidden');
+            })();
+            renderConvergence(data.results);
+            renderBenchmark(data.results, recommendedName);
+            try {
+                const acGrid = document.getElementById('algo-compare-grid');
+                const acSection = document.getElementById('algo-compare-section');
+                if (acGrid && acSection && data.results) {
+                    const algoMeta = [
+                        { key: 'genetic_algorithm',   short: 'GA',      color: '#A855F7' },
+                        { key: 'tabu_search',         short: 'Tabu',    color: '#06B6D4' },
+                        { key: 'greedy_ranking',      short: 'Greedy',  color: '#F59E0B' },
+                        { key: 'simulated_annealing', short: 'SA',      color: '#00C853' },
+                        { key: 'hill_climber',        short: 'HC',      color: '#FB923C' },
+                        { key: 'random_search',       short: 'Random',  color: '#4a4a45' },
+                    ].filter(a => !!data.results[a.key]);
+                    const bestGmv = algoMeta.reduce((m, a) => Math.max(m, data.results[a.key].total_gmv), 0);
+                    acGrid.style.gridTemplateColumns = `repeat(${algoMeta.length}, minmax(0, 1fr))`;
+                    acGrid.innerHTML = algoMeta.map(a => {
+                        const r = data.results[a.key];
+                        const isBest = r.total_gmv >= bestGmv && bestGmv > 0;
+                        const pct = bestGmv > 0 ? (r.total_gmv / bestGmv * 100).toFixed(0) : 0;
+                        return `<div class="glass-card rounded-xl p-md flex flex-col gap-xs" style="${isBest ? 'box-shadow:0 0 14px ' + a.color + '44;border-color:' + a.color + '88' : ''}">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider" style="color:${a.color}">${a.short}</span>
+                                ${isBest ? '<span class="material-symbols-outlined text-[12px] text-secondary">star</span>' : ''}
+                            </div>
+                            <p class="font-data-mono font-bold text-[13px] text-on-surface leading-none">${fmt(r.total_gmv)}</p>
+                            <p class="text-[10px] text-on-surface-variant leading-snug">${r.roi.toFixed(2)}x &middot; ${r.selected_count} KOLs</p>
+                            <div class="h-[3px] w-full bg-surface-container-highest rounded-full overflow-hidden">
+                                <div class="h-full rounded-full" style="width:${pct}%;background:${a.color}"></div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                    acSection.classList.remove('hidden');
+                }
+            } catch(_) {}
+            const techGrid = document.getElementById('tech-kol-grid');
+            techGrid.innerHTML = sorted.map(techKolCard).join('');
+            techGrid.querySelectorAll('.why-btn').forEach(btn => { btn.addEventListener('click', () => { btn.closest('.kol-card').querySelector('.why-panel').classList.toggle('hidden'); }); });
+            setView('business');
+        }
+
+        // ══════════ RUNTIME BENCHMARK ══════════
+        async function runBenchmark() {
+            const btn = document.getElementById('bench-run-btn');
+            const n = parseInt(document.getElementById('bench-n').value) || 50;
+            const budget = parseInt(budgetSlider.value) || 5000;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">refresh</span> Running...';
+            btn.disabled = true;
+            try {
+                const r = await fetch(`${API}/scalability`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ n, budget, seed: parseInt(document.getElementById('seed-input').value) || 42 }) });
+                if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Benchmark failed'); }
+                const d = await r.json();
+                renderBenchmarkResults(d);
+            } catch (e) { showError('⚠️ ' + e.message); }
+            finally { btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">play_arrow</span> Run Benchmark'; btn.disabled = false; }
+        }
+
+        function renderBenchmarkResults(d) {
+            document.getElementById('bench-results').classList.remove('hidden');
+            const algos = [
+                { key: 'greedy_ranking',      label: 'Greedy Ranking',      color: '#F59E0B' },
+                { key: 'tabu_search',         label: 'Tabu Search',         color: '#06B6D4' },
+                { key: 'simulated_annealing', label: 'Simulated Annealing', color: '#00C853' },
+                { key: 'genetic_algorithm',   label: 'Genetic Algorithm',   color: '#A855F7' },
+                { key: 'hill_climber',        label: 'Hill Climber',        color: '#FB923C' },
+                { key: 'random_search',       label: 'Random Search',       color: '#4a4a45' },
+            ].filter(a => !!d[a.key]);
+            const entries = algos.map(a => ({ ...a, entry: d[a.key] }));
+            const maxTime = Math.max(...entries.map(e => e.entry.time_seconds), 0.001);
+            const chart = document.getElementById('bench-time-chart');
+            chart.innerHTML = entries.map(e => {
+                const pct = maxTime > 0 ? (e.entry.time_seconds / maxTime * 100).toFixed(0) : 0;
+                const w = Math.max(2, pct);
+                return `<div class="flex items-center gap-md">
+                    <span class="text-[10px] font-bold uppercase tracking-wider w-[110px] text-right flex-shrink-0" style="color:${e.color}">${e.label}</span>
+                    <div class="flex-1 h-5 bg-surface-container-highest rounded-full overflow-hidden relative">
+                        <div class="h-full rounded-full flex items-center justify-end pr-xs transition-all duration-500" style="width:${w}%;background:${e.color};min-width:${Math.max(24, w)}%">
+                            <span class="text-[9px] font-data-mono font-bold text-black" style="${w < 15 ? 'display:none' : ''}">${e.entry.time_seconds.toFixed(3)}s</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            const tbody = document.getElementById('bench-time-body');
+            const bestGmv = entries.reduce((m, e) => Math.max(m, e.entry.total_gmv), 0);
+            tbody.innerHTML = entries.map(e => {
+                const r = e.entry;
+                const isBest = r.total_gmv >= bestGmv && bestGmv > 0;
+                return `<tr class="${isBest ? 'sa-highlight' : ''}">
+                    <td class="px-lg py-md"><div class="flex items-center gap-sm"><span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${e.color}"></span><span class="font-bold text-on-surface text-sm">${e.label}</span></div></td>
+                    <td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.time_seconds.toFixed(4)}s</td>
+                    <td class="px-md py-md text-right font-data-mono ${isBest ? 'text-secondary font-bold' : 'text-on-surface-variant'}">${fmt(r.total_gmv)}</td>
+                    <td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.roi.toFixed(2)}x</td>
+                    <td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.selected_count}</td>
+                </tr>`;
+            }).join('');
+            const fastest = entries.reduce((a, b) => a.entry.time_seconds < b.entry.time_seconds ? a : b);
+            const best = entries.reduce((a, b) => b.entry.total_gmv > a.entry.total_gmv ? b : a);
+            const note = document.getElementById('bench-time-note').querySelector('p');
+            note.innerHTML = `<span class="font-bold" style="color:${fastest.color}">${fastest.label}</span> was fastest at <span class="font-data-mono">${fastest.entry.time_seconds.toFixed(4)}s</span>. <span class="font-bold" style="color:${best.color}">${best.label}</span> achieved highest GMV (<span class="font-data-mono text-secondary">${fmt(best.entry.total_gmv)}</span>). Pool size: <span class="font-data-mono">${d.n}</span>, Budget: <span class="font-data-mono">${fmt(d.budget)}</span>.`;
+        }
+
+        // ══════════ KOL DETAIL MODAL ══════════
+        async function openKolDetail(id) {
+            currentKolId = id;
+            const overlay = document.getElementById('kol-detail-overlay');
+            overlay.classList.remove('hidden');
+            document.getElementById('kd-name').textContent = 'Loading...';
+            document.getElementById('kd-meta').textContent = '';
+            document.getElementById('kd-tier').textContent = '...';
+            document.getElementById('kd-stats').innerHTML = '';
+            document.getElementById('kd-solo-gmv').textContent = '—';
+            document.getElementById('kd-rank').textContent = '—';
+            document.getElementById('kd-risk').textContent = '—';
+            document.getElementById('kd-gender-label').textContent = '—';
+            document.getElementById('kd-gender-bar').style.width = '50%';
+            document.getElementById('kd-age').textContent = '—';
+            document.getElementById('kd-reasons').innerHTML = '';
+            document.getElementById('kd-risk-dot').className = 'risk-dot low';
+            document.getElementById('kd-history-content').innerHTML = '<p class="text-[11px] text-on-surface-variant">Loading history...</p>';
+            try {
+                const [kolRes, histRes] = await Promise.all([
+                    fetch(`${API}/kol/${id}`),
+                    fetch(`${API}/kols/${id}/history`)
+                ]);
+                if (!kolRes.ok) throw new Error('Not found');
+                const d = await kolRes.json();
+                renderKolDetail(d);
+                if (histRes.ok) { renderKolHistory(await histRes.json()); }
+                else { document.getElementById('kd-history-content').innerHTML = '<p class="text-[11px] text-on-surface-variant">No history yet. Edit the creator or click Simulate Update to start tracking.</p>'; }
+            } catch (e) {
+                document.getElementById('kd-name').textContent = 'Error loading creator';
+            }
+        }
+
+        function renderKolDetail(d) {
+            document.getElementById('kd-name').textContent = d.name;
+            document.getElementById('kd-meta').textContent = `${d.category} · ${d.country} · ${fmtF(d.followers)} followers`;
+            const tier = d.tier || 'Micro';
+            const tierSpan = document.getElementById('kd-tier');
+            tierSpan.textContent = `${TIER_EMOJI[tier] || ''} ${tier}`;
+            tierSpan.className = `tier-chip ${TIER_BADGE[tier] || 'tier-micro'}`;
+            document.getElementById('kd-stats').innerHTML = [
+                { label: 'Followers', v: fmtF(d.followers) },
+                { label: 'Engagement', v: (d.engagement_rate * 100).toFixed(1) + '%' },
+                { label: 'Fit Score', v: (d.fit_score * 100).toFixed(0) + '%' },
+                { label: 'Hiring Cost', v: fmt(d.cost) },
+                { label: 'Est. GMV', v: fmt(d.expected_gmv), cls: 'text-secondary font-bold' },
+            ].map(s => `<div class="text-center p-sm rounded-lg bg-surface-container-low"><p class="text-[10px] text-on-surface-variant uppercase">${s.label}</p><p class="font-title-md font-data-mono ${s.cls || 'text-on-surface'}">${s.v}</p></div>`).join('');
+            const gRatio = d.gender_ratio != null ? d.gender_ratio : 0.5;
+            document.getElementById('kd-gender-label').textContent = `${(gRatio * 100).toFixed(0)}% Female / ${((1 - gRatio) * 100).toFixed(0)}% Male`;
+            document.getElementById('kd-gender-bar').style.width = `${(gRatio * 100).toFixed(0)}%`;
+            document.getElementById('kd-gender-bar').className = `demo-fill ${gRatio > 0.5 ? 'female' : 'male'}`;
+            document.getElementById('kd-age').textContent = d.age_group || 'Unknown';
+            document.getElementById('kd-solo-gmv').textContent = fmt(d.predicted_gmv_solo || d.expected_gmv);
+            document.getElementById('kd-rank').textContent = d.cost_effectiveness_rank ? `#${d.cost_effectiveness_rank}` : '—';
+            const risk = d.audience_overlap_risk != null ? d.audience_overlap_risk : 0;
+            const riskLevel = risk < 0.3 ? 'low' : risk < 0.6 ? 'med' : 'high';
+            const riskLabel = risk < 0.3 ? 'Low' : risk < 0.6 ? 'Medium' : 'High';
+            document.getElementById('kd-risk').textContent = `${riskLabel} (${(risk * 100).toFixed(0)}%)`;
+            document.getElementById('kd-risk-dot').className = `risk-dot ${riskLevel}`;
+            const reasons = d.reasons || [];
+            document.getElementById('kd-reasons').innerHTML = reasons.length
+                ? reasons.map((r, i) => `<div class="flex items-start gap-sm text-body-base text-on-surface-variant"><span class="text-secondary font-bold">${i + 1}.</span><span>${r}</span></div>`).join('')
+                : '<p class="text-on-surface-variant">No reasons available.</p>';
+        }
+
+        function closeKolDetail() { document.getElementById('kol-detail-overlay').classList.add('hidden'); }
+
+        // ══════════ CREATORS: CRUD ══════════
+        let currentPage = 0; const PG = 20; let editingId = null;
+        async function loadTable() { const country = document.getElementById('f-country').value, category = document.getElementById('f-category').value, tier = document.getElementById('f-tier').value, params = new URLSearchParams({ limit: PG, offset: currentPage * PG }); if (country) params.set('country', country); if (category) params.set('category', category); if (tier) params.set('tier', tier); try { const r = await fetch(`${API}/kols?${params}`); const d = await r.json(); renderTable(d.kols, d.total); } catch (e) { toast('Backend unavailable', 'err'); } }
+        function renderTable(kols, total) { document.getElementById('count-badge').textContent = `${total} creators`; document.getElementById('page-info').textContent = total ? `${currentPage * PG + 1}–${Math.min((currentPage + 1) * PG, total)} of ${total}` : ''; document.getElementById('prev-btn').disabled = currentPage === 0; document.getElementById('next-btn').disabled = (currentPage + 1) * PG >= total; const tbody = document.getElementById('kol-tbody'); if (!kols.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center py-12 text-outline">No creators. Click <b>Add Creator</b> to get started.</td></tr>'; return; } tbody.innerHTML = kols.map(k => { const tier = k.tier || 'Micro'; return `<tr class="row-hover border-t border-[#353530]"><td class="px-4 py-3"><div class="font-semibold text-white">${k.name}</div><div class="text-[11px] text-outline font-mono">${k.category} · #${k.id}</div></td><td class="px-4 py-3">${k.country}</td><td class="px-4 py-3 capitalize">${k.category}</td><td class="px-4 py-3 text-right font-mono">${fmtF(k.followers)}</td><td class="px-4 py-3 text-right font-mono">${(k.engagement_rate * 100).toFixed(1)}%</td><td class="px-4 py-3 text-right font-mono">${fmt(k.cost)}</td><td class="px-4 py-3 text-center"><span class="${TIER_BADGE[tier]}" style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${tier}</span></td><td class="px-4 py-3 text-right font-mono text-secondary">${fmt(k.expected_gmv)}</td><td class="px-4 py-3 text-center"><button onclick="openEditModal(${k.id})" class="text-outline hover:text-secondary transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button><button onclick="deleteKol(${k.id},'${k.name.replace(/'/g, "\\'")}')" class="text-outline hover:text-error transition-colors ml-1"><span class="material-symbols-outlined text-[18px]">delete</span></button></td></tr>`; }).join(''); }
+        function changePage(d) { currentPage = Math.max(0, currentPage + d); loadTable(); }
+        function openAddModal() { editingId = null; document.getElementById('modal-title').textContent = 'Add New Creator'; document.getElementById('modal-submit').textContent = 'Save Creator'; document.getElementById('modal-submit').onclick = submitAdd; clearForm(); document.getElementById('modal').classList.remove('hidden'); }
+        async function openEditModal(id) { editingId = id; document.getElementById('modal-title').textContent = 'Edit Creator'; document.getElementById('modal-submit').textContent = 'Update'; document.getElementById('modal-submit').onclick = submitEdit; try { const r = await fetch(`${API}/kol/${id}`); const k = await r.json(); document.getElementById('f-name').value = k.name || ''; document.getElementById('f-url').value = k.tiktok_url || ''; document.getElementById('f-m-country').value = k.country || 'MY'; document.getElementById('f-m-cat').value = k.category || 'beauty'; document.getElementById('f-followers').value = k.followers || ''; document.getElementById('f-eng').value = k.engagement_rate || ''; document.getElementById('f-cost').value = k.cost || ''; document.getElementById('f-fit').value = k.fit_score || ''; document.getElementById('f-views').value = k.avg_views || ''; document.getElementById('f-likes').value = k.avg_likes || ''; document.getElementById('f-gender').value = k.gender_ratio || ''; document.getElementById('f-age').value = k.age_group || '18-24'; document.getElementById('modal').classList.remove('hidden'); } catch (e) { toast('Failed to load', 'err'); } }
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        function clearForm() { ['f-name', 'f-url', 'f-followers', 'f-eng', 'f-cost', 'f-fit', 'f-views', 'f-likes', 'f-gender'].forEach(id => { document.getElementById(id).value = ''; }); document.getElementById('f-m-country').value = 'MY'; document.getElementById('f-m-cat').value = 'beauty'; document.getElementById('f-age').value = '18-24'; }
+        function getFormData() { const d = { name: document.getElementById('f-name').value.trim(), country: document.getElementById('f-m-country').value, category: document.getElementById('f-m-cat').value, followers: parseInt(document.getElementById('f-followers').value), engagement_rate: parseFloat(document.getElementById('f-eng').value), cost: parseFloat(document.getElementById('f-cost').value) }; const fit = document.getElementById('f-fit').value; if (fit) d.fit_score = parseFloat(fit); const url = document.getElementById('f-url').value.trim(); if (url) d.tiktok_url = url; const views = document.getElementById('f-views').value; if (views) d.avg_views = parseInt(views); const likes = document.getElementById('f-likes').value; if (likes) d.avg_likes = parseInt(likes); const gender = document.getElementById('f-gender').value; if (gender) d.gender_ratio = parseFloat(gender); d.age_group = document.getElementById('f-age').value; if (!d.name || isNaN(d.followers) || isNaN(d.engagement_rate) || isNaN(d.cost)) { toast('Please fill all required fields', 'err'); return null; } return d; }
+        async function submitAdd() { const d = getFormData(); if (!d) return; try { const r = await fetch(`${API}/kols/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }); if (!r.ok) { const e = await r.json(); toast(e.detail || 'Error', 'err'); return; } const res = await r.json(); toast(`${d.name} added (ID: ${res.id})`); closeModal(); loadTable(); } catch (e) { toast('Failed', 'err'); } }
+        async function submitEdit() { const d = getFormData(); if (!d) return; try { const r = await fetch(`${API}/kols/${editingId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }); if (!r.ok) { const e = await r.json(); toast(e.detail || 'Error', 'err'); return; } toast(`${d.name} updated`); closeModal(); loadTable(); } catch (e) { toast('Failed', 'err'); } }
+        async function deleteKol(id, name) { if (!confirm(`Delete "${name}"?`)) return; try { const r = await fetch(`${API}/kols/${id}`, { method: 'DELETE' }); if (!r.ok) { toast('Delete failed', 'err'); return; } toast(`${name} deleted`); loadTable(); } catch (e) { toast('Failed', 'err'); } }
+        async function importCSV(input) { const file = input.files[0]; if (!file) return; const form = new FormData(); form.append('file', file); try { const r = await fetch(`${API}/kols/import-csv`, { method: 'POST', body: form }); const d = await r.json(); if (!r.ok) { toast(d.detail || 'Import failed', 'err'); return; } toast(`Imported ${d.added} creators` + (d.errors.length ? ` (${d.errors.length} errors)` : '')); loadTable(); } catch (e) { toast('Import failed', 'err'); } input.value = ''; }
+        async function resetDatabase() { if (!confirm('⚠️ Clear ALL creator data?\nThis cannot be undone.')) return; if (!confirm('Final confirmation?')) return; try { const r = await fetch(`${API}/kols/reset`, { method: 'POST' }); if (!r.ok) { toast('Reset failed', 'err'); return; } toast('Database cleared'); currentPage = 0; loadTable(); } catch (e) { toast('Failed', 'err'); } }
+
+        // ══════════ CAMPAIGN ATTRIBUTION ══════════
+        function openSaveCampaignModal() {
+            if (!lastOptimizeData || !lastPayload) { toast('Run an optimization first', 'err'); return; }
+            const plan = allPlansData ? allPlansData.find(p => p.plan_name === selectedPlanName) : null;
+            const kols = plan ? plan.selected_kols : lastOptimizeData.selected_kols;
+            const totalGmv = plan ? plan.total_gmv : lastOptimizeData.total_gmv;
+            const totalCost = plan ? plan.total_cost : lastOptimizeData.total_cost;
+            const d = new Date();
+            const catNames = { beauty: 'Beauty', fashion: 'Fashion', home: 'Home', fmcg: 'FMCG' };
+            document.getElementById('sc-name').value = `${catNames[lastPayload.category] || lastPayload.category} ${lastPayload.country} ${d.toLocaleDateString('en-US', {month:'short', year:'numeric'})}`;
+            document.getElementById('sc-pred-gmv').textContent = fmt(totalGmv);
+            document.getElementById('sc-cost').textContent = fmt(totalCost);
+            document.getElementById('sc-algo').textContent = lastOptimizeData.best_algorithm;
+            document.getElementById('sc-kols').textContent = kols.length + ' creators';
+            document.getElementById('save-campaign-modal').classList.remove('hidden');
+        }
+        function closeSaveCampaignModal() { document.getElementById('save-campaign-modal').classList.add('hidden'); }
+
+        async function saveCampaign() {
+            const name = document.getElementById('sc-name').value.trim();
+            if (!name) { toast('Enter a campaign name', 'err'); return; }
+            const plan = allPlansData ? allPlansData.find(p => p.plan_name === selectedPlanName) : null;
+            const kols = plan ? plan.selected_kols : lastOptimizeData.selected_kols;
+            const totalGmv = plan ? plan.total_gmv : lastOptimizeData.total_gmv;
+            const totalCost = plan ? plan.total_cost : lastOptimizeData.total_cost;
+            const payload = {
+                name, country: lastPayload.country, category: lastPayload.category,
+                budget: lastPayload.budget, best_algorithm: lastOptimizeData.best_algorithm,
+                selected_kols: kols.map(k => ({ id: k.id, name: k.name, country: k.country, category: k.category, followers: k.followers, cost: k.cost, predicted_gmv: k.expected_gmv || 0, tier: k.tier || '' })),
+                total_cost: totalCost, predicted_gmv: totalGmv
+            };
+            try {
+                const r = await fetch(`${API}/campaigns`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Save failed'); }
+                toast('Campaign saved! View it in the Campaigns tab.');
+                closeSaveCampaignModal();
+            } catch (e) { toast(e.message, 'err'); }
+        }
+
+        async function loadCampaigns() {
+            try {
+                const r = await fetch(`${API}/campaigns`);
+                if (!r.ok) throw new Error('Failed');
+                const d = await r.json();
+                renderCampaigns(d.campaigns || []);
+            } catch (e) { toast('Failed to load campaigns', 'err'); }
+        }
+
+        function renderCampaigns(campaigns) {
+            const empty = document.getElementById('campaigns-empty');
+            const tableWrap = document.getElementById('campaigns-table-wrap');
+            const tbody = document.getElementById('campaigns-tbody');
+            if (!campaigns.length) {
+                empty.classList.remove('hidden'); tableWrap.classList.add('hidden');
+                document.getElementById('c-total').textContent = '0';
+                document.getElementById('c-completed').textContent = '0';
+                document.getElementById('c-accuracy').textContent = '—';
+                document.getElementById('c-pred-gmv').textContent = '$0';
+                return;
+            }
+            empty.classList.add('hidden'); tableWrap.classList.remove('hidden');
+            const completed = campaigns.filter(c => c.status === 'completed');
+            const accuracies = completed.filter(c => c.accuracy_pct != null).map(c => c.accuracy_pct);
+            document.getElementById('c-total').textContent = campaigns.length;
+            document.getElementById('c-completed').textContent = completed.length;
+            document.getElementById('c-accuracy').textContent = accuracies.length ? (accuracies.reduce((a,b)=>a+b,0)/accuracies.length).toFixed(1)+'%' : '—';
+            document.getElementById('c-pred-gmv').textContent = fmt(campaigns.reduce((s,c)=>s+(c.predicted_gmv||0),0));
+            const catFlag = {MY:'🇲🇾',ID:'🇮🇩',TH:'🇹🇭',PH:'🇵🇭',SG:'🇸🇬',VN:'🇻🇳'};
+            tbody.innerHTML = campaigns.map(c => {
+                const statusBadge = c.status === 'completed'
+                    ? '<span style="background:rgba(0,200,83,0.15);color:#00C853;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">✓ Completed</span>'
+                    : '<span style="background:rgba(0,242,234,0.1);color:#00F2EA;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">● Active</span>';
+                const accuracy = c.accuracy_pct != null
+                    ? `<span class="font-data-mono font-bold" style="color:${c.accuracy_pct>=90?'#00C853':c.accuracy_pct>=70?'#F59E0B':'#FF0050'}">${c.accuracy_pct}%</span>`
+                    : '<span class="text-on-surface-variant">—</span>';
+                const actualGmv = c.actual_gmv != null ? `<span class="font-data-mono text-secondary">${fmt(c.actual_gmv)}</span>` : '<span class="text-on-surface-variant">—</span>';
+                const date = new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+                return `<tr class="row-hover border-t border-[#353530]">
+                    <td class="px-4 py-3"><div class="font-semibold text-white">${c.name}</div><div class="text-[11px] text-outline font-mono">${date} · ${c.best_algorithm}</div></td>
+                    <td class="px-4 py-3 text-[12px]">${catFlag[c.country]||''} ${c.country} · ${c.category}</td>
+                    <td class="px-4 py-3 text-right font-mono">${fmt(c.budget)}</td>
+                    <td class="px-4 py-3 text-right font-mono text-primary">${fmt(c.predicted_gmv)}</td>
+                    <td class="px-4 py-3 text-right">${actualGmv}</td>
+                    <td class="px-4 py-3 text-right">${accuracy}</td>
+                    <td class="px-4 py-3 text-center">${statusBadge}</td>
+                    <td class="px-4 py-3 text-center"><div class="flex gap-2 justify-center">
+                        <button onclick="openCampaignDetail(${c.id})" class="text-outline hover:text-primary transition-colors" title="View"><span class="material-symbols-outlined text-[18px]">visibility</span></button>
+                        ${c.status==='active'?`<button onclick="openActualModal(${c.id},${c.predicted_gmv})" class="text-outline hover:text-secondary transition-colors" title="Record Actual"><span class="material-symbols-outlined text-[18px]">edit_note</span></button>`:''}
+                        <button onclick="deleteCampaign(${c.id})" class="text-outline hover:text-error transition-colors" title="Delete"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+                    </div></td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function openCampaignDetail(id) {
+            currentCampaignId = id;
+            document.getElementById('cd-name').textContent = 'Loading...';
+            document.getElementById('campaign-detail-modal').classList.remove('hidden');
+            try {
+                const r = await fetch(`${API}/campaigns/${id}`);
+                if (!r.ok) throw new Error('Not found');
+                renderCampaignDetail(await r.json());
+            } catch (e) { toast('Failed to load campaign', 'err'); }
+        }
+        function closeCampaignDetail() { document.getElementById('campaign-detail-modal').classList.add('hidden'); }
+
+        function renderCampaignDetail(c) {
+            document.getElementById('cd-name').textContent = c.name;
+            document.getElementById('cd-meta').textContent = `${c.country} · ${c.category} · ${c.best_algorithm} · ${new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+            document.getElementById('cd-pred').textContent = fmt(c.predicted_gmv);
+            document.getElementById('cd-actual').textContent = c.actual_gmv != null ? fmt(c.actual_gmv) : '—';
+            const accEl = document.getElementById('cd-accuracy');
+            accEl.textContent = c.accuracy_pct != null ? c.accuracy_pct + '%' : '—';
+            accEl.style.color = c.accuracy_pct != null ? (c.accuracy_pct>=90?'#00C853':c.accuracy_pct>=70?'#F59E0B':'#FF0050') : '';
+            document.getElementById('cd-budget').textContent = fmt(c.budget);
+            document.getElementById('cd-cost').textContent = fmt(c.total_cost);
+            const statusEl = document.getElementById('cd-status');
+            statusEl.textContent = c.status === 'completed' ? '✓ Completed' : '● Active';
+            statusEl.style.color = c.status === 'completed' ? '#00C853' : '#00F2EA';
+            const bar = document.getElementById('cd-bar-chart');
+            if (c.actual_gmv != null) {
+                const maxVal = Math.max(c.predicted_gmv, c.actual_gmv, 1);
+                bar.innerHTML = `<div class="space-y-sm"><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Predicted</span><span class="font-data-mono text-on-surface">${fmt(c.predicted_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${(c.predicted_gmv/maxVal*100).toFixed(0)}%;background:#00F2EA"></div></div></div><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Actual</span><span class="font-data-mono text-secondary">${fmt(c.actual_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full bg-secondary" style="width:${(c.actual_gmv/maxVal*100).toFixed(0)}%"></div></div></div></div>`;
+            } else {
+                bar.innerHTML = '<p class="text-[11px] text-on-surface-variant">No actual results yet. Click "Record Actual Results" after the campaign ends.</p>';
+            }
+            document.getElementById('cd-kol-body').innerHTML = (c.selected_kols||[]).map(k => {
+                const kActual = (c.kol_actuals||[]).find(a=>a.id===k.id);
+                return `<tr class="border-t border-[#353530]"><td class="px-4 py-2 text-[12px]">${k.name}<span class="text-outline text-[11px] ml-2">${k.tier||''}</span></td><td class="px-4 py-2 text-right font-mono text-[12px] text-primary">${fmt(k.predicted_gmv)}</td><td class="px-4 py-2 text-right font-mono text-[12px]">${kActual?`<span class="text-secondary">${fmt(kActual.actual_gmv)}</span>`:'—'}</td></tr>`;
+            }).join('');
+            const notesSection = document.getElementById('cd-notes-section');
+            notesSection.classList.toggle('hidden', !c.notes);
+            if (c.notes) document.getElementById('cd-notes').textContent = c.notes;
+            const recordBtn = document.getElementById('cd-record-btn');
+            recordBtn.classList.toggle('hidden', c.status !== 'active');
+            recordBtn.onclick = () => { closeCampaignDetail(); openActualModal(c.id, c.predicted_gmv); };
+        }
+
+        function openActualModal(campaignId, predictedGmv) {
+            currentCampaignId = campaignId;
+            document.getElementById('ar-predicted').textContent = fmt(predictedGmv);
+            document.getElementById('ar-actual').value = '';
+            document.getElementById('ar-notes').value = '';
+            document.getElementById('actual-results-modal').classList.remove('hidden');
+        }
+        function closeActualModal() { document.getElementById('actual-results-modal').classList.add('hidden'); }
+
+        async function submitActualResults() {
+            const actual = parseFloat(document.getElementById('ar-actual').value);
+            const notes = document.getElementById('ar-notes').value.trim();
+            if (isNaN(actual) || actual < 0) { toast('Enter a valid GMV amount', 'err'); return; }
+            try {
+                const payload = { actual_total_gmv: actual };
+                if (notes) payload.notes = notes;
+                const r = await fetch(`${API}/campaigns/${currentCampaignId}/actual`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if (!r.ok) throw new Error('Failed');
+                const d = await r.json();
+                toast(`Results recorded! Accuracy: ${d.campaign.accuracy_pct}%`);
+                closeActualModal();
+                loadCampaigns();
+            } catch (e) { toast(e.message, 'err'); }
+        }
+
+        async function deleteCampaign(id) {
+            if (!confirm('Delete this campaign?')) return;
+            try {
+                const r = await fetch(`${API}/campaigns/${id}`, { method: 'DELETE' });
+                if (!r.ok) throw new Error('Delete failed');
+                toast('Campaign deleted'); loadCampaigns();
+            } catch (e) { toast(e.message, 'err'); }
+        }
+
+        // ══════════ KOL HISTORY & SPARKLINES ══════════
+        function renderSparkline(values, color) {
+            if (!values || values.length < 2) return values && values.length === 1 ? '<span class="text-[10px] text-on-surface-variant">1 pt</span>' : '<span class="text-[10px] text-on-surface-variant">—</span>';
+            const W = 90, H = 32;
+            const min = Math.min(...values), max = Math.max(...values), range = max - min;
+            const step = W / (values.length - 1);
+            const pts = values.map((v, i) => {
+                const x = (i * step).toFixed(1);
+                const y = range > 0 ? (H - ((v - min) / range) * (H - 6) - 3).toFixed(1) : (H / 2).toFixed(1);
+                return `${x},${y}`;
+            }).join(' ');
+            const trend = values[values.length-1] >= values[0] ? '↑' : '↓';
+            const trendColor = values[values.length-1] >= values[0] ? '#00C853' : '#FF0050';
+            return `<span style="color:${trendColor};font-size:11px;font-weight:bold">${trend}</span><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:inline-block;vertical-align:middle;margin-left:4px"><polyline fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" points="${pts}"/></svg>`;
+        }
+
+        function renderKolHistory(data) {
+            const content = document.getElementById('kd-history-content');
+            if (!data || !data.snapshots || data.snapshots.length === 0) {
+                content.innerHTML = '<p class="text-[11px] text-on-surface-variant">No snapshots yet. Edit the creator or click <strong>Simulate Update</strong> to start tracking trends.</p>';
+                return;
+            }
+            const snaps = [...data.snapshots].reverse();
+            const engVals = snaps.map(s => s.engagement_rate).filter(v => v != null);
+            const fitVals = snaps.map(s => s.fit_score).filter(v => v != null);
+            const folVals = snaps.map(s => s.followers).filter(v => v != null);
+            const latestEng = engVals.length ? (engVals[engVals.length-1]*100).toFixed(1)+'%' : '—';
+            const latestFit = fitVals.length ? (fitVals[fitVals.length-1]*100).toFixed(0)+'%' : '—';
+            const latestFol = folVals.length ? fmtF(folVals[folVals.length-1]) : '—';
+            content.innerHTML = `
+                <div class="grid grid-cols-3 gap-md">
+                    <div class="text-center p-md rounded-lg bg-surface-container-low">
+                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Engagement Rate</p>
+                        <div class="flex items-center justify-center gap-xs">${renderSparkline(engVals,'#00F2EA')}</div>
+                        <p class="font-data-mono font-bold text-primary text-[14px] mt-xs">${latestEng}</p>
+                    </div>
+                    <div class="text-center p-md rounded-lg bg-surface-container-low">
+                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Fit Score</p>
+                        <div class="flex items-center justify-center gap-xs">${renderSparkline(fitVals,'#00C853')}</div>
+                        <p class="font-data-mono font-bold text-secondary text-[14px] mt-xs">${latestFit}</p>
+                    </div>
+                    <div class="text-center p-md rounded-lg bg-surface-container-low">
+                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Followers</p>
+                        <div class="flex items-center justify-center gap-xs">${renderSparkline(folVals,'#A855F7')}</div>
+                        <p class="font-data-mono font-bold text-on-surface text-[14px] mt-xs">${latestFol}</p>
+                    </div>
+                </div>
+                <p class="text-[10px] text-on-surface-variant mt-sm text-center">${data.count} snapshot${data.count!==1?'s':''} recorded</p>
+            `;
+        }
+
+        async function simulateKolUpdate() {
+            if (!currentKolId) return;
+            const btn = document.getElementById('kd-simulate-btn');
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[14px]">refresh</span> Simulating...';
+            btn.disabled = true;
+            try {
+                const r = await fetch(`${API}/kols/${currentKolId}/simulate-update`, { method: 'POST' });
+                if (!r.ok) throw new Error('Simulate failed');
+                const d = await r.json();
+                const ch = d.changes;
+                toast(`Updated! Eng ${(ch.engagement_rate.before*100).toFixed(1)}%→${(ch.engagement_rate.after*100).toFixed(1)}%, Fit ${(ch.fit_score.before*100).toFixed(0)}%→${(ch.fit_score.after*100).toFixed(0)}%`);
+                const [histRes, kolRes] = await Promise.all([
+                    fetch(`${API}/kols/${currentKolId}/history`),
+                    fetch(`${API}/kol/${currentKolId}`)
+                ]);
+                if (histRes.ok) renderKolHistory(await histRes.json());
+                if (kolRes.ok) renderKolDetail(await kolRes.json());
+            } catch (e) { toast(e.message, 'err'); }
+            finally {
+                btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">refresh</span> Simulate Update';
+                btn.disabled = false;
+            }
+        }
+
+    </script>
+</body>
+
+</html>
+oFixed(0)+'%' : '—';
+            const latestFol = folVals.length ? fmtF(folVals[folVals.length-1]) : '—';
+            content.innerHTML = `
+                <div class="grid grid-cols-3 gap-md">
+                    <div class="text-center p-md rounded-lg bg-surface-container-low">
+                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Engagement Rate</p>
+                        <div class="flex items-center justify-center gap-xs">${renderSparkline(engVals,'#00F2EA')}</div>
+                        <p class="font-data-mono font-bold text-primary text-[14px] mt-xs">${latestEng}</p>
+                    </div>
+                    <div class="text-center p-md rounded-lg bg-surface-container-low">
+                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Fit Score</p>
+                        <div class="flex items-center justify-center gap-xs">${renderSparkline(fitVals,'#00C853')}</div>
+                        <p class="font-data-mono font-bold text-secondary text-[14px] mt-xs">${latestFit}</p>
+                    </div>
+                    <div class="text-center p-md rounded-lg bg-surface-container-low">
+                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Followers</p>
+                        <div class="flex items-center justify-center gap-xs">${renderSparkline(folVals,'#A855F7')}</div>
+                        <p class="font-data-mono font-bold text-on-surface text-[14px] mt-xs">${latestFol}</p>
+                    </div>
+                </div>
+                <p class="text-[10px] text-on-surface-variant mt-sm text-center">${data.count} snapshot${data.count!==1?'s':''} recorded</p>
+            `;
+        }
+
+        async function simulateKolUpdate() {
+            if (!currentKolId) return;
+            const btn = document.getElementById('kd-simulate-btn');
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[14px]">refresh</span> Simulating...';
+            btn.disabled = true;
+            try {
+                const r = await fetch(`${API}/kols/${currentKolId}/simulate-update`, { method: 'POST' });
+                if (!r.ok) throw new Error('Simulate failed');
+                const d = await r.json();
+                const ch = d.changes;
+                toast(`Updated! Eng ${(ch.engagement_rate.before*100).toFixed(1)}% to ${(ch.engagement_rate.after*100).toFixed(1)}%, Fit ${(ch.fit_score.before*100).toFixed(0)}% to ${(ch.fit_score.after*100).toFixed(0)}%`);
+                const [histRes, kolRes] = await Promise.all([
+                    fetch(`${API}/kols/${currentKolId}/history`),
+                    fetch(`${API}/kol/${currentKolId}`)
+                ]);
+                if (histRes.ok) renderKolHistory(await histRes.json());
+                if (kolRes.ok) renderKolDetail(await kolRes.json());
+            } catch (e) { toast(e.message, 'err'); }
+            finally {
+                btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">refresh</span> Simulate Update';
+                btn.disabled = false;
+            }
+        }
+
+    </script>
+</body>
+
+</html>
+rHTML = '<span class="material-symbols-outlined text-[14px]">refresh</span> Simulate Update';
+                btn.disabled = false;
+            }
+        }
 
     </script>
 </body>
