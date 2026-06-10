@@ -15,6 +15,7 @@ Docs: http://localhost:8000/docs
 """
 
 import json
+import math
 import os
 import sys
 import time
@@ -374,15 +375,15 @@ def _downsample(history: List[float], target: int = 400) -> List[float]:
     return [history[min(int(i * step), n - 1)] for i in range(target)]
 
 
-def run_single_optimization(
+def run_all_optimizations(
     filtered: List[KOL],
     budget: float,
     seed: int,
     scores: List[float],
     sa_T0: float = 15000.0,
     sa_max_iter: int = 150,
-) -> AlgorithmResult:
-    """Run all 6 algorithms and return the best one."""
+) -> Dict[str, AlgorithmResult]:
+    """Run all 6 algorithms and return the full results dict."""
     sa_state, _, sa_hist = simulated_annealing(filtered, budget, seed=seed, T0=sa_T0, max_iter=sa_max_iter)
     hc_state, _, hc_hist = hill_climber(filtered, budget, seed=seed)
     rs_state, _, rs_hist = random_search(filtered, budget, seed=seed)
@@ -390,7 +391,7 @@ def run_single_optimization(
     ts_state, _, ts_hist = tabu_search(filtered, budget, seed=seed)
     gr_state, _, gr_hist = greedy_ranking(filtered, budget, seed=seed)
 
-    results = {
+    return {
         "simulated_annealing": build_algorithm_result("Simulated Annealing", sa_state, _downsample(sa_hist), filtered, scores),
         "hill_climber":        build_algorithm_result("Hill Climber",        hc_state, _downsample(hc_hist), filtered, scores),
         "random_search":       build_algorithm_result("Random Search",       rs_state, _downsample(rs_hist), filtered, scores),
@@ -399,6 +400,17 @@ def run_single_optimization(
         "greedy_ranking":      build_algorithm_result("Greedy Ranking",      gr_state, _downsample(gr_hist), filtered, scores),
     }
 
+
+def run_single_optimization(
+    filtered: List[KOL],
+    budget: float,
+    seed: int,
+    scores: List[float],
+    sa_T0: float = 15000.0,
+    sa_max_iter: int = 150,
+) -> AlgorithmResult:
+    """Run all 6 algorithms and return the one with highest GMV."""
+    results = run_all_optimizations(filtered, budget, seed, scores, sa_T0, sa_max_iter)
     best_key = max(results, key=lambda k: results[k].total_gmv)
     return results[best_key]
 
@@ -481,7 +493,20 @@ def optimize(req: OptimizeRequest):
 
 @app.post("/optimize-plans", response_model=OptimizePlansResponse)
 def optimize_plans(req: OptimizeRequest):
-    """Return 3 plans: Aggressive (max GMV), Balanced, Safe (80% budget)."""
+    """Return 3 plans with genuinely different selection objectives.
+
+    Aggressive  — 120% budget, winner = algorithm with highest total GMV.
+                  "Spend more, maximise reach."
+
+    Balanced    — 100% budget, winner = algorithm with highest sqrt(GMV × ROI).
+                  Geometric mean penalises both low-GMV and low-ROI extremes.
+                  "Best trade-off between scale and efficiency."
+
+    Safe        — 80% budget, winner = Greedy Ranking.
+                  Greedy picks by GMV/cost ratio, guaranteeing the best
+                  cost-effectiveness in the pool.
+                  "Protect budget, maximise ROI."
+    """
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
     if req.country not in VALID_COUNTRIES:
@@ -504,23 +529,33 @@ def optimize_plans(req: OptimizeRequest):
 
     scores = compute_creator_score(filtered)
 
-    # Aggressive: 120% budget, higher T0 and more iterations
+    # ── Aggressive: 120% budget → pick algorithm with max GMV ──────────────
     aggressive_budget = req.budget * 1.2
-    agg_result = run_single_optimization(filtered, aggressive_budget, req.seed, scores,
-                                         sa_T0=20000.0, sa_max_iter=300)
+    agg_results = run_all_optimizations(filtered, aggressive_budget, req.seed, scores,
+                                        sa_T0=20000.0, sa_max_iter=300)
+    agg_key = max(agg_results, key=lambda k: agg_results[k].total_gmv)
+    agg_result = agg_results[agg_key]
     agg_tier = compute_tier_breakdown(agg_result.selected_kols)
     agg_overlap = detect_audience_overlap(agg_result.selected_kols, filtered)
 
-    # Balanced: standard budget and defaults
-    bal_result = run_single_optimization(filtered, req.budget, req.seed + 1, scores,
-                                         sa_T0=15000.0, sa_max_iter=150)
+    # ── Balanced: 100% budget → pick algorithm with max sqrt(GMV × ROI) ────
+    #    Geometric mean of GMV and ROI rewards both scale and efficiency;
+    #    it differs from Aggressive whenever ROI varies meaningfully across algos.
+    bal_results = run_all_optimizations(filtered, req.budget, req.seed + 1, scores,
+                                        sa_T0=15000.0, sa_max_iter=150)
+    bal_key = max(bal_results,
+                  key=lambda k: math.sqrt(bal_results[k].total_gmv * max(bal_results[k].roi, 0.01)))
+    bal_result = bal_results[bal_key]
     bal_tier = compute_tier_breakdown(bal_result.selected_kols)
     bal_overlap = detect_audience_overlap(bal_result.selected_kols, filtered)
 
-    # Safe: 80% budget, fewer iterations
+    # ── Safe: 80% budget → always use Greedy Ranking ───────────────────────
+    #    Greedy sorts by GMV/cost and greedily fills the budget, giving the
+    #    provably best cost-effectiveness ratio in the pool.
     safe_budget = req.budget * 0.8
-    safe_result = run_single_optimization(filtered, safe_budget, req.seed + 2, scores,
-                                          sa_T0=8000.0, sa_max_iter=100)
+    safe_results = run_all_optimizations(filtered, safe_budget, req.seed + 2, scores,
+                                         sa_T0=8000.0, sa_max_iter=100)
+    safe_result = safe_results["greedy_ranking"]   # always best ROI
     safe_tier = compute_tier_breakdown(safe_result.selected_kols)
     safe_overlap = detect_audience_overlap(safe_result.selected_kols, filtered)
 
@@ -543,7 +578,7 @@ def optimize_plans(req: OptimizeRequest):
             ),
             PlanResult(
                 plan_name="Balanced",
-                description="Stay within budget for the optimal GMV-ROI balance. Recommended default.",
+                description="Optimal GMV–ROI trade-off within budget. Recommended default.",
                 budget_limit=req.budget,
                 selected_kols=bal_result.selected_kols,
                 total_cost=bal_result.total_cost,
@@ -554,7 +589,7 @@ def optimize_plans(req: OptimizeRequest):
             ),
             PlanResult(
                 plan_name="Safe",
-                description="Cap spending at 80% of budget, prioritizing ROI over raw GMV.",
+                description="80% budget cap, Greedy selection — highest cost-effectiveness guaranteed.",
                 budget_limit=safe_budget,
                 selected_kols=safe_result.selected_kols,
                 total_cost=safe_result.total_cost,

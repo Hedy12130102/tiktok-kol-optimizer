@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>tiko — TikTok Shop KOL Optimizer</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23000000'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Inter,sans-serif' font-weight='800' font-size='38' fill='%2300C853'>tiko</text></svg>" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23000000'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Inter,sans-serif' font-weight='800' font-size='38' fill='%23ffffff'>tiko</text></svg>" />
     <link href="./dist/output.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
@@ -96,7 +96,7 @@
         <div class="flex items-center gap-md mb-xl px-xs">
             <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                 style="background:#000000">
-                <span style="color:#00C853" class="font-extrabold text-[13px] tracking-tighter leading-none">tiko</span>
+                <span style="color:#ffffff" class="font-extrabold text-[13px] tracking-tighter leading-none">tiko</span>
             </div>
             <div>
                 <p class="text-on-surface font-bold text-[15px] leading-none">KOL Optimizer</p>
@@ -218,6 +218,10 @@
 
             <!-- Results -->
             <div id="results-section" class="hidden space-y-xl">
+
+                <!-- ══ Small-pool warning banner ══ -->
+                <div id="pool-size-warning" class="hidden rounded-xl px-lg py-md text-sm font-medium"
+                     style="background:rgba(255,160,0,0.12);border:1px solid rgba(255,160,0,0.4);color:#FFA000;"></div>
 
                 <!-- ══ BUSINESS VIEW (default) ══ -->
                 <div id="biz-view" class="space-y-xl">
@@ -1230,6 +1234,17 @@
             document.getElementById('results-section').classList.remove('hidden');
             document.getElementById('view-toggle').classList.remove('hidden');
 
+            // ── Small-pool warning ──────────────────────────────────────────
+            const poolWarn = document.getElementById('pool-size-warning');
+            if (poolWarn) {
+                if (data.candidates < 20) {
+                    poolWarn.textContent = `⚠️ Small pool (${data.candidates} creators). With fewer than 20 candidates the search space is tiny — all stochastic algorithms may converge to the same solution. Consider widening your country/category filter or adding more KOLs.`;
+                    poolWarn.classList.remove('hidden');
+                } else {
+                    poolWarn.classList.add('hidden');
+                }
+            }
+
             const catN = { beauty: 'Beauty & Cosmetics', fashion: 'Fashion & Lifestyle', home: 'Home & Living', fmcg: 'FMCG' };
             const coN = { MY: 'Malaysia', ID: 'Indonesia', TH: 'Thailand', PH: 'Philippines', SG: 'Singapore', VN: 'Vietnam' };
             const sorted = [...data.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
@@ -1870,6 +1885,15 @@ kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono upper
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('results-section').classList.remove('hidden');
             document.getElementById('view-toggle').classList.remove('hidden');
+            const poolWarn = document.getElementById('pool-size-warning');
+            if (poolWarn) {
+                if (data.candidates < 20) {
+                    poolWarn.textContent = `⚠️ Small pool (${data.candidates} creators). With fewer than 20 candidates the search space is tiny — all stochastic algorithms may converge to the same solution. Consider widening your country/category filter or adding more KOLs.`;
+                    poolWarn.classList.remove('hidden');
+                } else {
+                    poolWarn.classList.add('hidden');
+                }
+            }
             const catN = { beauty: 'Beauty & Cosmetics', fashion: 'Fashion & Lifestyle', home: 'Home & Living', fmcg: 'FMCG' };
             const coN = { MY: 'Malaysia', ID: 'Indonesia', TH: 'Thailand', PH: 'Philippines', SG: 'Singapore', VN: 'Vietnam' };
             const sorted = [...data.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
