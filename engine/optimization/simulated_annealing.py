@@ -54,18 +54,20 @@ def get_neighbour_swap_operator(state: List[int], kols: List[KOL], budget: float
 def simulated_annealing(
     kols: List[KOL],
     budget: float,
-    T0: float = 100.0,
-    T_min: float = 0.01,
-    alpha: float = 0.98,
+    T0: float = 15000.0,
+    T_min: float = 10.0,
+    alpha: float = 0.95,
     max_iter: int = 150,
     seed: Optional[int] = None,
 ) -> Tuple[List[int], float, List[float]]:
     """
     Simulated Annealing with adaptive exploration.
 
-    For small pools (<50 KOLs), default T0=200 and max_iter=300 are
-    recommended so the algorithm has enough thermal budget to escape
-    the 'many-small-KOLs' local optimum.
+    Temperature is calibrated to the GMV fitness landscape:
+    - Typical single-KOL GMV delta is $2,000–$8,000
+    - T0=15,000 → initial acceptance probability ~60–85% for worsening moves
+    - Cooling: alpha=0.95, T_min=10 → ~143 temperature levels × 150 iters = ~21K evals
+    - At T=100 (late-stage), exp(-delta/T) ≈ 0 → algorithm converges
     """
     rng = random.Random(seed)
     n = len(kols)
