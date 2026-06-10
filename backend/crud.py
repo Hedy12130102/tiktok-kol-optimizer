@@ -3,19 +3,24 @@ Creator CRUD & CSV import — data management endpoints.
 
 Endpoints
 ---------
-  POST   /kols/add          Add a single KOL
-  POST   /kols/import-csv   Bulk import from CSV
-  PUT    /kols/{id}         Update a KOL
-  DELETE /kols/{id}         Delete a KOL
-  GET    /kols/template     Download CSV template
-  GET    /kols/export       Export all KOLs as CSV
+  POST   /kols/add                   Add a single KOL
+  POST   /kols/import-csv            Bulk import from CSV
+  PUT    /kols/{id}                  Update a KOL (auto-snapshots old values)
+  DELETE /kols/{id}                  Delete a KOL
+  GET    /kols/template              Download CSV template
+  GET    /kols/export                Export all KOLs as CSV
+  GET    /kols/{id}/history          Metric history snapshots for a KOL
+  POST   /kols/{id}/simulate-update  Simulate a TikTok API refresh (random drift)
 
 All writes persist to data/sample_kols.json immediately.
+KOL metric history persists to data/kol_history.json.
 """
 import csv
 import io
 import json
 import os
+import random
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
@@ -28,6 +33,43 @@ DATA_PATH = os.path.join(
     "data",
     "sample_kols.json",
 )
+
+KOL_HISTORY_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "data",
+    "kol_history.json",
+)
+
+# ── KOL history helpers ───────────────────────────────────────
+_SNAPSHOT_FIELDS = ("engagement_rate", "fit_score", "followers", "avg_views", "avg_likes")
+
+
+def _load_history() -> List[dict]:
+    if not os.path.exists(KOL_HISTORY_PATH):
+        return []
+    with open(KOL_HISTORY_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _save_history(data: List[dict]):
+    with open(KOL_HISTORY_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def _record_snapshot(kol_record: dict):
+    """Append a timestamped snapshot of the KOL's current metrics to history."""
+    history = _load_history()
+    entry = next((h for h in history if h["kol_id"] == kol_record["id"]), None)
+    if entry is None:
+        entry = {"kol_id": kol_record["id"], "snapshots": []}
+        history.append(entry)
+
+    snapshot = {"recorded_at": datetime.utcnow().isoformat()}
+    for f in _SNAPSHOT_FIELDS:
+        if f in kol_record and kol_record[f] is not None:
+            snapshot[f] = kol_record[f]
+    entry["snapshots"].append(snapshot)
+    _save_history(history)
 
 VALID_COUNTRIES = ["MY", "ID", "TH", "PH"]
 VALID_CATEGORIES = ["beauty", "tech", "fashion"]
@@ -171,7 +213,7 @@ def add_kol(kol: KOLCreate):
 
 @router.put("/kols/{kol_id}")
 def update_kol(kol_id: int, updates: KOLUpdate):
-    """Update an existing KOL. Only provided fields are changed."""
+    """Update an existing KOL. Snapshots current metrics before applying changes."""
     data = _load()
     idx = next((i for i, d in enumerate(data) if d["id"] == kol_id), None)
     if idx is None:
@@ -185,10 +227,70 @@ def update_kol(kol_id: int, updates: KOLUpdate):
         if changes["category"] not in VALID_CATEGORIES:
             raise HTTPException(status_code=422, detail="category must be one of: beauty, tech, fashion")
 
+    # Auto-snapshot BEFORE applying changes (track history)
+    _record_snapshot(data[idx])
+
     data[idx].update(changes)
     _save(data)
 
     return {"message": f"KOL {kol_id} updated", "kol": data[idx]}
+
+
+@router.get("/kols/{kol_id}/history")
+def get_kol_history(kol_id: int):
+    """Return all metric snapshots for a KOL, newest first."""
+    data = _load()
+    if not any(d["id"] == kol_id for d in data):
+        raise HTTPException(status_code=404, detail=f"KOL with id {kol_id} not found")
+
+    history = _load_history()
+    entry = next((h for h in history if h["kol_id"] == kol_id), None)
+    snapshots = list(reversed(entry["snapshots"])) if entry else []
+    return {"kol_id": kol_id, "snapshots": snapshots, "count": len(snapshots)}
+
+
+@router.post("/kols/{kol_id}/simulate-update")
+def simulate_kol_update(kol_id: int):
+    """
+    Simulate a TikTok API metric refresh: apply realistic random drift to
+    engagement_rate, fit_score, followers, and record a new snapshot.
+    Useful for demos and testing trend visualisation without a real API.
+    """
+    data = _load()
+    idx = next((i for i, d in enumerate(data) if d["id"] == kol_id), None)
+    if idx is None:
+        raise HTTPException(status_code=404, detail=f"KOL with id {kol_id} not found")
+
+    kol = data[idx]
+    rng = random.Random()   # fresh RNG each call → different values
+
+    def drift(val: float, lo: float, hi: float, min_v: float, max_v: float) -> float:
+        """Apply multiplicative drift within [min_v, max_v]."""
+        factor = 1 + rng.uniform(lo, hi)
+        return round(max(min_v, min(max_v, val * factor)), 4)
+
+    old_eng = kol.get("engagement_rate", 0.08)
+    old_fit = kol.get("fit_score", 0.75)
+    old_fol = kol.get("followers", 100000)
+
+    kol["engagement_rate"] = drift(old_eng, -0.08, +0.12, 0.01, 0.50)
+    kol["fit_score"]        = drift(old_fit, -0.05, +0.08, 0.10, 1.00)
+    kol["followers"]        = int(drift(old_fol, -0.02, +0.06, 1000, 50_000_000))
+    kol["avg_views"]        = int(kol["followers"] * rng.uniform(0.20, 0.40))
+    kol["avg_likes"]        = int(kol["avg_views"] * kol["engagement_rate"])
+
+    _record_snapshot(kol)
+    _save(data)
+
+    return {
+        "message": "Simulated metric refresh applied",
+        "kol_id": kol_id,
+        "changes": {
+            "engagement_rate": {"before": old_eng, "after": kol["engagement_rate"]},
+            "fit_score":        {"before": old_fit, "after": kol["fit_score"]},
+            "followers":        {"before": old_fol, "after": kol["followers"]},
+        },
+    }
 
 
 @router.delete("/kols/{kol_id}")
