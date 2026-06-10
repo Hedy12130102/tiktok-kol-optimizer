@@ -52,13 +52,16 @@ def test_optimize_happy_path():
     assert "roi" in data
     assert "results" in data
 
-    # All three algorithms present
+    # All six algorithms present
     assert "simulated_annealing" in data["results"]
     assert "hill_climber" in data["results"]
     assert "random_search" in data["results"]
+    assert "genetic_algorithm" in data["results"]
+    assert "tabu_search" in data["results"]
+    assert "greedy_ranking" in data["results"]
 
     # Each algorithm result has the expected structure
-    for algo_key in ["simulated_annealing", "hill_climber", "random_search"]:
+    for algo_key in data["results"]:
         algo = data["results"][algo_key]
         assert "algorithm" in algo
         assert "selected_kols" in algo
@@ -92,18 +95,17 @@ def test_optimize_includes_tier_and_creator_score():
         assert len(kol["reasons"]) >= 3  # spec guarantees at least 3 reasons
 
 
-def test_optimize_history_arrays_same_length():
-    """All three history arrays must be truncated to the same length."""
+def test_optimize_history_arrays_nonempty():
+    """All six algorithm history arrays must be non-empty lists."""
     response = client.post("/optimize", json={
         "budget": 5000, "country": "MY", "category": "beauty", "seed": 42,
     })
     results = response.json()["results"]
-    lengths = [
-        len(results["simulated_annealing"]["history"]),
-        len(results["hill_climber"]["history"]),
-        len(results["random_search"]["history"]),
-    ]
-    assert len(set(lengths)) == 1, f"history arrays differ in length: {lengths}"
+    for algo_key in ["simulated_annealing", "hill_climber", "random_search",
+                     "genetic_algorithm", "tabu_search", "greedy_ranking"]:
+        hist = results[algo_key]["history"]
+        assert isinstance(hist, list) and len(hist) > 0, \
+            f"{algo_key} history is empty"
 
 
 def test_optimize_best_algorithm_has_highest_gmv():
@@ -141,7 +143,7 @@ def test_optimize_rejects_negative_budget():
 
 def test_optimize_rejects_unknown_country():
     response = client.post("/optimize", json={
-        "budget": 5000, "country": "SG", "category": "beauty",
+        "budget": 5000, "country": "JP", "category": "beauty",
     })
     assert response.status_code == 422
     assert "country" in response.json()["detail"].lower()
@@ -149,15 +151,15 @@ def test_optimize_rejects_unknown_country():
 
 def test_optimize_rejects_unknown_category():
     response = client.post("/optimize", json={
-        "budget": 5000, "country": "MY", "category": "food",
+        "budget": 5000, "country": "MY", "category": "gaming",
     })
     assert response.status_code == 422
     assert "category" in response.json()["detail"].lower()
 
 
 def test_optimize_accepts_all_valid_countries():
-    """All four target markets should be accepted."""
-    for country in ["MY", "ID", "TH", "PH"]:
+    """All six target markets should be accepted."""
+    for country in ["MY", "ID", "TH", "PH", "SG", "VN"]:
         response = client.post("/optimize", json={
             "budget": 5000, "country": country, "category": "beauty",
         })
@@ -165,11 +167,20 @@ def test_optimize_accepts_all_valid_countries():
 
 
 def test_optimize_accepts_all_valid_categories():
-    for category in ["beauty", "tech", "fashion"]:
+    """All 4 product categories should be accepted."""
+    for category in ["beauty", "fashion", "home", "fmcg"]:
         response = client.post("/optimize", json={
             "budget": 5000, "country": "MY", "category": category,
         })
         assert response.status_code == 200, f"{category} was rejected"
+
+
+def test_optimize_accepts_small_budget():
+    """Budgets as low as $100 should be accepted (small merchant support)."""
+    response = client.post("/optimize", json={
+        "budget": 100, "country": "MY", "category": "fmcg",
+    })
+    assert response.status_code == 200
 
 
 # ════════════════════════════════════════════════════════════════
@@ -219,7 +230,7 @@ def test_kols_pagination():
 
 
 def test_kols_rejects_invalid_country():
-    response = client.get("/kols?country=SG")
+    response = client.get("/kols?country=JP")
     assert response.status_code == 422
 
 
@@ -277,16 +288,14 @@ def test_top_kols_no_filter():
 # ════════════════════════════════════════════════════════════════
 #  POST /scalability
 # ════════════════════════════════════════════════════════════════
-def test_scalability_returns_three_algorithms():
+def test_scalability_returns_all_six_algorithms():
     response = client.post("/scalability", json={"n": 50, "budget": 5000, "seed": 42})
     assert response.status_code == 200
     data = response.json()
     assert data["n"] == 50
-    assert "simulated_annealing" in data
-    assert "hill_climber" in data
-    assert "random_search" in data
-
-    for algo_key in ["simulated_annealing", "hill_climber", "random_search"]:
+    for algo_key in ["simulated_annealing", "hill_climber", "random_search",
+                     "genetic_algorithm", "tabu_search", "greedy_ranking"]:
+        assert algo_key in data, f"{algo_key} missing from /scalability response"
         algo = data[algo_key]
         assert algo["time_seconds"] >= 0
         assert algo["total_gmv"] >= 0
