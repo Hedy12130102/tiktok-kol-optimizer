@@ -1,5 +1,69 @@
 import csv, json, random, os, math
 
+
+# ════════════════════════════════════════════════════════════════
+#  Market-data tables (mirrored from engine/models.py so the
+#  generator stays self-contained — no engine import needed)
+# ════════════════════════════════════════════════════════════════
+
+_CTR = {
+    "beauty":  {"MY": 0.035, "ID": 0.032, "TH": 0.040, "PH": 0.030, "SG": 0.038, "VN": 0.038},
+    "fashion": {"MY": 0.033, "ID": 0.030, "TH": 0.036, "PH": 0.028, "SG": 0.036, "VN": 0.034},
+    "home":    {"MY": 0.028, "ID": 0.025, "TH": 0.030, "PH": 0.023, "SG": 0.030, "VN": 0.027},
+    "fmcg":    {"MY": 0.040, "ID": 0.037, "TH": 0.044, "PH": 0.035, "SG": 0.042, "VN": 0.041},
+}
+
+_CVR = {
+    "beauty":  {"MY": 0.085, "ID": 0.075, "TH": 0.090, "PH": 0.070, "SG": 0.095, "VN": 0.072},
+    "fashion": {"MY": 0.075, "ID": 0.065, "TH": 0.080, "PH": 0.060, "SG": 0.085, "VN": 0.062},
+    "home":    {"MY": 0.060, "ID": 0.050, "TH": 0.065, "PH": 0.045, "SG": 0.068, "VN": 0.046},
+    "fmcg":    {"MY": 0.095, "ID": 0.085, "TH": 0.105, "PH": 0.078, "SG": 0.108, "VN": 0.082},
+}
+
+_AOV = {
+    "beauty":  {"MY": 42,  "ID": 35,  "TH": 38,  "PH": 32,  "SG": 60,  "VN": 28},
+    "fashion": {"MY": 55,  "ID": 45,  "TH": 50,  "PH": 40,  "SG": 72,  "VN": 34},
+    "home":    {"MY": 45,  "ID": 38,  "TH": 42,  "PH": 32,  "SG": 65,  "VN": 28},
+    "fmcg":    {"MY": 22,  "ID": 18,  "TH": 20,  "PH": 16,  "SG": 32,  "VN": 11},
+}
+
+_PURCHASING_POWER = {
+    "MY": 1.0,
+    "TH": 0.9,
+    "ID": 0.7,
+    "PH": 0.6,
+    "SG": 1.3,
+    "VN": 0.55,
+}
+
+_SCALE = 200
+_ENG_BASE = 0.132
+_FIT_BASE = 0.650
+
+
+def _approx_expected_gmv(country: str, category: str, followers: int,
+                          engagement_rate: float, fit_score: float) -> float:
+    """Approximate GMV — same formula as KOL.expected_gmv() in engine/models.py."""
+    cat = category if category in _CTR else "beauty"
+    cty = country  if country  in _PURCHASING_POWER else "MY"
+
+    ctr = _CTR.get(cat, {}).get(cty, 0.030)
+    cvr = _CVR.get(cat, {}).get(cty, 0.060)
+    aov = _AOV.get(cat, {}).get(cty, 50)
+    pp  = _PURCHASING_POWER.get(cty, 1.0)
+
+    traction    = math.sqrt(max(1, followers))
+    funnel_rate = ctr * cvr
+
+    engagement_factor = math.sqrt(max(1e-4, engagement_rate) / _ENG_BASE)
+    fit_factor        = math.sqrt(max(1e-4, fit_score)        / _FIT_BASE)
+
+    return round(
+        traction * funnel_rate * aov * pp * engagement_factor * fit_factor * _SCALE,
+        2
+    )
+
+
 def generate_kols(num=300, json_output_path="data/sample_kols.json",
                   csv_output_path="data/influencers_mock.csv", seed=42):
     random.seed(seed)
@@ -40,18 +104,30 @@ def generate_kols(num=300, json_output_path="data/sample_kols.json",
 
         fit_score = random.uniform(0.3, 1.0)
 
-        # Cost: calibrated to SEA influencer market rates
-        # Sources: InfluenceFlow 2026, ContentGrip 2026
-        #   Nano:  $50-$200  |  Micro: $250-$1,000
-        #   Macro: $1,500-$5,000  |  Mega: $5,000-$20,000
+        country = random.choice(countries)
+        category = random.choice(categories)
+
+        # ── Commission rate (replaces flat-fee cost) ──────────────────
+        # Sources: TikTok Shop Affiliate Commission Benchmarks 2025-2026
+        # Higher-tier KOLs negotiate lower commission rates because they
+        # deliver higher absolute volume.
+        #   Nano  (<10K):     25-35%  — low reach, high rate
+        #   Micro (10K-100K): 18-28%
+        #   Macro (100K-1M):  12-22%
+        #   Mega  (>1M):       5-15%  — high volume, low rate
         if followers >= 1_000_000:
-            cost = round(random.uniform(5000, 20000), 2)
+            commission_rate = round(random.uniform(0.05, 0.15), 4)
         elif followers >= 100_000:
-            cost = round(random.uniform(1500, 5000), 2)
+            commission_rate = round(random.uniform(0.12, 0.22), 4)
         elif followers >= 10_000:
-            cost = round(random.uniform(250, 1000), 2)
+            commission_rate = round(random.uniform(0.18, 0.28), 4)
         else:
-            cost = round(random.uniform(50, 200), 2)
+            commission_rate = round(random.uniform(0.25, 0.35), 4)
+
+        # ── Cost = commission_rate × expected_gmv ────────────────────
+        approx_gmv = _approx_expected_gmv(country, category, followers,
+                                           engagement_rate, fit_score)
+        cost = round(commission_rate * approx_gmv, 2)
 
         noise    = random.randint(-int(followers * 0.05), int(followers * 0.05))
         avg_views = max(0, int(followers * 0.3 + noise))
@@ -59,11 +135,12 @@ def generate_kols(num=300, json_output_path="data/sample_kols.json",
 
         kols.append({
             "id": i, "name": f"KOL_{i}",
-            "country": random.choice(countries),
-            "category": random.choice(categories),
+            "country": country,
+            "category": category,
             "followers": followers,
             "engagement_rate": engagement_rate,
             "fit_score": round(fit_score, 4),
+            "commission_rate": commission_rate,
             "cost": cost,
             "avg_views": avg_views,
             "avg_likes": avg_likes,
@@ -79,5 +156,6 @@ def generate_kols(num=300, json_output_path="data/sample_kols.json",
         writer.writerows(kols)
     print(f"Generated {num} KOLs -> {json_output_path}")
     return kols
+
 
 generate_kols(300)

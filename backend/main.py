@@ -93,6 +93,7 @@ class KOLResult(BaseModel):
     followers: int
     engagement_rate: float
     fit_score: float
+    commission_rate: float = 0.15
     cost: float
     expected_gmv: float
     tier: str = ""
@@ -216,7 +217,8 @@ def load_raw_kols() -> List[dict]:
 
 
 _KOL_FIELDS = {"id", "name", "country", "category",
-               "followers", "engagement_rate", "fit_score", "cost"}
+               "followers", "engagement_rate", "fit_score",
+               "commission_rate", "cost"}
 
 
 def _dict_to_kol(d: dict) -> KOL:
@@ -232,6 +234,7 @@ def to_kol_result(k: KOL, score: float, all_kols: List[KOL]) -> KOLResult:
         followers=k.followers,
         engagement_rate=k.engagement_rate,
         fit_score=k.fit_score,
+        commission_rate=k.commission_rate,
         cost=k.cost,
         expected_gmv=round(k.expected_gmv(), 2),
         tier=get_tier(k),
