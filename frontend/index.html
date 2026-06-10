@@ -250,7 +250,7 @@
                             <div class="text-center p-md rounded-xl bg-secondary/10 border border-secondary/20">
                                 <p class="text-[10px] text-secondary uppercase tracking-wider mb-xs">Predicted GMV</p>
                                 <p id="biz-gmv" class="font-headline-lg text-headline-lg text-secondary font-bold">—</p>
-                                <p class="text-[11px] text-on-surface-variant mt-1">Gross Merchandise Value</p>
+                                <p id="biz-gmv-source" class="text-[11px] text-on-surface-variant mt-1">Gross Merchandise Value</p>
                             </div>
                             <div class="text-center p-md rounded-xl bg-surface-container-low">
                                 <p class="text-[10px] text-on-surface-variant uppercase tracking-wider mb-xs">Return on
@@ -1223,7 +1223,13 @@
             document.getElementById('biz-gmv').textContent = fmt(plan.total_gmv);
             document.getElementById('biz-roi').textContent = plan.roi.toFixed(2) + 'x';
             document.getElementById('biz-cost').textContent = fmt(plan.total_cost);
-            // biz-util keeps its own text (set by renderDashboard with actual budget)
+            // Fix: update biz-util to reflect THIS plan's budget limit (not the original budget)
+            const utilPct = (plan.total_cost / plan.budget_limit * 100).toFixed(1);
+            const budgetLabels = { Aggressive: '120% cap', Balanced: '100% cap', Safe: '80% cap' };
+            document.getElementById('biz-util').textContent =
+                utilPct + '% of ' + fmt(plan.budget_limit) + ' (' + (budgetLabels[name] || '') + ')';
+            const srcEl = document.getElementById('biz-gmv-source');
+            if (srcEl) srcEl.textContent = name + ' Plan · ' + (budgetLabels[name] || '');
             document.getElementById('biz-subtitle').textContent = document.getElementById('biz-subtitle').textContent
                 .replace(/\d+ creators$/, sorted.length + ' creators');
         }
@@ -1877,6 +1883,10 @@ kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono upper
             document.getElementById('biz-gmv').textContent = fmt(plan.total_gmv);
             document.getElementById('biz-roi').textContent = plan.roi.toFixed(2) + 'x';
             document.getElementById('biz-cost').textContent = fmt(plan.total_cost);
+            const utilPct2 = (plan.total_cost / plan.budget_limit * 100).toFixed(1);
+            const budgetLabels2 = { Aggressive: '120% cap', Balanced: '100% cap', Safe: '80% cap' };
+            document.getElementById('biz-util').textContent =
+                utilPct2 + '% of ' + fmt(plan.budget_limit) + ' (' + (budgetLabels2[name] || '') + ')';
             document.getElementById('biz-subtitle').textContent = document.getElementById('biz-subtitle').textContent.replace(/\d+ creators$/, sorted.length + ' creators');
         }
 
