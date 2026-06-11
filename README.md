@@ -14,9 +14,9 @@ The core feature. A merchant inputs parameters and the system returns the mathem
 
 **Inputs (sidebar):**
 - **Marketing Budget** — slider from $100 to $20,000. All algorithms guarantee the total hiring cost stays within this limit.
-- **Target Country** — Malaysia, Indonesia, Thailand, Philippines, Singapore, or Vietnam.
+- **Target Countries** — multi-select: Malaysia, Indonesia, Thailand, Philippines, Singapore, Vietnam, or All Countries. Selecting multiple countries pools creators from all chosen markets.
 - **Product Category** — Beauty, Fashion, Home & Living, or FMCG.
-- **Random Seed** — ensures reproducible results.
+- **Advanced Settings** — collapse/expand panel containing Random Seed (for reproducible results) and other tuning options.
 
 **What happens when you click "Run Optimization":**
 1. The backend filters the KOL pool by country + category.
@@ -41,15 +41,23 @@ The core feature. A merchant inputs parameters and the system returns the mathem
 
 ### 2. Creator Management
 
-Merchants can build their own KOL database. Operations available:
+Merchants can build their own KOL database. The Creators page opens with a **Data Sources** panel:
 
-- **Add Creator** — 12-field form (Name, TikTok URL, Country, Category, Followers, Engagement Rate, Cost, Fit Score, Avg Views, Avg Likes, Female Audience Ratio, Age Group).
+**Manual Import (Active):**
+- **Add Creator** — 12-field form (Name, TikTok URL, Country, Category, Followers, Engagement Rate, Commission Rate, Fit Score, Avg Views, Avg Likes, Female Audience Ratio, Age Group).
 - **Import CSV** — bulk upload with required columns `name, country, category, followers, engagement_rate, cost` and optional extended fields.
 - **Download Template** — pre-filled CSV with correct headers and one example row.
 - **Export** — download entire KOL database as CSV.
 - **Edit / Delete** — inline table actions with delete confirmation.
 - **Reset All** — clears the entire database (double confirmation required).
 - **Filters** — by Country, Category, or Tier; pagination at 20 per page.
+
+**Future API Integrations (Coming Soon):**
+- TikTok Creator Marketplace API — direct creator search and invite
+- TikTok Shop Partner API — live sales data and affiliate metrics
+- Analytics Platforms — third-party engagement data (e.g., Sprout Social, Brandwatch)
+
+Click any Coming Soon card to register interest for early access.
 
 **KOL Detail Modal:** Click any creator row to open a detail view showing full metrics and the **Metric Trends** section — sparkline charts for engagement rate, fit score, and followers over time, with trend arrows (↑ green / ↓ red). Click **Simulate Update** to apply a realistic TikTok API refresh with random drift and see the sparklines update live.
 
@@ -156,19 +164,19 @@ Sorts KOLs by predicted GMV-per-dollar and greedily fills the budget. Instant an
 ```
 tiktok-kol-optimizer/
 ├── backend/
-│   ├── main.py              # FastAPI: /optimize, /kols, /kol/{id}, /top-kols, /scalability
+│   ├── main.py              # FastAPI: /optimize, /kols, /kol/{id}, /top-kols, /scalability,
+│   │                        #          /api/connections (integration stubs)
 │   ├── crud.py              # KOL CRUD: /kols/add, PUT, DELETE, /import-csv, /reset
 │   │                        # also: GET /kols/{id}/history, POST /kols/{id}/simulate-update
 │   ├── campaigns.py         # Campaign Attribution: POST/GET/PUT/DELETE /campaigns
 │   └── README.md            # API usage guide with curl examples
 ├── frontend/
-│   └── index.html           # Single-page app: Optimizer + Creators + Campaign Attribution
+│   └── index.html           # Single-page app: Optimizer + Creators + Campaigns
 ├── engine/
 │   ├── models.py            # KOL dataclass + tier property
 │   ├── fitness.py           # Fitness function + budget penalty
 │   ├── optimization/
 │   │   ├── simulated_annealing.py
-│   │   ├── sa_improved.py   # Swap neighbourhood variant
 │   │   ├── hill_climber.py
 │   │   ├── random_search.py
 │   │   ├── genetic_algorithm.py
@@ -179,7 +187,7 @@ tiktok-kol-optimizer/
 │   │   ├── explainer.py     # Why-recommended reason generator
 │   │   └── roi_predictor.py # Predicted GMV and ROI calculator
 │   └── evaluation/
-│       ├── benchmark.py     # Multi-algorithm comparison runner
+│       ├── benchmark.py     # Multi-algorithm comparison runner (all 6 algorithms)
 │       └── sensitivity.py   # SA parameter sensitivity analysis
 ├── data/
 │   ├── generator.py         # Synthetic KOL dataset generator (--num flag)
@@ -188,8 +196,9 @@ tiktok-kol-optimizer/
 │   ├── campaigns.json       # Saved campaign attribution records
 │   └── influencers_mock.csv # Same data as sample_kols in CSV format
 ├── experiments/
-│   ├── run_comparison.py    # Convergence curve experiment
-│   └── scalability.py       # N=50 to 500 scaling benchmark
+│   ├── run_comparison.py    # Convergence curve experiment (6 algorithms)
+│   ├── scalability.py       # N=50 to 500 scaling benchmark (6 algorithms)
+│   └── gen_figures.py       # Generates all docs/figures/ charts
 ├── tests/
 │   ├── test_fitness.py
 │   ├── test_algorithms.py
@@ -292,6 +301,14 @@ Full specification: [`docs/API_SPEC.md`](docs/API_SPEC.md)
 | `PUT` | `/campaigns/{id}/actual` | Record actual GMV after campaign ends |
 | `DELETE` | `/campaigns/{id}` | Delete a campaign |
 
+### API Integrations (Stubs)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/connections` | List all integration statuses |
+| `POST` | `/api/connections/interest` | Register early-access email for a Coming Soon integration |
+| `POST` | `/api/connections/connect` | Connect an integration (returns `coming_soon` until live) |
+
 ---
 
 ## Run Tests
@@ -333,7 +350,7 @@ Merchant input (manual / CSV)
 
 ## Key Insight
 
-Hill Climber selects expensive Mega KOLs early, exhausts the budget, and gets trapped. No single-bit flip can improve the solution. Simulated Annealing, Genetic Algorithm, and Tabu Search each escape this trap via different mechanisms — temperature-driven acceptance, population crossover, and tabu memory respectively. In testing across the SE Asia dataset with 4 categories (Beauty, Fashion, Home, FMCG) and a proportional budget (N × $25), SA outperforms HC by 40–77% in predicted GMV depending on pool size, while GA and TS typically land within 3–15% of SA's result.
+Hill Climber selects expensive Mega KOLs early, exhausts the budget, and gets trapped. No single-bit flip can improve the solution. Simulated Annealing, Genetic Algorithm, and Tabu Search each escape this trap via different mechanisms — temperature-driven acceptance, population crossover, and tabu memory respectively. In benchmarks across the SE Asia dataset (N ∈ {20…200}, budget = N × $25, commission-rate cost model), the best algorithm outperforms HC by 42–77% in predicted GMV. At N=200, GA and GR tie at $78,356 GMV versus HC's $22,512 — a 3.5× gap that underscores the value of global search for large creator pools.
 
 ---
 
