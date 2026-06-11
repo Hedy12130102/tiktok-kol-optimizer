@@ -33,7 +33,9 @@ from engine.optimization.greedy_ranking import greedy_ranking
 def small_pool():
     """9 beauty/MY KOLs with increasing follower counts and costs."""
     return [
-        KOL(i, f"KOL_{i}", "MY", "beauty", 10000 * i, 0.1, 0.8, 500 * i)
+        KOL(id=i, name=f"KOL_{i}", country="MY", category="beauty",
+            followers=10000 * i, engagement_rate=0.1, fit_score=0.8,
+            commission_rate=0.15, cost=500 * i)
         for i in range(1, 10)
     ]
 
@@ -43,8 +45,9 @@ def mixed_pool():
     """Mixed-category pool covering all 4 categories."""
     categories = ["beauty", "fashion", "home", "fmcg"]
     return [
-        KOL(i + 1, f"KOL_{i+1}", "MY", categories[i % 4], 50000 + 10000 * i,
-            0.08 + 0.01 * i, 0.6 + 0.04 * i, 300 + 200 * i)
+        KOL(id=i + 1, name=f"KOL_{i+1}", country="MY", category=categories[i % 4],
+            followers=50000 + 10000 * i, engagement_rate=0.08 + 0.01 * i,
+            fit_score=0.6 + 0.04 * i, commission_rate=0.15, cost=300 + 200 * i)
         for i in range(16)
     ]
 
@@ -54,7 +57,7 @@ ALL_RUNNERS = [
     ("hill_climber",        lambda kols, b: hill_climber(kols, b, max_iter=100)),
     ("simulated_annealing", lambda kols, b: simulated_annealing(kols, b, max_iter=10)),
     ("random_search",       lambda kols, b: random_search(kols, b, max_iter=100)),
-    ("genetic_algorithm",   lambda kols, b: genetic_algorithm(kols, b, max_iter=5)),
+    ("genetic_algorithm",   lambda kols, b: genetic_algorithm(kols, b, generations=5)),
     ("tabu_search",         lambda kols, b: tabu_search(kols, b, max_iter=20)),
     ("greedy_ranking",      lambda kols, b: greedy_ranking(kols, b)),
 ]
@@ -113,8 +116,8 @@ def test_sa_reproducibility(small_pool):
 
 def test_ga_reproducibility(small_pool):
     """Same seed must yield identical GA result."""
-    s1, _, _ = genetic_algorithm(small_pool, BUDGET, seed=42, max_iter=5)
-    s2, _, _ = genetic_algorithm(small_pool, BUDGET, seed=42, max_iter=5)
+    s1, _, _ = genetic_algorithm(small_pool, BUDGET, seed=42, generations=5)
+    s2, _, _ = genetic_algorithm(small_pool, BUDGET, seed=42, generations=5)
     assert s1 == s2, "GA is not reproducible with fixed seed"
 
 

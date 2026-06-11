@@ -2,11 +2,11 @@
 """
 Scalability Analysis Experiment
 ================================
-Tests how each algorithm performs as the KOL pool size grows.
+Tests how each of the six algorithms performs as the KOL pool size grows.
 
 For each pool size N in [50, 100, 200, 500]:
-  - Runs Hill Climber, Simulated Annealing, and Random Search
-  - Repeats 10 times with different seeds
+  - Runs SA, HC, RS, GA, TS (N≤100 only), GR
+  - Repeats REPEAT times with different seeds
   - Records mean ± std of execution time and final GMV
 
 Outputs
@@ -24,7 +24,6 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-# ── Make sure project root is on the path ─────────────────────────
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
@@ -35,31 +34,45 @@ from engine.models import KOL
 from engine.optimization.hill_climber import hill_climber
 from engine.optimization.random_search import random_search
 from engine.optimization.simulated_annealing import simulated_annealing
+from engine.optimization.genetic_algorithm import genetic_algorithm
+from engine.optimization.tabu_search import tabu_search
+from engine.optimization.greedy_ranking import greedy_ranking
 
 # ── Experiment configuration ──────────────────────────────────────
-POOL_SIZES     = [50, 100, 200, 500]
-REPEAT         = 10          # number of seeds per pool size
-BUDGET         = 5000.0
-BASE_SEED      = 42          # seeds will be BASE_SEED, BASE_SEED+1, ..., BASE_SEED+REPEAT-1
+POOL_SIZES = [50, 100, 200, 500]
+REPEAT     = 10
+BUDGET     = 5_000.0
+BASE_SEED  = 42
+
+# TS is O(N²) per iteration — skip at N > 100 to avoid extremely long runtimes
+TS_MAX_N = 100
 
 ALGO_CONFIGS = {
-    "Simulated Annealing": {"color": "#1D9E75", "marker": "o"},
-    "Hill Climber":        {"color": "#D85A30", "marker": "s"},
-    "Random Search":       {"color": "#888780", "marker": "^"},
+    "Simulated Annealing": {"fn": simulated_annealing, "color": "#1D9E75", "marker": "o",  "ls": "-"},
+    "Hill Climber":        {"fn": hill_climber,        "color": "#D85A30", "marker": "s",  "ls": "-"},
+    "Random Search":       {"fn": random_search,       "color": "#888780", "marker": "^",  "ls": "--"},
+    "Genetic Algorithm":   {"fn": genetic_algorithm,   "color": "#4A90D9", "marker": "D",  "ls": "-"},
+    "Tabu Search":         {"fn": tabu_search,         "color": "#9B59B6", "marker": "v",  "ls": "-"},
+    "Greedy Ranking":      {"fn": greedy_ranking,      "color": "#F39C12", "marker": "P",  "ls": ":"},
 }
 
 
-# ── Helper ────────────────────────────────────────────────────────
 def dicts_to_kols(kol_dicts: list) -> list:
-    """Convert list of dicts (from generator) to list of KOL objects."""
     return [KOL(**d) for d in kol_dicts]
 
 
+def _gen_kols(n: int, seed: int) -> list:
+    """Generate n KOLs via data.generator, using temp files to avoid writes."""
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as jf, \
+         tempfile.NamedTemporaryFile(suffix=".csv",  delete=False) as cf:
+        jpath, cpath = jf.name, cf.name
+    kol_dicts = generate_kols(num=n, json_output_path=jpath, csv_output_path=cpath, seed=seed)
+    os.unlink(jpath); os.unlink(cpath)
+    return dicts_to_kols(kol_dicts)
+
+
 def run_one(algo_fn, kols, budget, seed, **kwargs):
-    """
-    Run one algorithm and return (elapsed_seconds, total_gmv).
-    All three algorithms return (state, cost, history).
-    """
     t0 = time.perf_counter()
     state, _, _hist = algo_fn(kols, budget, seed=seed, **kwargs)
     elapsed = time.perf_counter() - t0
@@ -67,144 +80,129 @@ def run_one(algo_fn, kols, budget, seed, **kwargs):
     return elapsed, gmv
 
 
-# ── Main experiment ───────────────────────────────────────────────
 def run_scalability_experiment():
     os.makedirs("experiments/plots", exist_ok=True)
     os.makedirs("docs/figures", exist_ok=True)
 
-    # Storage: results[algo_name][N] = {"times": [...], "gmvs": [...]}
+    # results[algo_name][N] = {"times": [...], "gmvs": [...]}
     results = {name: {N: {"times": [], "gmvs": []} for N in POOL_SIZES}
                for name in ALGO_CONFIGS}
 
     for N in POOL_SIZES:
-        print(f"\n{'─'*50}")
+        print(f"\n{'─'*60}")
         print(f"  Pool size N = {N}")
-        print(f"{'─'*50}")
+        print(f"{'─'*60}")
 
         for i in range(REPEAT):
             seed = BASE_SEED + i
+            kols = _gen_kols(N, seed)
 
-            # Generate a fresh KOL pool for this seed
-            kol_dicts = generate_kols(
-                num=N,
-                json_output_path=None,
-                csv_output_path=None,
-                seed=seed,
+            for algo_name, cfg in ALGO_CONFIGS.items():
+                # Skip TS for large pools
+                if algo_name == "Tabu Search" and N > TS_MAX_N:
+                    continue
+                elapsed, gmv = run_one(cfg["fn"], kols, BUDGET, seed)
+                results[algo_name][N]["times"].append(elapsed)
+                results[algo_name][N]["gmvs"].append(gmv)
+
+            # Print one-line progress
+            vals = " ".join(
+                f"{name[:2]}={results[name][N]['gmvs'][-1]:>9,.0f}"
+                for name in ALGO_CONFIGS
+                if results[name][N]["gmvs"]
             )
-            kols = dicts_to_kols(kol_dicts)
-
-            # Run all three algorithms on the same pool
-            t_sa, gmv_sa = run_one(simulated_annealing, kols, BUDGET, seed)
-            t_hc, gmv_hc = run_one(hill_climber,        kols, BUDGET, seed)
-            t_rs, gmv_rs = run_one(random_search,        kols, BUDGET, seed)
-
-            results["Simulated Annealing"][N]["times"].append(t_sa)
-            results["Simulated Annealing"][N]["gmvs"].append(gmv_sa)
-            results["Hill Climber"][N]["times"].append(t_hc)
-            results["Hill Climber"][N]["gmvs"].append(gmv_hc)
-            results["Random Search"][N]["times"].append(t_rs)
-            results["Random Search"][N]["gmvs"].append(gmv_rs)
-
-            print(f"  seed={seed}  SA={gmv_sa:>10,.0f}  HC={gmv_hc:>10,.0f}  RS={gmv_rs:>10,.0f}")
-
+            print(f"  seed={seed}  {vals}")
 
     # ── Write CSV ─────────────────────────────────────────────────
     csv_path = "experiments/plots/scalability_results.csv"
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow([
-            "N", "Algorithm",
-            "Mean_Time_Sec", "Std_Time_Sec",
-            "Mean_GMV",      "Std_GMV",
-        ])
+        writer.writerow(["N", "Algorithm", "Mean_Time_Sec", "Std_Time_Sec", "Mean_GMV", "Std_GMV"])
         for algo_name in ALGO_CONFIGS:
             for N in POOL_SIZES:
                 times = results[algo_name][N]["times"]
                 gmvs  = results[algo_name][N]["gmvs"]
+                if not times:
+                    writer.writerow([N, algo_name, "—", "—", "—", "—"])
+                    continue
                 writer.writerow([
                     N, algo_name,
                     round(np.mean(times), 4), round(np.std(times), 4),
                     round(np.mean(gmvs),  2),  round(np.std(gmvs),  2),
                 ])
-    print(f"\n[SUCCESS] CSV saved -> {csv_path}")
+    print(f"\n[OK] CSV → {csv_path}")
 
-    # ── Compute summary arrays for plotting ───────────────────────
+    # ── Compute summary arrays ────────────────────────────────────
     summary = {}
     for algo_name in ALGO_CONFIGS:
         summary[algo_name] = {
-            "mean_times": [np.mean(results[algo_name][N]["times"]) for N in POOL_SIZES],
-            "std_times":  [np.std( results[algo_name][N]["times"]) for N in POOL_SIZES],
-            "mean_gmvs":  [np.mean(results[algo_name][N]["gmvs"])  for N in POOL_SIZES],
-            "std_gmvs":   [np.std( results[algo_name][N]["gmvs"])  for N in POOL_SIZES],
+            "mean_times": [np.mean(results[algo_name][N]["times"]) if results[algo_name][N]["times"] else None for N in POOL_SIZES],
+            "std_times":  [np.std( results[algo_name][N]["times"]) if results[algo_name][N]["times"] else None for N in POOL_SIZES],
+            "mean_gmvs":  [np.mean(results[algo_name][N]["gmvs"])  if results[algo_name][N]["gmvs"]  else None for N in POOL_SIZES],
+            "std_gmvs":   [np.std( results[algo_name][N]["gmvs"])  if results[algo_name][N]["gmvs"]  else None for N in POOL_SIZES],
         }
 
+    def _filtered(vals):
+        """Return (x, y, err) only for non-None entries."""
+        xs, ys, es = [], [], []
+        for x, y, e in zip(POOL_SIZES, vals[0], vals[1]):
+            if y is not None:
+                xs.append(x); ys.append(y); es.append(e)
+        return xs, ys, es
+
     # ── Plot 1: Execution Time ────────────────────────────────────
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(10, 5))
     for algo_name, cfg in ALGO_CONFIGS.items():
         s = summary[algo_name]
-        ax.errorbar(
-            POOL_SIZES,
-            s["mean_times"],
-            yerr=s["std_times"],
-            label=algo_name,
-            color=cfg["color"],
-            marker=cfg["marker"],
-            linewidth=2,
-            markersize=7,
-            capsize=4,
-        )
+        xs, ys, es = _filtered((s["mean_times"], s["std_times"]))
+        ax.errorbar(xs, ys, yerr=es, label=algo_name, color=cfg["color"],
+                    marker=cfg["marker"], linestyle=cfg["ls"],
+                    linewidth=2, markersize=7, capsize=4)
     ax.set_xlabel("KOL Pool Size (N)", fontsize=12)
     ax.set_ylabel("Execution Time (seconds)", fontsize=12)
     ax.set_title("Algorithm Scalability — Execution Time vs Pool Size", fontsize=13)
-    ax.legend(fontsize=11)
+    ax.legend(fontsize=10)
     ax.grid(True, linestyle="--", alpha=0.4)
     fig.tight_layout()
     for path in ["experiments/plots/scalability_time.png", "docs/figures/scalability_time.png"]:
         fig.savefig(path, dpi=150)
     plt.close(fig)
-    print("[SUCCESS] Time chart saved -> docs/figures/scalability_time.png")
+    print("[OK] Time chart → docs/figures/scalability_time.png")
 
     # ── Plot 2: Final GMV ─────────────────────────────────────────
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(10, 5))
     for algo_name, cfg in ALGO_CONFIGS.items():
         s = summary[algo_name]
-        ax.errorbar(
-            POOL_SIZES,
-            s["mean_gmvs"],
-            yerr=s["std_gmvs"],
-            label=algo_name,
-            color=cfg["color"],
-            marker=cfg["marker"],
-            linewidth=2,
-            markersize=7,
-            capsize=4,
-        )
+        xs, ys, es = _filtered((s["mean_gmvs"], s["std_gmvs"]))
+        ax.errorbar(xs, ys, yerr=es, label=algo_name, color=cfg["color"],
+                    marker=cfg["marker"], linestyle=cfg["ls"],
+                    linewidth=2, markersize=7, capsize=4)
     ax.set_xlabel("KOL Pool Size (N)", fontsize=12)
     ax.set_ylabel("Mean Best GMV (USD)", fontsize=12)
     ax.set_title("Algorithm Scalability — Solution Quality vs Pool Size", fontsize=13)
-    ax.legend(fontsize=11)
+    ax.legend(fontsize=10)
     ax.grid(True, linestyle="--", alpha=0.4)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"${x:,.0f}"))
     fig.tight_layout()
     for path in ["experiments/plots/scalability_gmv.png", "docs/figures/scalability_gmv.png"]:
         fig.savefig(path, dpi=150)
     plt.close(fig)
-    print("[SUCCESS] GMV chart saved  -> docs/figures/scalability_gmv.png")
+    print("[OK] GMV chart  → docs/figures/scalability_gmv.png")
 
-    # ── Print summary table ───────────────────────────────────────
-    print("\n" + "═" * 70)
+    # ── Summary table ─────────────────────────────────────────────
+    print("\n" + "═" * 75)
     print(f"{'N':>6}  {'Algorithm':<22}  {'Time(s)':>10}  {'GMV':>12}")
-    print("═" * 70)
+    print("═" * 75)
     for N in POOL_SIZES:
         for algo_name in ALGO_CONFIGS:
             s = summary[algo_name]
             i = POOL_SIZES.index(N)
-            print(
-                f"{N:>6}  {algo_name:<22}  "
-                f"{s['mean_times'][i]:>8.4f}s  "
-                f"${s['mean_gmvs'][i]:>11,.0f}"
-            )
-        print("─" * 70)
+            t_val = s["mean_times"][i]
+            g_val = s["mean_gmvs"][i]
+            t_str = f"{t_val:>8.4f}s" if t_val is not None else "      —  "
+            g_str = f"${g_val:>11,.0f}" if g_val is not None else "           —"
+            print(f"{N:>6}  {algo_name:<22}  {t_str}  {g_str}")
+        print("─" * 75)
 
 
 if __name__ == "__main__":
