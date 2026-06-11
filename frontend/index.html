@@ -257,7 +257,7 @@
                                     Investment</p>
                                 <p id="biz-roi" class="font-headline-lg text-headline-lg text-on-surface font-bold">—
                                 </p>
-                                <p class="text-[11px] text-on-surface-variant mt-1">GMV / Budget</p>
+                                <p id="biz-roi-sub" class="text-[11px] text-on-surface-variant mt-1">GMV / Cost</p>
                             </div>
                         </div>
                     </section>
@@ -634,7 +634,7 @@
                         class="form-input" placeholder="250000" /></div>
                 <div><label class="form-label">Engagement Rate * (0~1)</label><input id="f-eng" type="number"
                         step="0.01" class="form-input" placeholder="0.08" /></div>
-                <div><label class="form-label">Hiring Cost (USD) *</label><input id="f-cost" type="number"
+                <div><label class="form-label">Cost (USD) *</label><input id="f-cost" type="number"
                         class="form-input" placeholder="1200" /></div>
                 <div><label class="form-label">Fit Score (0~1)</label><input id="f-fit" type="number" step="0.01"
                         class="form-input" placeholder="0.75" /></div>
@@ -1078,7 +1078,7 @@
             const rankText = rank !== '—' ? `#${rank} cost-effective` : '';
             return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer" onclick="openKolDetail(${kol.id})">
     <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
-    <div class="grid grid-cols-3 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-center"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Est. GMV</p><p class="font-title-md text-secondary font-data-mono font-bold">${fmt(kol.expected_gmv)}</p></div></div>
+    <div class="grid grid-cols-3 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-center"><p class="text-[10px] text-on-surface-variant uppercase">Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p><p class="text-[10px] text-on-surface-variant">${((kol.commission_rate || 0) * 100).toFixed(1)}% comm</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Est. GMV</p><p class="font-title-md text-secondary font-data-mono font-bold">${fmt(kol.expected_gmv)}</p></div></div>
     <div><div class="flex justify-between text-[10px] mb-1"><span class="text-on-surface-variant uppercase">GMV contribution</span><span class="text-secondary font-bold">${contrib}%</span></div><div class="contrib-bar"><div class="contrib-fill" style="width:${contrib}%"></div></div></div>
     <div class="flex items-center gap-md text-[11px]">
         ${riskHtml ? `<div class="flex items-center gap-xs">${riskHtml}</div>` : ''}
@@ -1103,7 +1103,7 @@
             const rankText = rank !== '—' ? `<span class="text-on-surface-variant">#${rank} cost-effective</span>` : '';
             return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer" onclick="openKolDetail(${kol.id})">
     <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
-    <div class="grid grid-cols-2 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div></div>
+    <div class="grid grid-cols-2 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p><p class="text-[10px] text-on-surface-variant">${((kol.commission_rate || 0) * 100).toFixed(1)}% comm</p></div></div>
     <div class="space-y-xs"><div class="flex justify-between items-center text-[10px]"><span class="text-on-surface-variant uppercase">Fit Score</span><span class="text-secondary font-bold">${(kol.fit_score * 100).toFixed(0)}%</span></div><div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary rounded-full" style="width:${(kol.fit_score * 100).toFixed(0)}%"></div></div></div>
     ${riskBadge || rankText ? `<div class="flex items-center gap-md text-[11px]">${riskBadge}${rankText}</div>` : ''}
     <div class="flex justify-between items-center pt-xs"><div class="bg-secondary/15 px-md py-sm rounded-lg border border-secondary/20"><p class="text-[9px] text-secondary uppercase font-bold tracking-wider">Est. GMV</p><p class="text-title-md font-bold text-secondary font-data-mono">${fmt(kol.expected_gmv)}</p></div><button class="text-on-surface-variant hover:text-primary flex items-center gap-xs text-[11px] why-btn" onclick="event.stopPropagation()">Why? <span class="material-symbols-outlined text-[14px]">expand_more</span></button></div>
@@ -1222,6 +1222,8 @@
             document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, plan.total_gmv)).join('');
             document.getElementById('biz-gmv').textContent = fmt(plan.total_gmv);
             document.getElementById('biz-roi').textContent = plan.roi.toFixed(2) + 'x';
+            const effRatePlan = plan.total_cost / plan.total_gmv;
+            document.getElementById('biz-roi-sub').textContent = `GMV / Cost  ·  ${(effRatePlan * 100).toFixed(1)}% effective commission`;
             document.getElementById('biz-cost').textContent = fmt(plan.total_cost);
             // Fix: update biz-util to reflect THIS plan's budget limit (not the original budget)
             const utilPct = (plan.total_cost / plan.budget_limit * 100).toFixed(1);
@@ -1261,9 +1263,11 @@
             document.getElementById('biz-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% of ' + fmt(payload.budget) + ' budget';
             document.getElementById('biz-gmv').textContent = fmt(data.total_gmv);
             document.getElementById('biz-roi').textContent = data.roi.toFixed(2) + 'x';
+            const effRate = data.total_cost / data.total_gmv;
+            document.getElementById('biz-roi-sub').textContent = `GMV / Cost  ·  ${(effRate * 100).toFixed(1)}% effective commission`;
             document.getElementById('biz-count').textContent = sorted.length;
             document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, data.total_gmv)).join('');
-            document.getElementById('biz-footer-msg').textContent = `This portfolio is predicted to generate ${fmt(data.total_gmv)} in GMV with an ROI of ${data.roi.toFixed(2)}x on your ${fmt(payload.budget)} budget.`;
+            document.getElementById('biz-footer-msg').textContent = `This portfolio is predicted to generate ${fmt(data.total_gmv)} in GMV with an ROI of ${data.roi.toFixed(2)}x — KOLs earn ${(effRate * 100).toFixed(1)}% commission on sales.`;
 
             // ── Technical view ──
             const recommended = getRecommendedResult(data.results);
@@ -1460,7 +1464,8 @@
                 { label: 'Followers', v: fmtF(d.followers) },
                 { label: 'Engagement', v: (d.engagement_rate * 100).toFixed(1) + '%' },
                 { label: 'Fit Score', v: (d.fit_score * 100).toFixed(0) + '%' },
-                { label: 'Hiring Cost', v: fmt(d.cost) },
+                { label: 'Cost', v: fmt(d.cost) },
+                { label: 'Commission', v: ((d.commission_rate || 0) * 100).toFixed(1) + '%' },
                 { label: 'Est. GMV', v: fmt(d.expected_gmv), cls: 'text-secondary font-bold' },
             ].map(s => `<div class="text-center p-sm rounded-lg bg-surface-container-low"><p class="text-[10px] text-on-surface-variant uppercase">${s.label}</p><p class="font-title-md font-data-mono ${s.cls || 'text-on-surface'}">${s.v}</p></div>`).join('');
 
@@ -1765,7 +1770,7 @@
 
 </html>
 kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
-    <div class="grid grid-cols-3 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-center"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Est. GMV</p><p class="font-title-md text-secondary font-data-mono font-bold">${fmt(kol.expected_gmv)}</p></div></div>
+    <div class="grid grid-cols-3 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-center"><p class="text-[10px] text-on-surface-variant uppercase">Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p><p class="text-[10px] text-on-surface-variant">${((kol.commission_rate || 0) * 100).toFixed(1)}% comm</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Est. GMV</p><p class="font-title-md text-secondary font-data-mono font-bold">${fmt(kol.expected_gmv)}</p></div></div>
     <div><div class="flex justify-between text-[10px] mb-1"><span class="text-on-surface-variant uppercase">GMV contribution</span><span class="text-secondary font-bold">${contrib}%</span></div><div class="contrib-bar"><div class="contrib-fill" style="width:${contrib}%"></div></div></div>
     <div class="flex items-center gap-md text-[11px]">
         ${riskHtml ? `<div class="flex items-center gap-xs">${riskHtml}</div>` : ''}
@@ -1790,7 +1795,7 @@ kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono upper
             const rankText = rank !== '—' ? `<span class="text-on-surface-variant">#${rank} cost-effective</span>` : '';
             return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer" onclick="openKolDetail(${kol.id})">
     <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
-    <div class="grid grid-cols-2 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div></div>
+    <div class="grid grid-cols-2 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p><p class="text-[10px] text-on-surface-variant">${((kol.commission_rate || 0) * 100).toFixed(1)}% comm</p></div></div>
     <div class="space-y-xs"><div class="flex justify-between items-center text-[10px]"><span class="text-on-surface-variant uppercase">Fit Score</span><span class="text-secondary font-bold">${(kol.fit_score * 100).toFixed(0)}%</span></div><div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary rounded-full" style="width:${(kol.fit_score * 100).toFixed(0)}%"></div></div></div>
     ${riskBadge || rankText ? `<div class="flex items-center gap-md text-[11px]">${riskBadge}${rankText}</div>` : ''}
     <div class="flex justify-between items-center pt-xs"><div class="bg-secondary/15 px-md py-sm rounded-lg border border-secondary/20"><p class="text-[9px] text-secondary uppercase font-bold tracking-wider">Est. GMV</p><p class="text-title-md font-bold text-secondary font-data-mono">${fmt(kol.expected_gmv)}</p></div><button class="text-on-surface-variant hover:text-primary flex items-center gap-xs text-[11px] why-btn" onclick="event.stopPropagation()">Why? <span class="material-symbols-outlined text-[14px]">expand_more</span></button></div>
@@ -1882,6 +1887,8 @@ kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono upper
             document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, plan.total_gmv)).join('');
             document.getElementById('biz-gmv').textContent = fmt(plan.total_gmv);
             document.getElementById('biz-roi').textContent = plan.roi.toFixed(2) + 'x';
+            const effRatePlan2 = plan.total_cost / plan.total_gmv;
+            document.getElementById('biz-roi-sub').textContent = `GMV / Cost  ·  ${(effRatePlan2 * 100).toFixed(1)}% effective commission`;
             document.getElementById('biz-cost').textContent = fmt(plan.total_cost);
             const utilPct2 = (plan.total_cost / plan.budget_limit * 100).toFixed(1);
             const budgetLabels2 = { Aggressive: '120% cap', Balanced: '100% cap', Safe: '80% cap' };
@@ -1912,9 +1919,11 @@ kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono upper
             document.getElementById('biz-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% of ' + fmt(payload.budget) + ' budget';
             document.getElementById('biz-gmv').textContent = fmt(data.total_gmv);
             document.getElementById('biz-roi').textContent = data.roi.toFixed(2) + 'x';
+            const effRate2 = data.total_cost / data.total_gmv;
+            document.getElementById('biz-roi-sub').textContent = `GMV / Cost  ·  ${(effRate2 * 100).toFixed(1)}% effective commission`;
             document.getElementById('biz-count').textContent = sorted.length;
             document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, data.total_gmv)).join('');
-            document.getElementById('biz-footer-msg').textContent = `This portfolio is predicted to generate ${fmt(data.total_gmv)} in GMV with an ROI of ${data.roi.toFixed(2)}x on your ${fmt(payload.budget)} budget.`;
+            document.getElementById('biz-footer-msg').textContent = `This portfolio is predicted to generate ${fmt(data.total_gmv)} in GMV with an ROI of ${data.roi.toFixed(2)}x — KOLs earn ${(effRate2 * 100).toFixed(1)}% commission on sales.`;
             const recommended = getRecommendedResult(data.results);
             const recommendedName = recommended ? recommended.algorithm : data.best_algorithm;
             document.getElementById('m-algo').textContent = recommendedName;
@@ -2081,7 +2090,8 @@ kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono upper
                 { label: 'Followers', v: fmtF(d.followers) },
                 { label: 'Engagement', v: (d.engagement_rate * 100).toFixed(1) + '%' },
                 { label: 'Fit Score', v: (d.fit_score * 100).toFixed(0) + '%' },
-                { label: 'Hiring Cost', v: fmt(d.cost) },
+                { label: 'Cost', v: fmt(d.cost) },
+                { label: 'Commission', v: ((d.commission_rate || 0) * 100).toFixed(1) + '%' },
                 { label: 'Est. GMV', v: fmt(d.expected_gmv), cls: 'text-secondary font-bold' },
             ].map(s => `<div class="text-center p-sm rounded-lg bg-surface-container-low"><p class="text-[10px] text-on-surface-variant uppercase">${s.label}</p><p class="font-title-md font-data-mono ${s.cls || 'text-on-surface'}">${s.v}</p></div>`).join('');
             const gRatio = d.gender_ratio != null ? d.gender_ratio : 0.5;
