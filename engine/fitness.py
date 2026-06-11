@@ -34,8 +34,10 @@ def summarize_state(state: List[int], kols: List[KOL]) -> Dict[str, float]:
     roi = total_gmv / total_cost if total_cost else 0.0
 
     # ── Audience overlap penalty ──────────────────────────────────
-    # If two selected KOLs share country+category+similar follower
-    # range, apply a penalty to discourage near-duplicates.
+    # If two selected KOLs share similar follower range, age group,
+    # or gender skew, apply a penalty to discourage near-duplicates.
+    # (Country+category are filtered upstream — all KOLs in a given
+    # run share those attributes, so we skip them here.)
     overlap_penalty = _compute_overlap_penalty(selected)
 
     return {
@@ -58,9 +60,9 @@ def _compute_overlap_penalty(selected: List[KOL]) -> float:
     share a similar follower range, which is a genuine redundancy signal.
 
     Two KOLs are considered overlapping when they share:
-    - same follower range (within 20% of each other) → 0.5
+    - same follower range (within 50% of each other) → 0.5
     - same age group → 0.3
-    - same gender skew (both >70% or both <30%) → 0.2
+    - same gender skew (both ≥70% or both ≤30%) → 0.2
     """
     n = len(selected)
     if n < 2:
