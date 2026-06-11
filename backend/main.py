@@ -74,7 +74,7 @@ DATA_PATH = os.path.join(
 # ════════════════════════════════════════════════════════════════
 class OptimizeRequest(BaseModel):
     budget: float
-    country: str = "MY"
+    countries: List[str] = []
     category: str = "beauty"
     seed: int = 42
 
@@ -139,7 +139,7 @@ class TierBreakdown(BaseModel):
 
 class OptimizeResponse(BaseModel):
     budget: float
-    country: str
+    countries: List[str]
     category: str
     candidates: int
     best_algorithm: str
@@ -166,7 +166,7 @@ class PlanResult(BaseModel):
 
 class OptimizePlansResponse(BaseModel):
     budget: float
-    country: str
+    countries: List[str]
     category: str
     candidates: int
     plans: List[PlanResult]
@@ -426,24 +426,75 @@ def health():
     return {"status": "ok"}
 
 
+
+# ── API Connections (commercial expansion stubs) ──────────────────
+# Phase 1 (current): manual import only
+# Phase 2 (planned): TikTok Creator Marketplace, TikTok Shop Partner API
+# Phase 3 (planned): Third-party analytics (AsiaKOL, Cube Asia, Nox)
+
+class ApiConnectionRequest(BaseModel):
+    integration_type: str
+    credentials: Dict[str, str]
+
+class ApiInterestRequest(BaseModel):
+    email: str
+    integration_type: str
+
+@app.get("/api/connections")
+def list_connections():
+    """Return status of all available data source integrations."""
+    return {
+        "connections": [
+            {"id": "manual", "name": "Manual Import", "status": "active",
+             "description": "CSV upload and manual KOL entry"},
+            {"id": "tiktok_creator", "name": "TikTok Creator Marketplace API", "status": "coming_soon",
+             "description": "Auto-sync KOL profiles and audience demographics"},
+            {"id": "tiktok_shop", "name": "TikTok Shop Partner API", "status": "coming_soon",
+             "description": "Real GMV and commission data from affiliate campaigns"},
+            {"id": "third_party", "name": "Third-Party Analytics Platforms", "status": "coming_soon",
+             "description": "AsiaKOL, Cube Asia, Nox Influencer and similar"},
+        ]
+    }
+
+@app.post("/api/connections/interest")
+def register_interest(req: ApiInterestRequest):
+    """Register merchant interest in a coming-soon integration."""
+    import re as _re
+    if not _re.match(r"[^@]+@[^@]+\.[^@]+", req.email):
+        raise HTTPException(status_code=422, detail="Invalid email address")
+    valid_types = {"tiktok_creator", "tiktok_shop", "third_party"}
+    if req.integration_type not in valid_types:
+        raise HTTPException(status_code=422, detail=f"Unknown integration type: {req.integration_type}")
+    return {"status": "registered", "email": req.email, "integration_type": req.integration_type}
+
+@app.post("/api/connections/connect")
+def connect_integration(req: ApiConnectionRequest):
+    """Stub — integrations not yet live."""
+    return {
+        "status": "coming_soon",
+        "message": f"Integration '{req.integration_type}' is not yet available."
+    }
+
 @app.post("/optimize", response_model=OptimizeResponse)
 def optimize(req: OptimizeRequest):
     """Run all six algorithms and return the best KOL matrix."""
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
-    if req.country not in VALID_COUNTRIES:
-        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH, SG, VN")
+    invalid_countries = [c for c in req.countries if c not in VALID_COUNTRIES]
+    if invalid_countries:
+        raise HTTPException(status_code=422, detail=f"invalid countries: {invalid_countries}")
     if req.category not in VALID_CATEGORIES:
         raise HTTPException(status_code=422, detail="category must be one of: beauty, fashion, home, fmcg")
 
+    active_countries = set(req.countries) if req.countries else set(VALID_COUNTRIES)
     all_kols = load_kols()
     filtered = [k for k in all_kols
-                if k.country == req.country and k.category == req.category]
+                if k.country in active_countries and k.category == req.category]
 
     if not filtered:
         return OptimizeResponse(
             budget=req.budget,
-            country=req.country,
+            countries=list(active_countries),
             category=req.category,
             candidates=0,
             best_algorithm="none",
@@ -480,7 +531,7 @@ def optimize(req: OptimizeRequest):
 
     return OptimizeResponse(
         budget=req.budget,
-        country=req.country,
+        countries=list(active_countries),
         category=req.category,
         candidates=len(filtered),
         best_algorithm=best.algorithm,
@@ -512,19 +563,21 @@ def optimize_plans(req: OptimizeRequest):
     """
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
-    if req.country not in VALID_COUNTRIES:
-        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH, SG, VN")
+    invalid_countries = [c for c in req.countries if c not in VALID_COUNTRIES]
+    if invalid_countries:
+        raise HTTPException(status_code=422, detail=f"invalid countries: {invalid_countries}")
     if req.category not in VALID_CATEGORIES:
         raise HTTPException(status_code=422, detail="category must be one of: beauty, fashion, home, fmcg")
 
+    active_countries = set(req.countries) if req.countries else set(VALID_COUNTRIES)
     all_kols = load_kols()
     filtered = [k for k in all_kols
-                if k.country == req.country and k.category == req.category]
+                if k.country in active_countries and k.category == req.category]
 
     if not filtered:
         return OptimizePlansResponse(
             budget=req.budget,
-            country=req.country,
+            countries=list(active_countries),
             category=req.category,
             candidates=0,
             plans=[],
@@ -564,7 +617,7 @@ def optimize_plans(req: OptimizeRequest):
 
     return OptimizePlansResponse(
         budget=req.budget,
-        country=req.country,
+        countries=list(active_countries),
         category=req.category,
         candidates=len(filtered),
         plans=[
