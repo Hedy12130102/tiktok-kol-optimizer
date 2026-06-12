@@ -66,6 +66,8 @@ def _approx_expected_gmv(country: str, category: str, followers: int,
 
 def generate_kols(num=300, json_output_path="data/sample_kols.json",
                   csv_output_path="data/influencers_mock.csv", seed=42):
+    if num < 1:
+        raise ValueError("num must be a positive integer")
     random.seed(seed)
     for p in [json_output_path, csv_output_path]:
         if p and os.path.dirname(p):
@@ -159,4 +161,16 @@ def generate_kols(num=300, json_output_path="data/sample_kols.json",
 
 
 if __name__ == "__main__":
-    generate_kols(300)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate a synthetic KOL dataset.")
+    parser.add_argument("--num", type=int, default=300,
+                        help="Number of KOLs to generate (default: 300).")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Random seed for reproducibility (default: 42).")
+    args = parser.parse_args()
+
+    if args.num < 1:
+        parser.error("--num must be a positive integer")
+
+    generate_kols(num=args.num, seed=args.seed)

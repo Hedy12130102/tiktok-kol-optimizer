@@ -2,7 +2,6 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List
-from tqdm import tqdm
 
 from engine.models import KOL
 from engine.optimization.simulated_annealing import simulated_annealing
@@ -31,8 +30,8 @@ def run_sensitivity_experiment():
     # result_matrix: rows = alpha, cols = T0 (to match imshow with origin="lower")
     result_matrix = np.zeros((len(ALPHA_LIST), len(T0_LIST)))
 
-    for a_idx, alpha in enumerate(tqdm(ALPHA_LIST, desc="Traverse Cooling Factor")):
-        for t_idx, t0 in enumerate(tqdm(T0_LIST, desc="Traverse Initial Temperature", leave=False)):
+    for a_idx, alpha in enumerate(ALPHA_LIST):
+        for t_idx, t0 in enumerate(T0_LIST):
             gmv_total = 0.0
             for _ in range(REPEAT_TIMES):
                 state, _, _ = simulated_annealing(
@@ -47,6 +46,7 @@ def run_sensitivity_experiment():
             # Calculate average GMV
             avg_gmv = round(gmv_total / REPEAT_TIMES, 2)
             result_matrix[a_idx][t_idx] = avg_gmv
+        print(f"  alpha={alpha}  done ({a_idx + 1}/{len(ALPHA_LIST)})")
 
     # ---------------------- Draw Heatmap ----------------------
     fig, ax = plt.subplots(figsize=(10, 6))
