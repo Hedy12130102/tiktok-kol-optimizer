@@ -232,14 +232,12 @@ tests/test_algorithms.py     — all 6 algorithm interfaces               (34)
 tests/test_scoring.py        — CreatorScore weighting + normalisation   ( 7)
 tests/test_creator_score.py  — CreatorScore edge cases                  ( 3)
 tests/test_explainer.py      — recommendation reason generation         ( 4)
-tests/test_sa_comparison.py  — SA vs HC trap scenario                   ( 1)
-tests/test_sa_improved.py    — SA neighbourhood / acceptance behaviour  ( 3)
 tests/test_api.py            — core API endpoint tests                  (31)
 tests/test_campaigns.py      — campaign attribution CRUD                (13)
 tests/test_kol_history.py    — KOL history tracking + simulate-update   (12)
 ```
 
-Total: **114 tests**. Run with: `pytest tests/ --tb=short`
+Total: **110 tests**. Run with: `pytest tests/ --tb=short`
 
 ---
 
