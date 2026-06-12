@@ -1,8 +1,57 @@
-# TikTok Shop KOL Matrix Optimizer
+# 🎯 TikTok Shop KOL Matrix Optimizer
 
-An AI-powered system that selects the **optimal KOL (Key Opinion Leader) portfolio** for TikTok Shop campaigns in Southeast Asia. Given a fixed marketing budget, the system runs **six optimization algorithms** in parallel — including Simulated Annealing, Genetic Algorithm, and Tabu Search — to maximize predicted GMV across thousands of possible creator combinations, then tracks real campaign outcomes and compares them against predictions.
+**Turn a fixed influencer budget into the highest-GMV creator portfolio — powered by six competing optimization algorithms, explainable AI, and closed-loop campaign attribution.**
 
-> **Live Demo:** Run `start_server.bat` (Windows) or `uvicorn backend.main:app --reload`, then open `http://localhost:8000/ui`.
+[![CI](https://github.com/Hedy12130102/tiktok-kol-optimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/Hedy12130102/tiktok-kol-optimizer/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-110%20passing-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+For Southeast-Asia TikTok Shop merchants and agencies who must allocate a marketing budget across hundreds of creators — and **prove the ROI afterwards**. The system filters the creator pool by market and category, runs **six optimization algorithms in parallel** to maximize predicted GMV, explains *why* each creator was chosen, and tracks predicted-vs-actual GMV so every campaign sharpens the next.
+
+> **▶ Live demo:** `start_server.bat` (Windows) or `uvicorn backend.main:app --reload`, then open **http://localhost:8000/ui**
+
+---
+
+## 💡 Why It Matters
+
+A brand with 100 candidate creators and a budget that fits 5–8 of them faces **2¹⁰⁰ possible portfolios** — far beyond spreadsheets or gut feel. And picking the single biggest influencer is usually the *wrong* move: under TikTok Shop's commission model a mega-creator is both the most expensive *and* the least cost-efficient hire. The winning play is a **mixed-tier portfolio** of micro + nano creators that no manual shortlist reliably finds.
+
+| Without this tool | With this tool |
+|---|---|
+| Manual shortlists, gut feel | Six algorithms compete; the best portfolio wins |
+| Overspend on one mega-KOL | Budget-optimal mixed-tier mix, every dollar inside budget |
+| "Trust me" recommendations | 3+ data-driven reasons generated per creator |
+| No feedback loop | Predicted vs actual GMV tracked per campaign |
+
+---
+
+## 📊 Proven Results
+
+Reproducible benchmark — `experiments/scalability.py`, fixed **$5,000** budget, **mean of 10 seeds**:
+
+| Creator pool N | Best algorithm | Best GMV | Hill Climber GMV | **Uplift** |
+|:---:|:---|---:|---:|:---:|
+| 50 | Random Search | $42.7K | $24.3K | **+76%** |
+| 100 | Tabu Search | $53.2K | $26.7K | **+99%** |
+| 200 | Greedy Ranking | $64.4K | $27.3K | **+136%** |
+| 500 | Genetic Algorithm | $73.3K | $28.1K | **+161%** |
+
+Structured search beats naïve hill-climbing by **76–161%**, and the advantage *widens* as the creator pool grows — exactly when human shortlisting breaks down. Full methodology, per-algorithm analysis, and the factors that drive these numbers: [`docs/report_draft.md`](docs/report_draft.md).
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Optimization engine** | Pure-Python implementations of Simulated Annealing, Genetic Algorithm, Tabu Search, Hill Climber, Random Search, Greedy Ranking |
+| **Backend API** | FastAPI + Pydantic — 20+ typed REST endpoints, auto-generated Swagger docs |
+| **Frontend** | Single-page app (vanilla JS + Tailwind CSS), served directly by FastAPI — no separate web server |
+| **Data & analytics** | NumPy / Pandas; JSON persistence; CSV import/export; calibrated SEA market model |
+| **Experiments** | Matplotlib figure pipeline; seeded, fully reproducible benchmarks |
+| **Quality** | 110 pytest tests; GitHub Actions CI on every push |
 
 ---
 
@@ -349,7 +398,7 @@ Merchant input (manual / CSV)
 
 ---
 
-## Key Insight
+## Why Structured Search Wins (Technical Deep-Dive)
 
 Hill Climber selects expensive Mega/Macro KOLs early, exhausts the budget, and gets trapped — no single-bit flip can improve the solution. Greedy Ranking (ratio-sort + 2-opt), Genetic Algorithm, Tabu Search, and Simulated Annealing each avoid this trap via different mechanisms — cost-effectiveness ranking, population crossover, tabu memory, and temperature-driven acceptance respectively. In the reproducible benchmark (`experiments/scalability.py`, fixed budget $5,000, mean of 10 seeds), HC is the weakest method at every pool size, and the best algorithm's GMV lead over HC widens from **+76% at N=50 to +161% at N=500**. At scale the lead is shared by GA and Greedy Ranking (GA $73.3K at N=500; GR $64.4K at N=200) versus HC's ~$28K — a ~2.6× gap that underscores the value of structured search for large creator pools. See [`docs/report_draft.md`](docs/report_draft.md) §3.2 for the full table.
 
