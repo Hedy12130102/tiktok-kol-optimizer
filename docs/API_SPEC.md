@@ -386,29 +386,46 @@ Returns all metric snapshots for a KOL, newest first.
 
 **Response `200 OK`:**
 ```json
-[
-  {
-    "timestamp": "2026-06-07T14:23:11",
-    "kol_id": 7,
-    "engagement_rate": 0.113,
-    "fit_score": 0.87,
-    "followers": 123500,
-    "avg_views": 46200,
-    "avg_likes": 3920
-  },
-  {
-    "timestamp": "2026-06-01T09:05:44",
-    "kol_id": 7,
-    "engagement_rate": 0.105,
-    "fit_score": 0.84,
-    "followers": 120000,
-    "avg_views": 45000,
-    "avg_likes": 3800
-  }
-]
+{
+  "kol_id": 7,
+  "count": 2,
+  "snapshots": [
+    {
+      "recorded_at": "2026-06-07T14:23:11",
+      "engagement_rate": 0.113,
+      "fit_score": 0.87,
+      "followers": 123500,
+      "commission_rate": 0.18,
+      "avg_views": 46200,
+      "avg_likes": 3920
+    },
+    {
+      "recorded_at": "2026-06-01T09:05:44",
+      "engagement_rate": 0.105,
+      "fit_score": 0.84,
+      "followers": 120000,
+      "commission_rate": 0.18,
+      "avg_views": 45000,
+      "avg_likes": 3800
+    }
+  ]
+}
 ```
 
-Returns `[]` if no history exists yet.
+Returns `{"kol_id": id, "snapshots": [], "count": 0}` if no history exists yet.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `kol_id` | `int` | KOL identifier |
+| `count` | `int` | Total number of snapshots |
+| `snapshots` | `List[Snapshot]` | Snapshots, newest first |
+| `snapshots[].recorded_at` | `str` | ISO-8601 UTC timestamp of the snapshot |
+| `snapshots[].engagement_rate` | `float` | Engagement rate at snapshot time |
+| `snapshots[].fit_score` | `float` | Fit score at snapshot time |
+| `snapshots[].followers` | `int` | Follower count at snapshot time |
+| `snapshots[].commission_rate` | `float` | Commission rate at snapshot time |
+| `snapshots[].avg_views` | `int` | Average views at snapshot time |
+| `snapshots[].avg_likes` | `int` | Average likes at snapshot time |
 
 ---
 
@@ -424,7 +441,19 @@ Applies a realistic random drift to the KOL's metrics (simulating a TikTok API r
 
 **Request Body:** None required.
 
-**Response `200 OK`:** Updated KOL record with the new metric values.  
+**Response `200 OK`:**
+```json
+{
+  "message": "Simulated metric refresh applied",
+  "kol_id": 7,
+  "changes": {
+    "engagement_rate": { "before": 0.105, "after": 0.118 },
+    "fit_score":        { "before": 0.84,  "after": 0.87  },
+    "followers":        { "before": 120000, "after": 123500 }
+  }
+}
+```
+
 **Error:** `404` if ID not found.
 
 ---
