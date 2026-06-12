@@ -39,7 +39,7 @@ def random_search(
     # Calculate an approximate safe selection ratio so random sampling 
     # doesn't instantly blow the budget on large pools (e.g., N=500)
     avg_cost = sum(k.cost for k in kols) / n if n > 0 else 1.0
-    safe_sample_count = max(1, min(n, int(budget / avg_cost)))
+    safe_sample_count = max(1, min(n, int(budget / avg_cost))) if avg_cost > 0 else 1
     prob_of_inclusion = safe_sample_count / n
 
     for _ in range(max_iter):

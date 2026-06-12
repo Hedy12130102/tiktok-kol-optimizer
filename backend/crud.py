@@ -275,13 +275,15 @@ def simulate_kol_update(kol_id: int):
     old_fit = kol.get("fit_score", 0.75)
     old_fol = kol.get("followers", 100000)
 
+    # Snapshot BEFORE applying drift (consistent with update_kol behavior)
+    _record_snapshot(dict(kol))
+
     kol["engagement_rate"] = drift(old_eng, -0.08, +0.12, 0.01, 0.50)
     kol["fit_score"]        = drift(old_fit, -0.05, +0.08, 0.10, 1.00)
     kol["followers"]        = int(drift(old_fol, -0.02, +0.06, 1000, 50_000_000))
     kol["avg_views"]        = int(kol["followers"] * rng.uniform(0.20, 0.40))
     kol["avg_likes"]        = int(kol["avg_views"] * kol["engagement_rate"])
 
-    _record_snapshot(kol)
     _save(data)
 
     return {

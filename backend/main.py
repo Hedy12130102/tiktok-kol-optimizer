@@ -99,13 +99,13 @@ class KOLResult(BaseModel):
     tier: str = ""
     creator_score: float = 0.0
     reasons: List[str] = []
+    age_group: str = ""
+    gender_ratio: float = 0.5
 
 
 class KOLDetail(KOLResult):
     avg_views: Optional[int] = None
     avg_likes: Optional[int] = None
-    gender_ratio: Optional[float] = None
-    age_group: Optional[str] = None
     predicted_gmv_solo: float = 0.0
     audience_overlap_risk: float = 0.0
     cost_effectiveness_rank: int = 0
@@ -207,8 +207,11 @@ class ScalabilityResponse(BaseModel):
 #  Helpers
 # ════════════════════════════════════════════════════════════════
 def load_kols() -> List[KOL]:
-    with open(DATA_PATH, encoding="utf-8") as f:
-        return [_dict_to_kol(d) for d in json.load(f)]
+    try:
+        with open(DATA_PATH, encoding="utf-8") as f:
+            return [_dict_to_kol(d) for d in json.load(f)]
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=500, detail=f"Data file error: {e}")
 
 
 def load_raw_kols() -> List[dict]:
@@ -218,7 +221,8 @@ def load_raw_kols() -> List[dict]:
 
 _KOL_FIELDS = {"id", "name", "country", "category",
                "followers", "engagement_rate", "fit_score",
-               "commission_rate", "cost"}
+               "commission_rate", "cost",
+               "avg_views", "avg_likes", "gender_ratio", "age_group"}
 
 
 def _dict_to_kol(d: dict) -> KOL:
@@ -238,6 +242,8 @@ def to_kol_result(k: KOL, score: float, all_kols: List[KOL]) -> KOLResult:
         cost=k.cost,
         expected_gmv=round(k.expected_gmv(), 2),
         tier=get_tier(k),
+        age_group=k.age_group,
+        gender_ratio=k.gender_ratio,
         creator_score=score,
         reasons=generate_reasons(k, all_kols),
     )
@@ -738,8 +744,6 @@ def get_kol(kol_id: int):
         **base.model_dump(),
         avg_views=raw.get("avg_views"),
         avg_likes=raw.get("avg_likes"),
-        gender_ratio=raw.get("gender_ratio"),
-        age_group=raw.get("age_group"),
         predicted_gmv_solo=round(target.expected_gmv(), 2),
         audience_overlap_risk=compute_audience_overlap_risk(target, all_kols),
         cost_effectiveness_rank=compute_cost_effectiveness_rank(target, all_kols),

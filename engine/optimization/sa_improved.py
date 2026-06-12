@@ -73,7 +73,6 @@ def simulated_annealing_improved(
         (best_state, best_cost, history)
     """
     rng = random.Random(seed)
-    rng.randint(0,1000)
     n = len(kols)
     current = [0] * n
     current_cost = fitness(current, kols, budget)
@@ -90,11 +89,12 @@ def simulated_annealing_improved(
             else:
                 neighbour = _bitflip(current, rng)
 
-            delta = fitness(neighbour, kols, budget) - current_cost
+            new_cost = fitness(neighbour, kols, budget)
+            delta = new_cost - current_cost
 
             if delta < 0 or rng.random() < math.exp(-delta / T):
                 current = neighbour
-                current_cost = fitness(neighbour, kols, budget)
+                current_cost = new_cost
 
             if current_cost < best_cost:
                 best = copy.copy(current)

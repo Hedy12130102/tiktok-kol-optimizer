@@ -1058,8 +1058,8 @@
         const TIER_EMOJI = { Mega: '🟣', Macro: '🔵', Micro: '🟢', Nano: '🟡' };
         const ALGO_COLORS = { 'Simulated Annealing': '#00C853', 'Hill Climber': '#FB923C', 'Random Search': '#4a4a45', 'Genetic Algorithm': '#A855F7', 'Tabu Search': '#06B6D4', 'Greedy Ranking': '#F59E0B' };
         const PLAN_COLORS = { Aggressive: '#FF0050', Balanced: '#00C853', Safe: '#f1c40f' };
-        const fmt = n => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
-        const fmtF = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : n;
+        const fmt = n => { if (n == null || isNaN(n)) return '$0'; return '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 }); };
+        const fmtF = n => { if (n == null || isNaN(n)) return '0'; return n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(n); };
         const formatCampaignCountries = c => {
             const flag = { MY: '🇲🇾', ID: '🇮🇩', TH: '🇹🇭', PH: '🇵🇭', SG: '🇸🇬', VN: '🇻🇳' };
             const arr = c.countries || (c.country ? [c.country] : []);
@@ -1883,7 +1883,7 @@
                 const accuracy = c.accuracy_pct != null
                     ? `<span class="font-data-mono font-bold" style="color:${c.accuracy_pct>=90?'#00C853':c.accuracy_pct>=70?'#F59E0B':'#FF0050'}">${c.accuracy_pct}%</span>`
                     : '<span class="text-on-surface-variant">—</span>';
-                const actualGmv = c.actual_gmv != null ? `<span class="font-data-mono text-secondary">${fmt(c.actual_gmv)}</span>` : '<span class="text-on-surface-variant">—</span>';
+                const actualGmv = c.actual_total_gmv != null ? `<span class="font-data-mono text-secondary">${fmt(c.actual_total_gmv)}</span>` : '<span class="text-on-surface-variant">—</span>';
                 const date = new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
                 return `<tr class="row-hover border-t border-[#353530]">
                     <td class="px-4 py-3"><div class="font-semibold text-white">${c.name}</div><div class="text-[11px] text-outline font-mono">${date} · ${c.best_algorithm}</div></td>
@@ -1920,7 +1920,7 @@
             document.getElementById('cd-name').textContent = c.name;
             document.getElementById('cd-meta').textContent = `${formatCampaignCountries(c)} · ${c.category} · ${c.best_algorithm} · ${new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
             document.getElementById('cd-pred').textContent = fmt(c.predicted_gmv);
-            document.getElementById('cd-actual').textContent = c.actual_gmv != null ? fmt(c.actual_gmv) : '—';
+            document.getElementById('cd-actual').textContent = c.actual_total_gmv != null ? fmt(c.actual_total_gmv) : '—';
             const accEl = document.getElementById('cd-accuracy');
             accEl.textContent = c.accuracy_pct != null ? c.accuracy_pct + '%' : '—';
             accEl.style.color = c.accuracy_pct != null ? (c.accuracy_pct>=90?'#00C853':c.accuracy_pct>=70?'#F59E0B':'#FF0050') : '';
@@ -1931,9 +1931,9 @@
             statusEl.style.color = c.status === 'completed' ? '#00C853' : '#00F2EA';
             // Bar chart
             const bar = document.getElementById('cd-bar-chart');
-            if (c.actual_gmv != null) {
-                const maxVal = Math.max(c.predicted_gmv, c.actual_gmv, 1);
-                bar.innerHTML = `<div class="space-y-sm"><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Predicted</span><span class="font-data-mono text-on-surface">${fmt(c.predicted_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${(c.predicted_gmv/maxVal*100).toFixed(0)}%;background:#00F2EA"></div></div></div><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Actual</span><span class="font-data-mono text-secondary">${fmt(c.actual_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full bg-secondary" style="width:${(c.actual_gmv/maxVal*100).toFixed(0)}%"></div></div></div></div>`;
+            if (c.actual_total_gmv != null) {
+                const maxVal = Math.max(c.predicted_gmv, c.actual_total_gmv, 1);
+                bar.innerHTML = `<div class="space-y-sm"><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Predicted</span><span class="font-data-mono text-on-surface">${fmt(c.predicted_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${(c.predicted_gmv/maxVal*100).toFixed(0)}%;background:#00F2EA"></div></div></div><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Actual</span><span class="font-data-mono text-secondary">${fmt(c.actual_total_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full bg-secondary" style="width:${(c.actual_total_gmv/maxVal*100).toFixed(0)}%"></div></div></div></div>`;
             } else {
                 bar.innerHTML = '<p class="text-[11px] text-on-surface-variant">No actual results yet. Click "Record Actual Results" after the campaign ends.</p>';
             }
@@ -2061,4 +2061,7 @@
             }
         }
 
-    </
+    </script>
+</body>
+
+</html>

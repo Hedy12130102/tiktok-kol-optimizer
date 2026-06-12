@@ -40,7 +40,7 @@ def run_sensitivity_experiment():
                     budget=BUDGET,
                     T0=t0,
                     alpha=alpha,
-                    seed=SEED
+                    seed=SEED + _
                 )
                 res = summarize_state(state, kols)
                 gmv_total += res["total_gmv"]
@@ -52,15 +52,15 @@ def run_sensitivity_experiment():
     fig, ax = plt.subplots(figsize=(10, 6))
     im = ax.imshow(result_matrix, cmap="YlGn", aspect="auto", origin="lower")
 
-    ax.set_xticks(np.arange(len(ALPHA_LIST)))
-    ax.set_yticks(np.arange(len(T0_LIST)))
-    ax.set_xticklabels(ALPHA_LIST)
-    ax.set_yticklabels(T0_LIST)
+    ax.set_xticks(np.arange(len(T0_LIST)))
+    ax.set_yticks(np.arange(len(ALPHA_LIST)))
+    ax.set_xticklabels(T0_LIST)
+    ax.set_yticklabels(ALPHA_LIST)
 
     cbar = plt.colorbar(im, ax=ax, label="Average Total GMV")
     cbar.ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"${v:,.0f}"))
-    plt.xlabel("Cooling Rate Alpha", fontsize=12)
-    plt.ylabel("Initial Temperature T0", fontsize=12)
+    plt.xlabel("Initial Temperature T0", fontsize=12)
+    plt.ylabel("Cooling Rate Alpha", fontsize=12)
     plt.title("SA Parameter Sensitivity — Best GMV (MY beauty, budget=$2,500)", fontsize=13)
 
     for i in range(len(ALPHA_LIST)):
