@@ -440,6 +440,11 @@ def reset_database():
     Used when a merchant wants to start fresh with only their own
     manually entered creators, discarding all synthetic/seed data.
     This action is irreversible.
+
+    Also clears metric history so a recycled KOL id (the next added
+    creator gets id 1 again) does not inherit a previous creator's
+    snapshots.
     """
     _save([])
+    _save_history([])
     return {"message": "Database cleared successfully", "total": 0}

@@ -122,9 +122,9 @@ The optimizer typically selects a **mixed-tier portfolio** rather than spending 
 
 Models the physical process of metal cooling. Starts with high temperature (accepts random moves) and gradually cools (becomes selective).
 
-- **Neighbourhood:** Hybrid bit-flip + swap.
+- **Neighbourhood:** Thermal-adaptive hybrid — single bit-flip, structural swap (drop one selected / add one unselected), and occasional multi-swap jumps.
 - **Acceptance:** Worse solutions accepted with probability `P = e^(-delta/T)`.
-- **Parameters:** T0=50000, T_min=1.0, alpha=0.95, 500 iterations per temperature step.
+- **Parameters:** T0=15,000, T_min=10, alpha=0.95, 150 iterations per temperature step (~143 temperature levels).
 - **Advantage:** Escapes local optima by accepting temporarily worse portfolios.
 
 ### Hill Climber
@@ -139,10 +139,11 @@ Pure random sampling. Demonstrates that structured search significantly outperfo
 
 Population-based evolutionary search.
 
-- **Population:** 40 individuals; first individual is a greedy-seeded solution.
+- **Population:** 60 individuals over 120 generations; first individual is a greedy-seeded solution, the rest are randomly seeded at a budget-aware inclusion probability.
 - **Selection:** Tournament selection (k=3).
-- **Crossover:** Single-point crossover with budget repair (drop highest-cost KOL until feasible).
+- **Crossover:** Single-point crossover (probability 0.9). Budget feasibility is enforced by the fitness penalty rather than explicit repair, so over-budget children are culled by selection.
 - **Mutation:** Bit-flip with probability 1/n per gene.
+- **Elitism:** The best individual always survives into the next generation.
 - **Advantage:** Diverse population avoids premature convergence; crossover creates genuinely novel portfolios.
 
 ### Tabu Search
@@ -350,7 +351,7 @@ Merchant input (manual / CSV)
 
 ## Key Insight
 
-Hill Climber selects expensive Mega KOLs early, exhausts the budget, and gets trapped. No single-bit flip can improve the solution. Simulated Annealing, Genetic Algorithm, and Tabu Search each escape this trap via different mechanisms — temperature-driven acceptance, population crossover, and tabu memory respectively. In benchmarks across the SE Asia dataset (N ∈ {20…200}, budget = N × $25, commission-rate cost model), the best algorithm outperforms HC by 42–77% in predicted GMV. At N=200, GA and GR tie at $78,356 GMV versus HC's $22,512 — a 3.5× gap that underscores the value of global search for large creator pools.
+Hill Climber selects expensive Mega/Macro KOLs early, exhausts the budget, and gets trapped — no single-bit flip can improve the solution. Greedy Ranking (ratio-sort + 2-opt), Genetic Algorithm, Tabu Search, and Simulated Annealing each avoid this trap via different mechanisms — cost-effectiveness ranking, population crossover, tabu memory, and temperature-driven acceptance respectively. In the reproducible benchmark (`experiments/scalability.py`, fixed budget $5,000, mean of 10 seeds), HC is the weakest method at every pool size, and the best algorithm's GMV lead over HC widens from **+76% at N=50 to +161% at N=500**. At scale the lead is shared by GA and Greedy Ranking (GA $73.3K at N=500; GR $64.4K at N=200) versus HC's ~$28K — a ~2.6× gap that underscores the value of structured search for large creator pools. See [`docs/report_draft.md`](docs/report_draft.md) §3.2 for the full table.
 
 ---
 
