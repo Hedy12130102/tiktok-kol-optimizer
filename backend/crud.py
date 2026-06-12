@@ -223,11 +223,11 @@ def update_kol(kol_id: int, updates: KOLUpdate):
 
     changes = updates.model_dump(exclude_none=True)
     if "country" in changes and changes["country"] not in VALID_COUNTRIES:
-        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH")
+        raise HTTPException(status_code=422, detail=f"country must be one of: {', '.join(VALID_COUNTRIES)}")
     if "category" in changes:
         changes["category"] = changes["category"].lower()
         if changes["category"] not in VALID_CATEGORIES:
-            raise HTTPException(status_code=422, detail="category must be one of: beauty, tech, fashion")
+            raise HTTPException(status_code=422, detail=f"category must be one of: {', '.join(VALID_CATEGORIES)}")
 
     # Auto-snapshot BEFORE applying changes (track history)
     _record_snapshot(data[idx])

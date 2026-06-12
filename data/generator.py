@@ -158,4 +158,5 @@ def generate_kols(num=300, json_output_path="data/sample_kols.json",
     return kols
 
 
-generate_kols(300)
+if __name__ == "__main__":
+    generate_kols(300)
