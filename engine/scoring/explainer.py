@@ -27,25 +27,22 @@ _COUNTRY_NAME = {
     "ID": "Indonesia",
     "TH": "Thailand",
     "PH": "Philippines",
+    "SG": "Singapore",
+    "VN": "Vietnam",
 }
 
 # ── Category display names ─────────────────────────────────────────
 _CATEGORY_NAME = {
     "beauty":  "beauty & personal care",
-    "tech":    "consumer electronics",
     "fashion": "fashion & lifestyle",
+    "home":    "home & living",
+    "fmcg":    "FMCG",
 }
 
 
 def get_tier(kol: KOL) -> str:
-    """Return tier string based on follower count."""
-    if kol.followers >= 1_000_000:
-        return "Mega"
-    if kol.followers >= 100_000:
-        return "Macro"
-    if kol.followers >= 10_000:
-        return "Micro"
-    return "Nano"
+    """Return tier string — delegates to KOL.tier property."""
+    return kol.tier
 
 
 def generate_reasons(kol: KOL, all_kols: List[KOL]) -> List[str]:

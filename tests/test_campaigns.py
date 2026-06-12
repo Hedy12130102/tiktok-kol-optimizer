@@ -34,7 +34,7 @@ def isolated_campaigns_file(tmp_path, monkeypatch):
 
 SAMPLE_CAMPAIGN = {
     "name": "MY Beauty Test Campaign",
-    "country": "MY",
+    "countries": ["MY"],
     "category": "beauty",
     "budget": 5000.0,
     "best_algorithm": "Simulated Annealing",

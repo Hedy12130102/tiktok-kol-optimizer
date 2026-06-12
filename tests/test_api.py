@@ -31,7 +31,7 @@ def test_optimize_happy_path():
     """Standard request should return 200 with all three algorithm results."""
     response = client.post("/optimize", json={
         "budget": 5000,
-        "country": "MY",
+        "countries": ["MY"],
         "category": "beauty",
         "seed": 42,
     })
@@ -40,7 +40,7 @@ def test_optimize_happy_path():
 
     # Echo fields
     assert data["budget"] == 5000
-    assert data["country"] == "MY"
+    assert data["countries"] == ["MY"]
     assert data["category"] == "beauty"
 
     # Top-level fields
@@ -77,7 +77,7 @@ def test_optimize_includes_tier_and_creator_score():
     """Each selected KOL must include tier, creator_score and reasons fields."""
     response = client.post("/optimize", json={
         "budget": 10000,
-        "country": "MY",
+        "countries": ["MY"],
         "category": "beauty",
         "seed": 42,
     })
@@ -98,7 +98,7 @@ def test_optimize_includes_tier_and_creator_score():
 def test_optimize_history_arrays_nonempty():
     """All six algorithm history arrays must be non-empty lists."""
     response = client.post("/optimize", json={
-        "budget": 5000, "country": "MY", "category": "beauty", "seed": 42,
+        "budget": 5000, "countries": ["MY"], "category": "beauty", "seed": 42,
     })
     results = response.json()["results"]
     for algo_key in ["simulated_annealing", "hill_climber", "random_search",
@@ -111,7 +111,7 @@ def test_optimize_history_arrays_nonempty():
 def test_optimize_best_algorithm_has_highest_gmv():
     """The best_algorithm field must correspond to the algorithm with max GMV."""
     response = client.post("/optimize", json={
-        "budget": 5000, "country": "MY", "category": "beauty", "seed": 42,
+        "budget": 5000, "countries": ["MY"], "category": "beauty", "seed": 42,
     })
     data = response.json()
     best_name = data["best_algorithm"]
@@ -128,7 +128,7 @@ def test_optimize_best_algorithm_has_highest_gmv():
 # ════════════════════════════════════════════════════════════════
 def test_optimize_rejects_zero_budget():
     response = client.post("/optimize", json={
-        "budget": 0, "country": "MY", "category": "beauty",
+        "budget": 0, "countries": ["MY"], "category": "beauty",
     })
     assert response.status_code == 422
     assert "budget" in response.json()["detail"].lower()
@@ -136,22 +136,22 @@ def test_optimize_rejects_zero_budget():
 
 def test_optimize_rejects_negative_budget():
     response = client.post("/optimize", json={
-        "budget": -100, "country": "MY", "category": "beauty",
+        "budget": -100, "countries": ["MY"], "category": "beauty",
     })
     assert response.status_code == 422
 
 
 def test_optimize_rejects_unknown_country():
     response = client.post("/optimize", json={
-        "budget": 5000, "country": "JP", "category": "beauty",
+        "budget": 5000, "countries": ["JP"], "category": "beauty",
     })
     assert response.status_code == 422
-    assert "country" in response.json()["detail"].lower()
+    assert "countr" in response.json()["detail"].lower()
 
 
 def test_optimize_rejects_unknown_category():
     response = client.post("/optimize", json={
-        "budget": 5000, "country": "MY", "category": "gaming",
+        "budget": 5000, "countries": ["MY"], "category": "gaming",
     })
     assert response.status_code == 422
     assert "category" in response.json()["detail"].lower()
@@ -161,7 +161,7 @@ def test_optimize_accepts_all_valid_countries():
     """All six target markets should be accepted."""
     for country in ["MY", "ID", "TH", "PH", "SG", "VN"]:
         response = client.post("/optimize", json={
-            "budget": 5000, "country": country, "category": "beauty",
+            "budget": 5000, "countries": [country], "category": "beauty",
         })
         assert response.status_code == 200, f"{country} was rejected"
 
@@ -170,7 +170,7 @@ def test_optimize_accepts_all_valid_categories():
     """All 4 product categories should be accepted."""
     for category in ["beauty", "fashion", "home", "fmcg"]:
         response = client.post("/optimize", json={
-            "budget": 5000, "country": "MY", "category": category,
+            "budget": 5000, "countries": ["MY"], "category": category,
         })
         assert response.status_code == 200, f"{category} was rejected"
 
@@ -178,9 +178,29 @@ def test_optimize_accepts_all_valid_categories():
 def test_optimize_accepts_small_budget():
     """Budgets as low as $100 should be accepted (small merchant support)."""
     response = client.post("/optimize", json={
-        "budget": 100, "country": "MY", "category": "fmcg",
+        "budget": 100, "countries": ["MY"], "category": "fmcg",
     })
     assert response.status_code == 200
+
+
+def test_optimize_multi_country():
+    """Multi-country selection should return 200 and echo all requested countries."""
+    response = client.post("/optimize", json={
+        "budget": 5000, "countries": ["MY", "SG"], "category": "beauty", "seed": 1,
+    })
+    assert response.status_code == 200
+    countries = response.json()["countries"]
+    assert set(countries) == {"MY", "SG"}
+
+
+def test_optimize_empty_countries_uses_all():
+    """Empty countries list should include KOLs from all 6 markets."""
+    response = client.post("/optimize", json={
+        "budget": 50000, "countries": [], "category": "beauty", "seed": 1,
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["candidates"] > 0
 
 
 # ════════════════════════════════════════════════════════════════
@@ -318,12 +338,12 @@ def test_scalability_rejects_zero_budget():
     assert response.status_code == 422
 
 
-# ════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════
 #  Reproducibility
-# ════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════
 def test_optimize_same_seed_same_result():
     """Same seed should produce identical results across two calls."""
-    payload = {"budget": 5000, "country": "MY", "category": "beauty", "seed": 42}
+    payload = {"budget": 5000, "countries": ["MY"], "category": "beauty", "seed": 42}
     r1 = client.post("/optimize", json=payload).json()
     r2 = client.post("/optimize", json=payload).json()
     assert r1["total_gmv"] == r2["total_gmv"]

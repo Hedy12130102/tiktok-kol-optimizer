@@ -61,7 +61,7 @@ class KOLPrediction(BaseModel):
 
 class CampaignCreate(BaseModel):
     name: str
-    country: str
+    countries: List[str] = []
     category: str
     budget: float
     best_algorithm: str
@@ -84,7 +84,7 @@ class ActualResultsUpdate(BaseModel):
 # ════════════════════════════════════════════════════════════════
 #  Endpoints
 # ════════════════════════════════════════════════════════════════
-@router.post("/campaigns", status_code=201)
+@router.post("/campaigns")
 def save_campaign(req: CampaignCreate):
     """Persist an optimization result as a trackable campaign."""
     data = _load()
@@ -92,7 +92,7 @@ def save_campaign(req: CampaignCreate):
         "id":             _next_id(data),
         "name":           req.name,
         "created_at":     datetime.utcnow().isoformat(),
-        "country":        req.country,
+        "countries":      req.countries,
         "category":       req.category,
         "budget":         req.budget,
         "best_algorithm": req.best_algorithm,
@@ -100,15 +100,16 @@ def save_campaign(req: CampaignCreate):
         "total_cost":     req.total_cost,
         "predicted_gmv":  req.predicted_gmv,
         # filled after campaign ends:
-        "actual_gmv":      None,
-        "kol_actuals":     None,
-        "accuracy_pct":    None,
-        "notes":           None,
-        "status":          "active",   # active | completed
+        "actual_total_gmv": None,
+        "kol_actuals":      None,
+        "accuracy_pct":     None,
+        "notes":            None,
+        "completed_at":     None,
+        "status":           "active",   # active | completed
     }
     data.append(campaign)
     _save(data)
-    return {"id": campaign["id"], "message": f"Campaign '{req.name}' saved"}
+    return campaign
 
 
 @router.get("/campaigns")
@@ -116,7 +117,7 @@ def list_campaigns():
     """Return all campaigns sorted newest-first."""
     data = _load()
     data.sort(key=lambda d: d["created_at"], reverse=True)
-    return {"campaigns": data, "total": len(data)}
+    return data
 
 
 @router.get("/campaigns/{campaign_id}")
@@ -124,7 +125,7 @@ def get_campaign(campaign_id: int):
     data = _load()
     c = next((d for d in data if d["id"] == campaign_id), None)
     if not c:
-        raise HTTPException(status_code=404, detail="Campaign not found")
+        raise HTTPException(status_code=404, detail=f"Campaign {campaign_id} not found")
     return c
 
 
@@ -140,7 +141,7 @@ def record_actual(campaign_id: int, req: ActualResultsUpdate):
         raise HTTPException(status_code=404, detail="Campaign not found")
 
     c = data[idx]
-    c["actual_gmv"] = req.actual_total_gmv
+    c["actual_total_gmv"] = req.actual_total_gmv
     if req.kol_actuals:
         c["kol_actuals"] = [k.model_dump() for k in req.kol_actuals]
     if req.notes:
@@ -151,7 +152,7 @@ def record_actual(campaign_id: int, req: ActualResultsUpdate):
     c["completed_at"] = datetime.utcnow().isoformat()
 
     _save(data)
-    return {"message": "Actual results recorded", "campaign": c}
+    return c
 
 
 @router.delete("/campaigns/{campaign_id}")
@@ -160,6 +161,6 @@ def delete_campaign(campaign_id: int):
     before = len(data)
     data = [d for d in data if d["id"] != campaign_id]
     if len(data) == before:
-        raise HTTPException(status_code=404, detail="Campaign not found")
+        raise HTTPException(status_code=404, detail=f"Campaign {campaign_id} not found")
     _save(data)
-    return {"message": f"Campaign {campaign_id} deleted"}
+    return {"deleted": True, "id": campaign_id}

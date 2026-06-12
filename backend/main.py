@@ -284,6 +284,13 @@ def get_tier_from_followers(followers: int) -> str:
 
 
 def detect_audience_overlap(selected_kols: List[KOLResult], all_kols: List[KOL]) -> List[OverlapWarning]:
+    """Warn when two selected KOLs target demographically near-identical audiences.
+
+    IMPORTANT: /optimize already filters by country + category, so we skip
+    those dimensions (every pair would trigger). Instead we check follower
+    range, age group, and gender skew — the same dimensions used by the
+    fitness overlap penalty.
+    """
     warnings: List[OverlapWarning] = []
     n = len(selected_kols)
     if n < 2:
@@ -298,20 +305,25 @@ def detect_audience_overlap(selected_kols: List[KOLResult], all_kols: List[KOL])
             score = 0.0
             reasons: List[str] = []
 
-            if a.country == b.country:
-                score += 0.4
-                reasons.append("same country")
-            if a.category == b.category:
-                score += 0.3
-                reasons.append("same category")
-
             fa = follower_map.get(a.id, a.followers)
             fb = follower_map.get(b.id, b.followers)
             if fa > 0 and fb > 0:
                 ratio = min(fa, fb) / max(fa, fb)
-                if ratio > 0.8:
-                    score += 0.3
+                if ratio > 0.5:
+                    score += 0.5
                     reasons.append("similar follower range")
+
+            if hasattr(a, 'age_group') and hasattr(b, 'age_group') and a.age_group and b.age_group and a.age_group == b.age_group:
+                score += 0.3
+                reasons.append("same age group")
+
+            if hasattr(a, 'gender_ratio') and hasattr(b, 'gender_ratio'):
+                if a.gender_ratio >= 0.7 and b.gender_ratio >= 0.7:
+                    score += 0.2
+                    reasons.append("both heavily female")
+                elif a.gender_ratio <= 0.3 and b.gender_ratio <= 0.3:
+                    score += 0.2
+                    reasons.append("both heavily male")
 
             if score > 0.5:
                 warnings.append(OverlapWarning(
@@ -342,13 +354,19 @@ def compute_audience_overlap_risk(kol: KOL, all_kols: List[KOL]) -> float:
             continue
         overlap = 0.0
         if kol.country == other.country:
-            overlap += 0.4
-        if kol.category == other.category:
             overlap += 0.3
+        if kol.category == other.category:
+            overlap += 0.2
         if kol.followers > 0 and other.followers > 0:
             ratio = min(kol.followers, other.followers) / max(kol.followers, other.followers)
             if ratio > 0.5:
                 overlap += 0.3
+        if kol.age_group and other.age_group and kol.age_group == other.age_group:
+            overlap += 0.1
+        if kol.gender_ratio >= 0.7 and other.gender_ratio >= 0.7:
+            overlap += 0.05
+        elif kol.gender_ratio <= 0.3 and other.gender_ratio <= 0.3:
+            overlap += 0.05
         total_overlap += overlap
         count += 1
 
@@ -767,21 +785,18 @@ def scalability(req: ScalabilityRequest):
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
 
+    import tempfile
     from data.generator import generate_kols
-    tmp_json = os.path.join(os.path.dirname(DATA_PATH), f"_scalability_tmp_{req.n}_{req.seed}.json")
-    tmp_csv = tmp_json.replace(".json", ".csv")
-    try:
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_json = os.path.join(tmpdir, f"kols_{req.n}_{req.seed}.json")
+        tmp_csv  = os.path.join(tmpdir, f"kols_{req.n}_{req.seed}.csv")
         kol_dicts = generate_kols(
             num=req.n,
             json_output_path=tmp_json,
             csv_output_path=tmp_csv,
             seed=req.seed,
         )
-        kols = [_dict_to_kol(d) for d in kol_dicts]
-    finally:
-        for path in (tmp_json, tmp_csv):
-            if os.path.exists(path):
-                os.remove(path)
+    kols = [_dict_to_kol(d) for d in kol_dicts]
 
     def run(algo_fn) -> ScalabilityEntry:
         t0 = time.perf_counter()

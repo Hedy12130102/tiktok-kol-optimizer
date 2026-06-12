@@ -1060,6 +1060,12 @@
         const PLAN_COLORS = { Aggressive: '#FF0050', Balanced: '#00C853', Safe: '#f1c40f' };
         const fmt = n => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
         const fmtF = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : n;
+        const formatCampaignCountries = c => {
+            const flag = { MY: '🇲🇾', ID: '🇮🇩', TH: '🇹🇭', PH: '🇵🇭', SG: '🇸🇬', VN: '🇻🇳' };
+            const arr = c.countries || (c.country ? [c.country] : []);
+            if (!arr.length) return '—';
+            return arr.map(cc => (flag[cc] || '') + ' ' + cc).join(' ');
+        };
         const PAGE_TITLES = { dashboard: 'Optimizer Dashboard', creators: 'Creator Management', campaigns: 'Campaign Attribution' };
         let currentView = 'business';
         let selectedPlanName = 'Balanced';
@@ -1356,7 +1362,8 @@
                 else { allPlansData = null; }
                 // Pre-fetch enhanced KOL data for enriched cards
                 try {
-                    const kolParams = new URLSearchParams({ limit: 200, country: payload.country, category: payload.category });
+                    const firstCountry = (payload.countries && payload.countries.length > 0) ? payload.countries[0] : '';
+                    const kolParams = new URLSearchParams({ limit: 200, country: firstCountry, category: payload.category });
                     const kolRes = await fetch(`${API}/kols?${kolParams}`);
                     if (kolRes.ok) {
                         const kolData = await kolRes.json();
@@ -1489,7 +1496,10 @@
             const sorted = [...data.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
 
             // ── Business view ──
-            document.getElementById('biz-subtitle').textContent = `${catN[payload.category] || payload.category} campaign · ${coN[payload.country] || payload.country} · ${sorted.length} creators`;
+            const countryDisplay = (payload.countries && payload.countries.length > 0)
+                ? payload.countries.map(c => coN[c] || c).join(' · ')
+                : 'All Countries';
+            document.getElementById('biz-subtitle').textContent = `${catN[payload.category] || payload.category} campaign · ${countryDisplay} · ${sorted.length} creators`;
             document.getElementById('biz-cost').textContent = fmt(data.total_cost);
             document.getElementById('biz-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% of ' + fmt(payload.budget) + ' budget';
             document.getElementById('biz-gmv').textContent = fmt(data.total_gmv);
@@ -1805,7 +1815,9 @@
             const totalCost = plan ? plan.total_cost : lastOptimizeData.total_cost;
             const d = new Date();
             const catNames = { beauty: 'Beauty', fashion: 'Fashion', home: 'Home', fmcg: 'FMCG' };
-            document.getElementById('sc-name').value = `${catNames[lastPayload.category] || lastPayload.category} ${lastPayload.country} ${d.toLocaleDateString('en-US', {month:'short', year:'numeric'})}`;
+            const countryLabel = (lastPayload.countries && lastPayload.countries.length > 0)
+                ? lastPayload.countries.join('/') : 'All';
+            document.getElementById('sc-name').value = `${catNames[lastPayload.category] || lastPayload.category} ${countryLabel} ${d.toLocaleDateString('en-US', {month:'short', year:'numeric'})}`;
             document.getElementById('sc-pred-gmv').textContent = fmt(totalGmv);
             document.getElementById('sc-cost').textContent = fmt(totalCost);
             document.getElementById('sc-algo').textContent = lastOptimizeData.best_algorithm;
@@ -1822,7 +1834,7 @@
             const totalGmv = plan ? plan.total_gmv : lastOptimizeData.total_gmv;
             const totalCost = plan ? plan.total_cost : lastOptimizeData.total_cost;
             const payload = {
-                name, country: lastPayload.country, category: lastPayload.category,
+                name, countries: lastPayload.countries || [], category: lastPayload.category,
                 budget: lastPayload.budget, best_algorithm: lastOptimizeData.best_algorithm,
                 selected_kols: kols.map(k => ({ id: k.id, name: k.name, country: k.country, category: k.category, followers: k.followers, cost: k.cost, predicted_gmv: k.expected_gmv || 0, tier: k.tier || '' })),
                 total_cost: totalCost, predicted_gmv: totalGmv
@@ -1840,7 +1852,7 @@
                 const r = await fetch(`${API}/campaigns`);
                 if (!r.ok) throw new Error('Failed');
                 const d = await r.json();
-                renderCampaigns(d.campaigns || []);
+                renderCampaigns(Array.isArray(d) ? d : (d.campaigns || []));
             } catch (e) { toast('Failed to load campaigns', 'err'); }
         }
 
@@ -1875,7 +1887,7 @@
                 const date = new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
                 return `<tr class="row-hover border-t border-[#353530]">
                     <td class="px-4 py-3"><div class="font-semibold text-white">${c.name}</div><div class="text-[11px] text-outline font-mono">${date} · ${c.best_algorithm}</div></td>
-                    <td class="px-4 py-3 text-[12px]">${catFlag[c.country]||''} ${c.country} · ${c.category}</td>
+                    <td class="px-4 py-3 text-[12px]">${formatCampaignCountries(c)} · ${c.category}</td>
                     <td class="px-4 py-3 text-right font-mono">${fmt(c.budget)}</td>
                     <td class="px-4 py-3 text-right font-mono text-primary">${fmt(c.predicted_gmv)}</td>
                     <td class="px-4 py-3 text-right">${actualGmv}</td>
@@ -1906,7 +1918,7 @@
 
         function renderCampaignDetail(c) {
             document.getElementById('cd-name').textContent = c.name;
-            document.getElementById('cd-meta').textContent = `${c.country} · ${c.category} · ${c.best_algorithm} · ${new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+            document.getElementById('cd-meta').textContent = `${formatCampaignCountries(c)} · ${c.category} · ${c.best_algorithm} · ${new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
             document.getElementById('cd-pred').textContent = fmt(c.predicted_gmv);
             document.getElementById('cd-actual').textContent = c.actual_gmv != null ? fmt(c.actual_gmv) : '—';
             const accEl = document.getElementById('cd-accuracy');
@@ -1959,7 +1971,7 @@
                 const r = await fetch(`${API}/campaigns/${currentCampaignId}/actual`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 if (!r.ok) throw new Error('Failed');
                 const d = await r.json();
-                toast(`Results recorded! Accuracy: ${d.campaign.accuracy_pct}%`);
+                toast(`Results recorded! Accuracy: ${d.accuracy_pct}%`);
                 closeActualModal();
                 loadCampaigns();
             } catch (e) { toast(e.message, 'err'); }
@@ -2049,7 +2061,4 @@
             }
         }
 
-    </script>
-</body>
-
-</html>
+    </
