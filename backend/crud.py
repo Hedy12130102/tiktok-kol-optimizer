@@ -41,7 +41,7 @@ KOL_HISTORY_PATH = os.path.join(
 )
 
 # ── KOL history helpers ───────────────────────────────────────
-_SNAPSHOT_FIELDS = ("engagement_rate", "fit_score", "followers", "avg_views", "avg_likes")
+_SNAPSHOT_FIELDS = ("engagement_rate", "fit_score", "followers", "commission_rate", "avg_views", "avg_likes")
 
 
 def _load_history() -> List[dict]:
@@ -71,12 +71,12 @@ def _record_snapshot(kol_record: dict):
     entry["snapshots"].append(snapshot)
     _save_history(history)
 
-VALID_COUNTRIES = ["MY", "ID", "TH", "PH"]
-VALID_CATEGORIES = ["beauty", "tech", "fashion"]
+VALID_COUNTRIES = ["MY", "ID", "TH", "PH", "SG", "VN"]
+VALID_CATEGORIES = ["beauty", "fashion", "home", "fmcg"]
 
 CSV_TEMPLATE_HEADER = [
     "name", "country", "category", "followers",
-    "engagement_rate", "fit_score", "cost",
+    "engagement_rate", "fit_score", "commission_rate", "cost",
     "avg_views", "avg_likes", "gender_ratio", "age_group",
     "tiktok_url",
 ]
@@ -93,7 +93,8 @@ class KOLCreate(BaseModel):
     followers: int
     engagement_rate: float
     fit_score: float = 0.75
-    cost: float
+    commission_rate: float = 0.15
+    cost: float = 0.0
     avg_views: Optional[int] = None
     avg_likes: Optional[int] = None
     gender_ratio: Optional[float] = None
@@ -152,6 +153,7 @@ class KOLUpdate(BaseModel):
     followers: Optional[int] = None
     engagement_rate: Optional[float] = None
     fit_score: Optional[float] = None
+    commission_rate: Optional[float] = None
     cost: Optional[float] = None
     avg_views: Optional[int] = None
     avg_likes: Optional[int] = None
@@ -221,11 +223,11 @@ def update_kol(kol_id: int, updates: KOLUpdate):
 
     changes = updates.model_dump(exclude_none=True)
     if "country" in changes and changes["country"] not in VALID_COUNTRIES:
-        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH")
+        raise HTTPException(status_code=422, detail=f"country must be one of: {', '.join(VALID_COUNTRIES)}")
     if "category" in changes:
         changes["category"] = changes["category"].lower()
         if changes["category"] not in VALID_CATEGORIES:
-            raise HTTPException(status_code=422, detail="category must be one of: beauty, tech, fashion")
+            raise HTTPException(status_code=422, detail=f"category must be one of: {', '.join(VALID_CATEGORIES)}")
 
     # Auto-snapshot BEFORE applying changes (track history)
     _record_snapshot(data[idx])
@@ -273,13 +275,15 @@ def simulate_kol_update(kol_id: int):
     old_fit = kol.get("fit_score", 0.75)
     old_fol = kol.get("followers", 100000)
 
+    # Snapshot BEFORE applying drift (consistent with update_kol behavior)
+    _record_snapshot(dict(kol))
+
     kol["engagement_rate"] = drift(old_eng, -0.08, +0.12, 0.01, 0.50)
     kol["fit_score"]        = drift(old_fit, -0.05, +0.08, 0.10, 1.00)
     kol["followers"]        = int(drift(old_fol, -0.02, +0.06, 1000, 50_000_000))
     kol["avg_views"]        = int(kol["followers"] * rng.uniform(0.20, 0.40))
     kol["avg_likes"]        = int(kol["avg_views"] * kol["engagement_rate"])
 
-    _record_snapshot(kol)
     _save(data)
 
     return {
@@ -346,6 +350,7 @@ async def import_csv(file: UploadFile = File(...)):
                 "followers":       int(row["followers"]),
                 "engagement_rate": round(float(row["engagement_rate"]), 4),
                 "fit_score":       round(float(row.get("fit_score") or 0.75), 4),
+                "commission_rate": round(float(row.get("commission_rate") or 0.15), 4),
                 "cost":            round(float(row["cost"]), 2),
                 "avg_views":       int(row["avg_views"]) if row.get("avg_views") else None,
                 "avg_likes":       int(row["avg_likes"]) if row.get("avg_likes") else None,
@@ -386,7 +391,7 @@ def download_template():
     writer.writerow(CSV_TEMPLATE_HEADER)
     writer.writerow([
         "Lisa Beauty", "MY", "beauty", 250000,
-        0.08, 0.85, 1200,
+        0.08, 0.85, 0.15, 1200,
         75000, 6000, 0.78, "18-24",
         "https://tiktok.com/@lisa_beauty",
     ])
@@ -435,6 +440,11 @@ def reset_database():
     Used when a merchant wants to start fresh with only their own
     manually entered creators, discarding all synthetic/seed data.
     This action is irreversible.
+
+    Also clears metric history so a recycled KOL id (the next added
+    creator gets id 1 again) does not inherit a previous creator's
+    snapshots.
     """
     _save([])
+    _save_history([])
     return {"message": "Database cleared successfully", "total": 0}

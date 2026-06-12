@@ -92,7 +92,7 @@ def genetic_algorithm(
 
     # Remaining: random individuals scaled to realistic inclusion probability
     avg_cost = sum(k.cost for k in kols) / n if n > 0 else 1.0
-    inclusion_prob = min(0.6, max(0.1, (budget / avg_cost) / n))
+    inclusion_prob = min(0.6, max(0.1, (budget / avg_cost) / n)) if avg_cost > 0 else 0.1
     for _ in range(pop_size - 1):
         ind = [1 if rng.random() < inclusion_prob else 0 for _ in range(n)]
         population.append(ind)

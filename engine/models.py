@@ -66,7 +66,8 @@ class KOL:
     followers: int
     engagement_rate: float   # 0~1, historical engagement rate
     fit_score: float         # 0~1, cultural fit score
-    cost: float              # Cost in USD
+    commission_rate: float = 0.15  # 0~1, commission % of GMV (e.g. 0.15 = 15%)
+    cost: float = 0.0             # Cost in USD (= commission_rate × expected_gmv)
     avg_views:    int   = 0
     avg_likes:    int   = 0
     gender_ratio: float = 0.5

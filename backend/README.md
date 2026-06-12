@@ -74,6 +74,14 @@ pytest tests/ -v
 | `PUT` | `/campaigns/{id}/actual` | Record actual GMV |
 | `DELETE` | `/campaigns/{id}` | Delete campaign |
 
+### API Integrations (Stubs)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/connections` | List integrations and statuses |
+| `POST` | `/api/connections/interest` | Register early-access email |
+| `POST` | `/api/connections/connect` | Connect integration (returns `coming_soon`) |
+
 ---
 
 ## 1. Health Check
@@ -88,20 +96,25 @@ Response: `{ "status": "ok" }`
 ## 2. Optimize a Campaign
 
 ```bash
-# macOS / Linux — beauty campaign
+# macOS / Linux — beauty campaign, single country
 curl -X POST http://localhost:8000/optimize \
   -H "Content-Type: application/json" \
-  -d '{"budget": 5000, "country": "MY", "category": "beauty", "seed": 42}'
+  -d '{"budget": 5000, "countries": ["MY"], "category": "beauty", "seed": 42}'
 
-# Small merchant — FMCG campaign with $200 budget
+# Multi-country — pool creators from MY + SG + ID
 curl -X POST http://localhost:8000/optimize \
   -H "Content-Type: application/json" \
-  -d '{"budget": 200, "country": "TH", "category": "fmcg", "seed": 42}'
+  -d '{"budget": 5000, "countries": ["MY","SG","ID"], "category": "beauty", "seed": 42}'
+
+# All countries (omit countries or pass empty array)
+curl -X POST http://localhost:8000/optimize \
+  -H "Content-Type: application/json" \
+  -d '{"budget": 200, "countries": [], "category": "fmcg", "seed": 42}'
 
 # Windows PowerShell
 curl.exe -X POST http://localhost:8000/optimize `
   -H "Content-Type: application/json" `
-  -d '{\"budget\": 5000, \"country\": \"MY\", \"category\": \"beauty\", \"seed\": 42}'
+  -d '{\"budget\": 5000, \"countries\": [\"MY\"], \"category\": \"beauty\", \"seed\": 42}'
 ```
 
 Valid categories: `beauty`, `fashion`, `home`, `fmcg`  

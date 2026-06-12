@@ -27,25 +27,22 @@ _COUNTRY_NAME = {
     "ID": "Indonesia",
     "TH": "Thailand",
     "PH": "Philippines",
+    "SG": "Singapore",
+    "VN": "Vietnam",
 }
 
 # ── Category display names ─────────────────────────────────────────
 _CATEGORY_NAME = {
     "beauty":  "beauty & personal care",
-    "tech":    "consumer electronics",
     "fashion": "fashion & lifestyle",
+    "home":    "home & living",
+    "fmcg":    "FMCG",
 }
 
 
 def get_tier(kol: KOL) -> str:
-    """Return tier string based on follower count."""
-    if kol.followers >= 1_000_000:
-        return "Mega"
-    if kol.followers >= 100_000:
-        return "Macro"
-    if kol.followers >= 10_000:
-        return "Micro"
-    return "Nano"
+    """Return tier string — delegates to KOL.tier property."""
+    return kol.tier
 
 
 def generate_reasons(kol: KOL, all_kols: List[KOL]) -> List[str]:
@@ -111,13 +108,14 @@ def generate_reasons(kol: KOL, all_kols: List[KOL]) -> List[str]:
     # ── 4. Cost-effectiveness (conditional) ──────────────────────
     gmv = kol.expected_gmv()
     cost_eff = gmv / kol.cost if kol.cost > 0 else 0
+    positive_cost_kols = [k for k in all_kols if k.cost > 0]
     avg_ce = (
-        sum(k.expected_gmv() / k.cost for k in all_kols if k.cost > 0)
-        / len(all_kols)
-        if all_kols
+        sum(k.expected_gmv() / k.cost for k in positive_cost_kols)
+        / len(positive_cost_kols)
+        if positive_cost_kols
         else 0
     )
-    if cost_eff >= avg_ce * 1.15:
+    if cost_eff > 0 and avg_ce > 0 and cost_eff >= avg_ce * 1.15:
         reasons.append(
             f"Predicted ROI is {round((cost_eff / avg_ce - 1) * 100)}% "
             f"above the pool average — high cost-effectiveness"

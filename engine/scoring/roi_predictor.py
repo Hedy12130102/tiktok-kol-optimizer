@@ -2,7 +2,9 @@
 """
 ROI Predictor — estimates return-on-investment for a KOL portfolio.
 
-Predicted GMV per KOL = followers × engagement_rate × fit_score
+Predicted GMV per KOL = KOL.expected_gmv()  (the funnel model defined in
+                        engine/models.py: sqrt(followers) × CTR × CVR × AOV
+                        × purchasing_power × engagement_factor × fit_factor)
 Portfolio ROI         = total_predicted_gmv / total_cost
 
 These are the same metrics used by the fitness function; this module

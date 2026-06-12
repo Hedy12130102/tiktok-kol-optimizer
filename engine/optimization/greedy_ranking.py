@@ -92,10 +92,11 @@ def greedy_ranking(
                 history.append(-current_cost)
                 break
 
-    # ── Pad history to ~400 points for consistent chart display ─────
-    if history:
+    # ── Pad history up to 400 points for consistent chart display ──
+    # Only pad when the history is short (small pool); don't pad beyond 400.
+    if history and len(history) < 400:
         pad_val = history[-1]
-        target = max(400, len(history))
-        history.extend([pad_val] * (target - len(history)))
+        target = min(400, len(history) + 100)
+        history.extend([pad_val] * max(0, target - len(history)))
 
     return copy.copy(current), current_cost, history

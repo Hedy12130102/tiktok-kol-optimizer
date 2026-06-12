@@ -74,7 +74,7 @@ DATA_PATH = os.path.join(
 # ════════════════════════════════════════════════════════════════
 class OptimizeRequest(BaseModel):
     budget: float
-    country: str = "MY"
+    countries: List[str] = []
     category: str = "beauty"
     seed: int = 42
 
@@ -93,18 +93,19 @@ class KOLResult(BaseModel):
     followers: int
     engagement_rate: float
     fit_score: float
+    commission_rate: float = 0.15
     cost: float
     expected_gmv: float
     tier: str = ""
     creator_score: float = 0.0
     reasons: List[str] = []
+    age_group: str = ""
+    gender_ratio: float = 0.5
 
 
 class KOLDetail(KOLResult):
     avg_views: Optional[int] = None
     avg_likes: Optional[int] = None
-    gender_ratio: Optional[float] = None
-    age_group: Optional[str] = None
     predicted_gmv_solo: float = 0.0
     audience_overlap_risk: float = 0.0
     cost_effectiveness_rank: int = 0
@@ -138,7 +139,7 @@ class TierBreakdown(BaseModel):
 
 class OptimizeResponse(BaseModel):
     budget: float
-    country: str
+    countries: List[str]
     category: str
     candidates: int
     best_algorithm: str
@@ -165,7 +166,7 @@ class PlanResult(BaseModel):
 
 class OptimizePlansResponse(BaseModel):
     budget: float
-    country: str
+    countries: List[str]
     category: str
     candidates: int
     plans: List[PlanResult]
@@ -206,8 +207,11 @@ class ScalabilityResponse(BaseModel):
 #  Helpers
 # ════════════════════════════════════════════════════════════════
 def load_kols() -> List[KOL]:
-    with open(DATA_PATH, encoding="utf-8") as f:
-        return [_dict_to_kol(d) for d in json.load(f)]
+    try:
+        with open(DATA_PATH, encoding="utf-8") as f:
+            return [_dict_to_kol(d) for d in json.load(f)]
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=500, detail=f"Data file error: {e}")
 
 
 def load_raw_kols() -> List[dict]:
@@ -216,7 +220,9 @@ def load_raw_kols() -> List[dict]:
 
 
 _KOL_FIELDS = {"id", "name", "country", "category",
-               "followers", "engagement_rate", "fit_score", "cost"}
+               "followers", "engagement_rate", "fit_score",
+               "commission_rate", "cost",
+               "avg_views", "avg_likes", "gender_ratio", "age_group"}
 
 
 def _dict_to_kol(d: dict) -> KOL:
@@ -232,9 +238,12 @@ def to_kol_result(k: KOL, score: float, all_kols: List[KOL]) -> KOLResult:
         followers=k.followers,
         engagement_rate=k.engagement_rate,
         fit_score=k.fit_score,
+        commission_rate=k.commission_rate,
         cost=k.cost,
         expected_gmv=round(k.expected_gmv(), 2),
         tier=get_tier(k),
+        age_group=k.age_group,
+        gender_ratio=k.gender_ratio,
         creator_score=score,
         reasons=generate_reasons(k, all_kols),
     )
@@ -281,6 +290,13 @@ def get_tier_from_followers(followers: int) -> str:
 
 
 def detect_audience_overlap(selected_kols: List[KOLResult], all_kols: List[KOL]) -> List[OverlapWarning]:
+    """Warn when two selected KOLs target demographically near-identical audiences.
+
+    IMPORTANT: /optimize already filters by country + category, so we skip
+    those dimensions (every pair would trigger). Instead we check follower
+    range, age group, and gender skew — the same dimensions used by the
+    fitness overlap penalty.
+    """
     warnings: List[OverlapWarning] = []
     n = len(selected_kols)
     if n < 2:
@@ -295,20 +311,25 @@ def detect_audience_overlap(selected_kols: List[KOLResult], all_kols: List[KOL])
             score = 0.0
             reasons: List[str] = []
 
-            if a.country == b.country:
-                score += 0.4
-                reasons.append("same country")
-            if a.category == b.category:
-                score += 0.3
-                reasons.append("same category")
-
             fa = follower_map.get(a.id, a.followers)
             fb = follower_map.get(b.id, b.followers)
             if fa > 0 and fb > 0:
                 ratio = min(fa, fb) / max(fa, fb)
-                if ratio > 0.8:
-                    score += 0.3
+                if ratio > 0.5:
+                    score += 0.5
                     reasons.append("similar follower range")
+
+            if hasattr(a, 'age_group') and hasattr(b, 'age_group') and a.age_group and b.age_group and a.age_group == b.age_group:
+                score += 0.3
+                reasons.append("same age group")
+
+            if hasattr(a, 'gender_ratio') and hasattr(b, 'gender_ratio'):
+                if a.gender_ratio >= 0.7 and b.gender_ratio >= 0.7:
+                    score += 0.2
+                    reasons.append("both heavily female")
+                elif a.gender_ratio <= 0.3 and b.gender_ratio <= 0.3:
+                    score += 0.2
+                    reasons.append("both heavily male")
 
             if score > 0.5:
                 warnings.append(OverlapWarning(
@@ -339,13 +360,19 @@ def compute_audience_overlap_risk(kol: KOL, all_kols: List[KOL]) -> float:
             continue
         overlap = 0.0
         if kol.country == other.country:
-            overlap += 0.4
-        if kol.category == other.category:
             overlap += 0.3
+        if kol.category == other.category:
+            overlap += 0.2
         if kol.followers > 0 and other.followers > 0:
             ratio = min(kol.followers, other.followers) / max(kol.followers, other.followers)
             if ratio > 0.5:
                 overlap += 0.3
+        if kol.age_group and other.age_group and kol.age_group == other.age_group:
+            overlap += 0.1
+        if kol.gender_ratio >= 0.7 and other.gender_ratio >= 0.7:
+            overlap += 0.05
+        elif kol.gender_ratio <= 0.3 and other.gender_ratio <= 0.3:
+            overlap += 0.05
         total_overlap += overlap
         count += 1
 
@@ -423,24 +450,75 @@ def health():
     return {"status": "ok"}
 
 
+
+# ── API Connections (commercial expansion stubs) ──────────────────
+# Phase 1 (current): manual import only
+# Phase 2 (planned): TikTok Creator Marketplace, TikTok Shop Partner API
+# Phase 3 (planned): Third-party analytics (AsiaKOL, Cube Asia, Nox)
+
+class ApiConnectionRequest(BaseModel):
+    integration_type: str
+    credentials: Dict[str, str]
+
+class ApiInterestRequest(BaseModel):
+    email: str
+    integration_type: str
+
+@app.get("/api/connections")
+def list_connections():
+    """Return status of all available data source integrations."""
+    return {
+        "connections": [
+            {"id": "manual", "name": "Manual Import", "status": "active",
+             "description": "CSV upload and manual KOL entry"},
+            {"id": "tiktok_creator", "name": "TikTok Creator Marketplace API", "status": "coming_soon",
+             "description": "Auto-sync KOL profiles and audience demographics"},
+            {"id": "tiktok_shop", "name": "TikTok Shop Partner API", "status": "coming_soon",
+             "description": "Real GMV and commission data from affiliate campaigns"},
+            {"id": "third_party", "name": "Third-Party Analytics Platforms", "status": "coming_soon",
+             "description": "AsiaKOL, Cube Asia, Nox Influencer and similar"},
+        ]
+    }
+
+@app.post("/api/connections/interest")
+def register_interest(req: ApiInterestRequest):
+    """Register merchant interest in a coming-soon integration."""
+    import re as _re
+    if not _re.match(r"[^@]+@[^@]+\.[^@]+", req.email):
+        raise HTTPException(status_code=422, detail="Invalid email address")
+    valid_types = {"tiktok_creator", "tiktok_shop", "third_party"}
+    if req.integration_type not in valid_types:
+        raise HTTPException(status_code=422, detail=f"Unknown integration type: {req.integration_type}")
+    return {"status": "registered", "email": req.email, "integration_type": req.integration_type}
+
+@app.post("/api/connections/connect")
+def connect_integration(req: ApiConnectionRequest):
+    """Stub — integrations not yet live."""
+    return {
+        "status": "coming_soon",
+        "message": f"Integration '{req.integration_type}' is not yet available."
+    }
+
 @app.post("/optimize", response_model=OptimizeResponse)
 def optimize(req: OptimizeRequest):
     """Run all six algorithms and return the best KOL matrix."""
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
-    if req.country not in VALID_COUNTRIES:
-        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH, SG, VN")
+    invalid_countries = [c for c in req.countries if c not in VALID_COUNTRIES]
+    if invalid_countries:
+        raise HTTPException(status_code=422, detail=f"invalid countries: {invalid_countries}")
     if req.category not in VALID_CATEGORIES:
         raise HTTPException(status_code=422, detail="category must be one of: beauty, fashion, home, fmcg")
 
+    active_countries = set(req.countries) if req.countries else set(VALID_COUNTRIES)
     all_kols = load_kols()
     filtered = [k for k in all_kols
-                if k.country == req.country and k.category == req.category]
+                if k.country in active_countries and k.category == req.category]
 
     if not filtered:
         return OptimizeResponse(
             budget=req.budget,
-            country=req.country,
+            countries=list(active_countries),
             category=req.category,
             candidates=0,
             best_algorithm="none",
@@ -477,7 +555,7 @@ def optimize(req: OptimizeRequest):
 
     return OptimizeResponse(
         budget=req.budget,
-        country=req.country,
+        countries=list(active_countries),
         category=req.category,
         candidates=len(filtered),
         best_algorithm=best.algorithm,
@@ -509,19 +587,21 @@ def optimize_plans(req: OptimizeRequest):
     """
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
-    if req.country not in VALID_COUNTRIES:
-        raise HTTPException(status_code=422, detail="country must be one of: MY, ID, TH, PH, SG, VN")
+    invalid_countries = [c for c in req.countries if c not in VALID_COUNTRIES]
+    if invalid_countries:
+        raise HTTPException(status_code=422, detail=f"invalid countries: {invalid_countries}")
     if req.category not in VALID_CATEGORIES:
         raise HTTPException(status_code=422, detail="category must be one of: beauty, fashion, home, fmcg")
 
+    active_countries = set(req.countries) if req.countries else set(VALID_COUNTRIES)
     all_kols = load_kols()
     filtered = [k for k in all_kols
-                if k.country == req.country and k.category == req.category]
+                if k.country in active_countries and k.category == req.category]
 
     if not filtered:
         return OptimizePlansResponse(
             budget=req.budget,
-            country=req.country,
+            countries=list(active_countries),
             category=req.category,
             candidates=0,
             plans=[],
@@ -561,7 +641,7 @@ def optimize_plans(req: OptimizeRequest):
 
     return OptimizePlansResponse(
         budget=req.budget,
-        country=req.country,
+        countries=list(active_countries),
         category=req.category,
         candidates=len(filtered),
         plans=[
@@ -664,8 +744,6 @@ def get_kol(kol_id: int):
         **base.model_dump(),
         avg_views=raw.get("avg_views"),
         avg_likes=raw.get("avg_likes"),
-        gender_ratio=raw.get("gender_ratio"),
-        age_group=raw.get("age_group"),
         predicted_gmv_solo=round(target.expected_gmv(), 2),
         audience_overlap_risk=compute_audience_overlap_risk(target, all_kols),
         cost_effectiveness_rank=compute_cost_effectiveness_rank(target, all_kols),
@@ -711,21 +789,18 @@ def scalability(req: ScalabilityRequest):
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
 
+    import tempfile
     from data.generator import generate_kols
-    tmp_json = os.path.join(os.path.dirname(DATA_PATH), f"_scalability_tmp_{req.n}_{req.seed}.json")
-    tmp_csv = tmp_json.replace(".json", ".csv")
-    try:
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_json = os.path.join(tmpdir, f"kols_{req.n}_{req.seed}.json")
+        tmp_csv  = os.path.join(tmpdir, f"kols_{req.n}_{req.seed}.csv")
         kol_dicts = generate_kols(
             num=req.n,
             json_output_path=tmp_json,
             csv_output_path=tmp_csv,
             seed=req.seed,
         )
-        kols = [_dict_to_kol(d) for d in kol_dicts]
-    finally:
-        for path in (tmp_json, tmp_csv):
-            if os.path.exists(path):
-                os.remove(path)
+    kols = [_dict_to_kol(d) for d in kol_dicts]
 
     def run(algo_fn) -> ScalabilityEntry:
         t0 = time.perf_counter()

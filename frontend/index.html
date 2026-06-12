@@ -85,6 +85,11 @@
         .sa-highlight td { background: rgba(0,200,83,0.04); }
         /* Textarea inherits form-input styles */
         textarea.form-input { resize: vertical; min-height: 72px; }
+        /* Country multi-select dropdown */
+        #country-dropdown { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        .country-option { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:13px; color:#e5e2da; transition:background .12s; }
+        .country-option:hover { background:rgba(255,255,255,0.06); }
+        .country-option input[type=checkbox] { accent-color:#00F2EA; width:14px; height:14px; flex-shrink:0; cursor:pointer; }
     </style>
 </head>
 
@@ -119,18 +124,29 @@
                         <div class="flex justify-between text-[10px] text-on-surface-variant/50">
                             <span>$100</span><span>$20k</span></div>
                     </div>
-                    <div class="space-y-xs">
-                        <label class="font-label-sm text-label-sm text-on-surface-variant">Target Country</label>
-                        <select id="country-select"
-                            class="w-full border border-outline-variant rounded-lg p-sm text-body-base focus:ring-1 focus:ring-primary outline-none"
-                            style="background:#20201b;color:#e5e2da;border-color:#353530">
-                            <option value="MY">🇲🇾 Malaysia</option>
-                            <option value="ID">🇮🇩 Indonesia</option>
-                            <option value="TH">🇹🇭 Thailand</option>
-                            <option value="PH">🇵🇭 Philippines</option>
-                            <option value="SG">🇸🇬 Singapore</option>
-                            <option value="VN">🇻🇳 Vietnam</option>
-                        </select>
+                    <div class="space-y-xs" style="position:relative">
+                        <label class="font-label-sm text-label-sm text-on-surface-variant">Target Countries</label>
+                        <button id="country-trigger" type="button" onclick="toggleCountryDropdown()"
+                            class="w-full border rounded-lg p-sm text-body-base flex justify-between items-center text-left"
+                            style="background:#20201b;color:#e5e2da;border-color:#353530;outline:none">
+                            <span id="country-display" class="truncate">🌏 All Countries</span>
+                            <span class="material-symbols-outlined text-[16px] text-on-surface-variant flex-shrink-0 ml-1" style="transition:transform .2s" id="country-chevron">expand_more</span>
+                        </button>
+                        <div id="country-dropdown" class="hidden absolute left-0 right-0 rounded-xl border overflow-hidden"
+                             style="background:#1c1c17;border-color:#353530;z-index:200;top:calc(100% + 4px)">
+                            <div class="p-xs">
+                                <label class="country-option" style="border-bottom:1px solid rgba(53,53,48,0.4);margin-bottom:4px;padding-bottom:8px">
+                                    <input type="checkbox" id="country-all" onchange="onAllCountriesChange()" checked />
+                                    <span>🌏 All Countries</span>
+                                </label>
+                                <label class="country-option"><input type="checkbox" class="country-cb" value="MY" onchange="onCountryCbChange()" /><span>🇲🇾 Malaysia</span></label>
+                                <label class="country-option"><input type="checkbox" class="country-cb" value="ID" onchange="onCountryCbChange()" /><span>🇮🇩 Indonesia</span></label>
+                                <label class="country-option"><input type="checkbox" class="country-cb" value="TH" onchange="onCountryCbChange()" /><span>🇹🇭 Thailand</span></label>
+                                <label class="country-option"><input type="checkbox" class="country-cb" value="PH" onchange="onCountryCbChange()" /><span>🇵🇭 Philippines</span></label>
+                                <label class="country-option"><input type="checkbox" class="country-cb" value="SG" onchange="onCountryCbChange()" /><span>🇸🇬 Singapore</span></label>
+                                <label class="country-option"><input type="checkbox" class="country-cb" value="VN" onchange="onCountryCbChange()" /><span>🇻🇳 Vietnam</span></label>
+                            </div>
+                        </div>
                     </div>
                     <div class="space-y-xs">
                         <label class="font-label-sm text-label-sm text-on-surface-variant">Product Category</label>
@@ -143,18 +159,37 @@
                             <option value="fmcg">🛒 FMCG</option>
                         </select>
                     </div>
-                    <div class="space-y-xs">
-                        <label class="font-label-sm text-label-sm text-on-surface-variant">Random Seed</label>
-                        <input id="seed-input" type="number" min="0" max="9999" value="42"
-                            class="w-full border border-outline-variant rounded-lg p-sm text-body-base outline-none focus:ring-1 focus:ring-primary"
-                            style="background:#20201b;color:#e5e2da;border-color:#353530" />
-                    </div>
                 </div>
             </div>
             <button id="run-btn"
                 class="w-full primary-gradient text-white font-title-md text-title-md py-md rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-xs hover:scale-[0.98] transition-all duration-200 active:opacity-80">
                 <span class="material-symbols-outlined text-[20px]">bolt</span> Run Optimization
             </button>
+            <!-- Advanced Settings -->
+            <div>
+                <button type="button" onclick="toggleAdvanced()" class="flex items-center gap-xs text-[11px] text-on-surface-variant hover:text-on-surface transition-colors w-full pt-xs">
+                    <span class="material-symbols-outlined text-[14px]" id="adv-chevron">tune</span>
+                    <span>Advanced Settings</span>
+                    <span class="material-symbols-outlined text-[13px] ml-auto" id="adv-arrow">expand_more</span>
+                </button>
+                <div id="adv-panel" class="hidden pt-sm">
+                    <div class="p-md glass-card rounded-xl space-y-xs">
+                        <div class="flex items-start gap-sm">
+                            <span class="material-symbols-outlined text-[16px] text-on-surface-variant mt-0.5">casino</span>
+                            <div class="flex-1 space-y-xs">
+                                <div class="flex justify-between items-center">
+                                    <label class="font-label-sm text-label-sm text-on-surface-variant">Result Seed</label>
+                                    <button type="button" onclick="randomizeSeed()" class="text-[10px] text-primary hover:opacity-80">Randomize</button>
+                                </div>
+                                <input id="seed-input" type="number" min="0" max="9999" value="42"
+                                    class="w-full border border-outline-variant rounded-lg p-sm text-body-base outline-none focus:ring-1 focus:ring-primary"
+                                    style="background:#20201b;color:#e5e2da;border-color:#353530" />
+                                <p class="text-[10px] text-on-surface-variant/70">Fix this number to get identical results across runs. Leave as-is for varied results each time.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="pt-md space-y-xs">
                 <div class="nav-item active" data-page="dashboard"><span
                         class="material-symbols-outlined">bolt</span><span
@@ -189,20 +224,7 @@
                     <button class="active" onclick="setView('business')">Business</button>
                     <button onclick="setView('technical')">Technical</button>
                 </div>
-                <!-- Creator actions (creators page only) -->
-                <div id="creator-actions" class="hidden flex items-center gap-3">
-                    <button onclick="openAddModal()" class="btn btn-primary flex items-center gap-1"><span
-                            class="material-symbols-outlined text-[18px]">person_add</span> Add Creator</button>
-                    <label class="btn btn-outline flex items-center gap-1 cursor-pointer"><span
-                            class="material-symbols-outlined text-[18px]">upload_file</span> Import CSV<input
-                            type="file" accept=".csv" onchange="importCSV(this)" class="hidden" /></label>
-                    <a href="http://localhost:8000/kols/template" class="btn btn-outline flex items-center gap-1"><span
-                            class="material-symbols-outlined text-[18px]">download</span> Template</a>
-                    <a href="http://localhost:8000/kols/export" class="btn btn-outline flex items-center gap-1"><span
-                            class="material-symbols-outlined text-[18px]">file_download</span> Export</a>
-                    <button onclick="resetDatabase()" class="btn btn-danger flex items-center gap-1"><span
-                            class="material-symbols-outlined text-[18px]">restart_alt</span> Reset All</button>
-                </div>
+                <!-- (creator actions moved into the Creators page body) -->
             </div>
         </header>
 
@@ -250,14 +272,14 @@
                             <div class="text-center p-md rounded-xl bg-secondary/10 border border-secondary/20">
                                 <p class="text-[10px] text-secondary uppercase tracking-wider mb-xs">Predicted GMV</p>
                                 <p id="biz-gmv" class="font-headline-lg text-headline-lg text-secondary font-bold">—</p>
-                                <p class="text-[11px] text-on-surface-variant mt-1">Gross Merchandise Value</p>
+                                <p id="biz-gmv-source" class="text-[11px] text-on-surface-variant mt-1">Gross Merchandise Value</p>
                             </div>
                             <div class="text-center p-md rounded-xl bg-surface-container-low">
                                 <p class="text-[10px] text-on-surface-variant uppercase tracking-wider mb-xs">Return on
                                     Investment</p>
                                 <p id="biz-roi" class="font-headline-lg text-headline-lg text-on-surface font-bold">—
                                 </p>
-                                <p class="text-[11px] text-on-surface-variant mt-1">GMV / Budget</p>
+                                <p id="biz-roi-sub" class="text-[11px] text-on-surface-variant mt-1">GMV / Cost</p>
                             </div>
                         </div>
                     </section>
@@ -283,8 +305,8 @@
                         </div>
                         <div id="plans-grid" class="grid grid-cols-3 gap-gutter"></div>
                         <div class="flex justify-center gap-sm">
-                            <button class="plan-toggle-btn active" onclick="selectPlan('Aggressive')">Aggressive</button>
-                            <button class="plan-toggle-btn" onclick="selectPlan('Balanced')">Balanced</button>
+                            <button class="plan-toggle-btn" onclick="selectPlan('Aggressive')">Aggressive</button>
+                            <button class="plan-toggle-btn active" onclick="selectPlan('Balanced')">Balanced</button>
                             <button class="plan-toggle-btn" onclick="selectPlan('Safe')">Safe</button>
                         </div>
                     </section>
@@ -548,6 +570,103 @@
 
         <!-- ════ PAGE: CREATORS ════ -->
         <div id="page-creators" class="hidden p-margin-desktop space-y-xl">
+
+            <!-- ── Data Sources Panel ── -->
+            <div class="space-y-md">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-title-md text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">database</span>
+                        Data Sources
+                    </h3>
+                    <span class="text-[11px] text-outline bg-surface-container-low px-sm py-xs rounded-full">
+                        KOL data is pulled from all connected sources
+                    </span>
+                </div>
+                <div class="grid grid-cols-4 gap-md">
+                    <!-- Manual Import — ACTIVE -->
+                    <div class="glass-card rounded-xl p-md flex flex-col gap-sm" style="border:1px solid rgba(var(--color-primary-rgb,120,184,0),0.35)">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-[20px]">upload_file</span>
+                                <span class="font-label-md text-on-surface text-sm font-semibold">Manual Import</span>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style="background:rgba(120,184,0,0.15);color:#78b800">● Active</span>
+                        </div>
+                        <p class="text-[11px] text-outline leading-relaxed">Add KOLs individually or import via CSV file. Export your roster anytime.</p>
+                        <div class="flex flex-wrap gap-2 mt-auto pt-sm border-t border-outline-variant">
+                            <button onclick="openAddModal()" class="btn btn-primary flex items-center gap-1 text-[12px] py-1 px-2">
+                                <span class="material-symbols-outlined text-[14px]">person_add</span>Add
+                            </button>
+                            <label class="btn btn-outline flex items-center gap-1 text-[12px] py-1 px-2 cursor-pointer">
+                                <span class="material-symbols-outlined text-[14px]">upload_file</span>CSV
+                                <input type="file" accept=".csv" onchange="importCSV(this)" class="hidden" />
+                            </label>
+                            <a href="http://localhost:8000/kols/template" class="btn btn-outline flex items-center gap-1 text-[12px] py-1 px-2">
+                                <span class="material-symbols-outlined text-[14px]">download</span>Template
+                            </a>
+                            <a href="http://localhost:8000/kols/export" class="btn btn-outline flex items-center gap-1 text-[12px] py-1 px-2">
+                                <span class="material-symbols-outlined text-[14px]">file_download</span>Export
+                            </a>
+                            <button onclick="resetDatabase()" class="btn btn-danger flex items-center gap-1 text-[12px] py-1 px-2">
+                                <span class="material-symbols-outlined text-[14px]">restart_alt</span>Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TikTok Creator Marketplace API — COMING SOON -->
+                    <div class="glass-card rounded-xl p-md flex flex-col gap-sm cursor-pointer hover:border-primary/30 transition-colors" onclick="openApiConnectModal('tiktok_creator')" style="border:1px solid rgba(255,255,255,0.06)">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-2">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/TikTok_logo.svg" class="w-5 h-5 opacity-60" onerror="this.outerHTML='<span class=\'material-symbols-outlined text-outline text-[20px]\'>movie</span>'" />
+                                <span class="font-label-md text-on-surface text-sm font-semibold">Creator Marketplace</span>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style="background:rgba(255,255,255,0.07);color:#888">Coming Soon</span>
+                        </div>
+                        <p class="text-[11px] text-outline leading-relaxed">Sync KOL profiles, follower counts, engagement stats and audience demographics directly from TikTok Creator Marketplace.</p>
+                        <div class="mt-auto pt-sm border-t border-outline-variant">
+                            <button class="btn btn-outline text-[12px] py-1 px-3 w-full opacity-60 cursor-not-allowed flex items-center justify-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">link</span>Connect API
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TikTok Shop Partner API — COMING SOON -->
+                    <div class="glass-card rounded-xl p-md flex flex-col gap-sm cursor-pointer hover:border-primary/30 transition-colors" onclick="openApiConnectModal('tiktok_shop')" style="border:1px solid rgba(255,255,255,0.06)">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-outline text-[20px]">storefront</span>
+                                <span class="font-label-md text-on-surface text-sm font-semibold">TikTok Shop API</span>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style="background:rgba(255,255,255,0.07);color:#888">Coming Soon</span>
+                        </div>
+                        <p class="text-[11px] text-outline leading-relaxed">Pull real GMV and commission data from your TikTok Shop affiliate campaigns. Sync actual sales attribution automatically.</p>
+                        <div class="mt-auto pt-sm border-t border-outline-variant">
+                            <button class="btn btn-outline text-[12px] py-1 px-3 w-full opacity-60 cursor-not-allowed flex items-center justify-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">link</span>Connect API
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Third-Party Analytics — COMING SOON -->
+                    <div class="glass-card rounded-xl p-md flex flex-col gap-sm cursor-pointer hover:border-primary/30 transition-colors" onclick="openApiConnectModal('third_party')" style="border:1px solid rgba(255,255,255,0.06)">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-outline text-[20px]">bar_chart_4_bars</span>
+                                <span class="font-label-md text-on-surface text-sm font-semibold">Analytics Platforms</span>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style="background:rgba(255,255,255,0.07);color:#888">Coming Soon</span>
+                        </div>
+                        <p class="text-[11px] text-outline leading-relaxed">Integrate with AsiaKOL, Cube Asia, Nox Influencer or similar SEA analytics platforms for enriched KOL profiles.</p>
+                        <div class="mt-auto pt-sm border-t border-outline-variant">
+                            <button class="btn btn-outline text-[12px] py-1 px-3 w-full opacity-60 cursor-not-allowed flex items-center justify-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">link</span>Connect API
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Filter Bar ── -->
             <div class="glass-card rounded-xl p-4 flex items-center gap-4 flex-wrap">
                 <div class="flex items-center gap-2"><span
                         class="material-symbols-outlined text-outline">filter_list</span>
@@ -604,6 +723,45 @@
 
     </main>
 
+    <!-- ═══════════ API CONNECT MODAL ═══════════ -->
+    <div id="api-connect-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeApiModal()">
+        <div class="glass-card rounded-xl p-6 w-[500px]">
+            <div class="flex justify-between items-center mb-5">
+                <h3 id="api-modal-title" class="font-headline-sm text-on-surface flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">api</span>Connect Integration
+                </h3>
+                <button onclick="closeApiModal()" class="text-outline hover:text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Coming Soon banner -->
+            <div class="rounded-xl p-md mb-5 flex items-start gap-3" style="background:rgba(255,180,0,0.08);border:1px solid rgba(255,180,0,0.25)">
+                <span class="material-symbols-outlined text-[20px] flex-shrink-0" style="color:#ffb400">construction</span>
+                <div>
+                    <p class="text-sm font-semibold" style="color:#ffb400">Coming in a future release</p>
+                    <p class="text-[12px] text-outline mt-1">This integration is under development. Register your interest below and we'll notify you when it's ready for your account.</p>
+                </div>
+            </div>
+
+            <div id="api-modal-body" class="space-y-md mb-5"></div>
+
+            <!-- Interest form -->
+            <div class="space-y-sm p-md rounded-xl bg-surface-container-low">
+                <p class="text-[11px] text-outline uppercase tracking-wider font-semibold">Register Early Access Interest</p>
+                <div class="flex gap-2">
+                    <input id="api-interest-email" type="email" placeholder="your@email.com" class="form-input flex-1 text-sm" />
+                    <button onclick="submitApiInterest()" class="btn btn-primary text-sm px-md">Notify Me</button>
+                </div>
+                <p id="api-interest-confirm" class="text-[11px] text-primary hidden">✓ Registered! We'll reach out when this integration is live.</p>
+            </div>
+
+            <div class="mt-5 flex justify-end">
+                <button onclick="closeApiModal()" class="btn btn-outline">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══════════ ADD/EDIT MODAL ═══════════ -->
     <div id="modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal()">
         <div class="glass-card rounded-xl p-6 w-[520px] max-h-[85vh] overflow-y-auto">
@@ -634,7 +792,7 @@
                         class="form-input" placeholder="250000" /></div>
                 <div><label class="form-label">Engagement Rate * (0~1)</label><input id="f-eng" type="number"
                         step="0.01" class="form-input" placeholder="0.08" /></div>
-                <div><label class="form-label">Hiring Cost (USD) *</label><input id="f-cost" type="number"
+                <div><label class="form-label">Cost (USD) *</label><input id="f-cost" type="number"
                         class="form-input" placeholder="1200" /></div>
                 <div><label class="form-label">Fit Score (0~1)</label><input id="f-fit" type="number" step="0.01"
                         class="form-input" placeholder="0.75" /></div>
@@ -900,11 +1058,17 @@
         const TIER_EMOJI = { Mega: '🟣', Macro: '🔵', Micro: '🟢', Nano: '🟡' };
         const ALGO_COLORS = { 'Simulated Annealing': '#00C853', 'Hill Climber': '#FB923C', 'Random Search': '#4a4a45', 'Genetic Algorithm': '#A855F7', 'Tabu Search': '#06B6D4', 'Greedy Ranking': '#F59E0B' };
         const PLAN_COLORS = { Aggressive: '#FF0050', Balanced: '#00C853', Safe: '#f1c40f' };
-        const fmt = n => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
-        const fmtF = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : n;
+        const fmt = n => { if (n == null || isNaN(n)) return '$0'; return '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 }); };
+        const fmtF = n => { if (n == null || isNaN(n)) return '0'; return n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(n); };
+        const formatCampaignCountries = c => {
+            const flag = { MY: '🇲🇾', ID: '🇮🇩', TH: '🇹🇭', PH: '🇵🇭', SG: '🇸🇬', VN: '🇻🇳' };
+            const arr = c.countries || (c.country ? [c.country] : []);
+            if (!arr.length) return '—';
+            return arr.map(cc => (flag[cc] || '') + ' ' + cc).join(' ');
+        };
         const PAGE_TITLES = { dashboard: 'Optimizer Dashboard', creators: 'Creator Management', campaigns: 'Campaign Attribution' };
         let currentView = 'business';
-        let selectedPlanName = 'Aggressive';
+        let selectedPlanName = 'Balanced';
         let allPlansData = null;
         let enhancedKolMap = {};
         let lastOptimizeData = null;
@@ -922,13 +1086,86 @@
             });
         }
 
+        // ══════════ ADVANCED SETTINGS ══════════
+        function toggleAdvanced() {
+            const panel = document.getElementById('adv-panel');
+            const arrow = document.getElementById('adv-arrow');
+            const open = !panel.classList.contains('hidden');
+            panel.classList.toggle('hidden', open);
+            arrow.textContent = open ? 'expand_more' : 'expand_less';
+        }
+        function getSeed() {
+            // If Advanced panel is open and user has set a seed, use it; otherwise random
+            const panel = document.getElementById('adv-panel');
+            const input = document.getElementById('seed-input');
+            if (!panel.classList.contains('hidden') && input.value !== '') {
+                return parseInt(input.value) || Math.floor(Math.random() * 9999);
+            }
+            // Auto-random each run
+            const s = Math.floor(Math.random() * 9999);
+            input.value = s; // keep visible so user can reproduce if needed
+            return s;
+        }
+        function randomizeSeed() {
+            document.getElementById('seed-input').value = Math.floor(Math.random() * 9999);
+        }
+
+        // ══════════ COUNTRY MULTI-SELECT ══════════
+        const COUNTRY_LABELS = { MY:'MY', ID:'ID', TH:'TH', PH:'PH', SG:'SG', VN:'VN' };
+
+        function toggleCountryDropdown() {
+            const dd = document.getElementById('country-dropdown');
+            const chevron = document.getElementById('country-chevron');
+            const open = !dd.classList.contains('hidden');
+            dd.classList.toggle('hidden', open);
+            chevron.style.transform = open ? '' : 'rotate(180deg)';
+        }
+
+        function onAllCountriesChange() {
+            // "All" checked → uncheck individual countries
+            document.querySelectorAll('.country-cb').forEach(cb => { cb.checked = false; });
+            document.getElementById('country-all').checked = true;
+            refreshCountryDisplay();
+        }
+
+        function onCountryCbChange() {
+            const cbs = [...document.querySelectorAll('.country-cb')];
+            const anyChecked = cbs.some(cb => cb.checked);
+            // If none individually checked, revert to "All"
+            document.getElementById('country-all').checked = !anyChecked;
+            refreshCountryDisplay();
+        }
+
+        function refreshCountryDisplay() {
+            const selected = [...document.querySelectorAll('.country-cb:checked')].map(cb => cb.value);
+            const el = document.getElementById('country-display');
+            el.textContent = selected.length === 0 ? '🌏 All Countries'
+                : selected.length <= 3 ? selected.map(c => COUNTRY_LABELS[c]).join(' · ')
+                : selected.slice(0, 2).map(c => COUNTRY_LABELS[c]).join(' · ') + ` +${selected.length - 2}`;
+        }
+
+        function getSelectedCountries() {
+            const selected = [...document.querySelectorAll('.country-cb:checked')].map(cb => cb.value);
+            return selected; // empty array = all countries (backend handles this)
+        }
+
+        // Close dropdown on outside click
+        document.addEventListener('click', e => {
+            const wrap = document.getElementById('country-trigger')?.closest('[style*="position:relative"]');
+            if (wrap && !wrap.contains(e.target)) {
+                document.getElementById('country-dropdown')?.classList.add('hidden');
+                document.getElementById('country-chevron').style.transform = '';
+            }
+        });
+
         // ══════════ NAVIGATION ══════════
         function showPage(name) {
             ['dashboard', 'creators', 'campaigns'].forEach(p => document.getElementById('page-' + p).classList.toggle('hidden', p !== name));
             document.getElementById('page-title').textContent = PAGE_TITLES[name] || 'Dashboard';
-            document.getElementById('creator-actions').classList.toggle('hidden', name !== 'creators');
             document.getElementById('view-toggle').classList.toggle('hidden', name !== 'dashboard' || document.getElementById('results-section').classList.contains('hidden'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === name));
+            // Reset scroll position so top of each page is always visible
+            document.querySelector('main').scrollTop = 0;
             if (name === 'creators') loadTable();
             if (name === 'campaigns') loadCampaigns();
         }
@@ -1078,7 +1315,7 @@
             const rankText = rank !== '—' ? `#${rank} cost-effective` : '';
             return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer" onclick="openKolDetail(${kol.id})">
     <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
-    <div class="grid grid-cols-3 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-center"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Est. GMV</p><p class="font-title-md text-secondary font-data-mono font-bold">${fmt(kol.expected_gmv)}</p></div></div>
+    <div class="grid grid-cols-3 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-center"><p class="text-[10px] text-on-surface-variant uppercase">Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p><p class="text-[10px] text-on-surface-variant">${((kol.commission_rate || 0) * 100).toFixed(1)}% comm</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Est. GMV</p><p class="font-title-md text-secondary font-data-mono font-bold">${fmt(kol.expected_gmv)}</p></div></div>
     <div><div class="flex justify-between text-[10px] mb-1"><span class="text-on-surface-variant uppercase">GMV contribution</span><span class="text-secondary font-bold">${contrib}%</span></div><div class="contrib-bar"><div class="contrib-fill" style="width:${contrib}%"></div></div></div>
     <div class="flex items-center gap-md text-[11px]">
         ${riskHtml ? `<div class="flex items-center gap-xs">${riskHtml}</div>` : ''}
@@ -1103,7 +1340,7 @@
             const rankText = rank !== '—' ? `<span class="text-on-surface-variant">#${rank} cost-effective</span>` : '';
             return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer" onclick="openKolDetail(${kol.id})">
     <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
-    <div class="grid grid-cols-2 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div></div>
+    <div class="grid grid-cols-2 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p><p class="text-[10px] text-on-surface-variant">${((kol.commission_rate || 0) * 100).toFixed(1)}% comm</p></div></div>
     <div class="space-y-xs"><div class="flex justify-between items-center text-[10px]"><span class="text-on-surface-variant uppercase">Fit Score</span><span class="text-secondary font-bold">${(kol.fit_score * 100).toFixed(0)}%</span></div><div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary rounded-full" style="width:${(kol.fit_score * 100).toFixed(0)}%"></div></div></div>
     ${riskBadge || rankText ? `<div class="flex items-center gap-md text-[11px]">${riskBadge}${rankText}</div>` : ''}
     <div class="flex justify-between items-center pt-xs"><div class="bg-secondary/15 px-md py-sm rounded-lg border border-secondary/20"><p class="text-[9px] text-secondary uppercase font-bold tracking-wider">Est. GMV</p><p class="text-title-md font-bold text-secondary font-data-mono">${fmt(kol.expected_gmv)}</p></div><button class="text-on-surface-variant hover:text-primary flex items-center gap-xs text-[11px] why-btn" onclick="event.stopPropagation()">Why? <span class="material-symbols-outlined text-[14px]">expand_more</span></button></div>
@@ -1113,7 +1350,7 @@
         document.getElementById('run-btn').addEventListener('click', async () => {
             showPage('dashboard');
             const btn = document.getElementById('run-btn'); btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">refresh</span>'; btn.disabled = true;
-            const payload = { budget: parseInt(budgetSlider.value), country: document.getElementById('country-select').value, category: document.getElementById('category-select').value, seed: parseInt(document.getElementById('seed-input').value) || 42 };
+            const payload = { budget: parseInt(budgetSlider.value), countries: getSelectedCountries(), category: document.getElementById('category-select').value, seed: getSeed() };
             try {
                 const [optRes, plansRes] = await Promise.all([
                     fetch(API + '/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
@@ -1125,7 +1362,8 @@
                 else { allPlansData = null; }
                 // Pre-fetch enhanced KOL data for enriched cards
                 try {
-                    const kolParams = new URLSearchParams({ limit: 200, country: payload.country, category: payload.category });
+                    const firstCountry = (payload.countries && payload.countries.length > 0) ? payload.countries[0] : '';
+                    const kolParams = new URLSearchParams({ limit: 200, country: firstCountry, category: payload.category });
                     const kolRes = await fetch(`${API}/kols?${kolParams}`);
                     if (kolRes.ok) {
                         const kolData = await kolRes.json();
@@ -1222,8 +1460,16 @@
             document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, plan.total_gmv)).join('');
             document.getElementById('biz-gmv').textContent = fmt(plan.total_gmv);
             document.getElementById('biz-roi').textContent = plan.roi.toFixed(2) + 'x';
+            const effRatePlan = plan.total_cost / plan.total_gmv;
+            document.getElementById('biz-roi-sub').textContent = `GMV / Cost  ·  ${(effRatePlan * 100).toFixed(1)}% effective commission`;
             document.getElementById('biz-cost').textContent = fmt(plan.total_cost);
-            // biz-util keeps its own text (set by renderDashboard with actual budget)
+            // Fix: update biz-util to reflect THIS plan's budget limit (not the original budget)
+            const utilPct = (plan.total_cost / plan.budget_limit * 100).toFixed(1);
+            const budgetLabels = { Aggressive: '120% cap', Balanced: '100% cap', Safe: '80% cap' };
+            document.getElementById('biz-util').textContent =
+                utilPct + '% of ' + fmt(plan.budget_limit) + ' (' + (budgetLabels[name] || '') + ')';
+            const srcEl = document.getElementById('biz-gmv-source');
+            if (srcEl) srcEl.textContent = name + ' Plan · ' + (budgetLabels[name] || '');
             document.getElementById('biz-subtitle').textContent = document.getElementById('biz-subtitle').textContent
                 .replace(/\d+ creators$/, sorted.length + ' creators');
         }
@@ -1250,14 +1496,19 @@
             const sorted = [...data.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
 
             // ── Business view ──
-            document.getElementById('biz-subtitle').textContent = `${catN[payload.category] || payload.category} campaign · ${coN[payload.country] || payload.country} · ${sorted.length} creators`;
+            const countryDisplay = (payload.countries && payload.countries.length > 0)
+                ? payload.countries.map(c => coN[c] || c).join(' · ')
+                : 'All Countries';
+            document.getElementById('biz-subtitle').textContent = `${catN[payload.category] || payload.category} campaign · ${countryDisplay} · ${sorted.length} creators`;
             document.getElementById('biz-cost').textContent = fmt(data.total_cost);
             document.getElementById('biz-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% of ' + fmt(payload.budget) + ' budget';
             document.getElementById('biz-gmv').textContent = fmt(data.total_gmv);
             document.getElementById('biz-roi').textContent = data.roi.toFixed(2) + 'x';
+            const effRate = data.total_cost / data.total_gmv;
+            document.getElementById('biz-roi-sub').textContent = `GMV / Cost  ·  ${(effRate * 100).toFixed(1)}% effective commission`;
             document.getElementById('biz-count').textContent = sorted.length;
             document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, data.total_gmv)).join('');
-            document.getElementById('biz-footer-msg').textContent = `This portfolio is predicted to generate ${fmt(data.total_gmv)} in GMV with an ROI of ${data.roi.toFixed(2)}x on your ${fmt(payload.budget)} budget.`;
+            document.getElementById('biz-footer-msg').textContent = `This portfolio is predicted to generate ${fmt(data.total_gmv)} in GMV with an ROI of ${data.roi.toFixed(2)}x — KOLs earn ${(effRate * 100).toFixed(1)}% commission on sales.`;
 
             // ── Technical view ──
             const recommended = getRecommendedResult(data.results);
@@ -1337,7 +1588,7 @@
                 const r = await fetch(`${API}/scalability`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ n, budget, seed: parseInt(document.getElementById('seed-input').value) || 42 })
+                    body: JSON.stringify({ n, budget, seed: getSeed() })
                 });
                 if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Benchmark failed'); }
                 const d = await r.json();
@@ -1454,7 +1705,8 @@
                 { label: 'Followers', v: fmtF(d.followers) },
                 { label: 'Engagement', v: (d.engagement_rate * 100).toFixed(1) + '%' },
                 { label: 'Fit Score', v: (d.fit_score * 100).toFixed(0) + '%' },
-                { label: 'Hiring Cost', v: fmt(d.cost) },
+                { label: 'Cost', v: fmt(d.cost) },
+                { label: 'Commission', v: ((d.commission_rate || 0) * 100).toFixed(1) + '%' },
                 { label: 'Est. GMV', v: fmt(d.expected_gmv), cls: 'text-secondary font-bold' },
             ].map(s => `<div class="text-center p-sm rounded-lg bg-surface-container-low"><p class="text-[10px] text-on-surface-variant uppercase">${s.label}</p><p class="font-title-md font-data-mono ${s.cls || 'text-on-surface'}">${s.v}</p></div>`).join('');
 
@@ -1493,6 +1745,59 @@
         function openAddModal() { editingId = null; document.getElementById('modal-title').textContent = 'Add New Creator'; document.getElementById('modal-submit').textContent = 'Save Creator'; document.getElementById('modal-submit').onclick = submitAdd; clearForm(); document.getElementById('modal').classList.remove('hidden'); }
         async function openEditModal(id) { editingId = id; document.getElementById('modal-title').textContent = 'Edit Creator'; document.getElementById('modal-submit').textContent = 'Update'; document.getElementById('modal-submit').onclick = submitEdit; try { const r = await fetch(`${API}/kol/${id}`); const k = await r.json(); document.getElementById('f-name').value = k.name || ''; document.getElementById('f-url').value = k.tiktok_url || ''; document.getElementById('f-m-country').value = k.country || 'MY'; document.getElementById('f-m-cat').value = k.category || 'beauty'; document.getElementById('f-followers').value = k.followers || ''; document.getElementById('f-eng').value = k.engagement_rate || ''; document.getElementById('f-cost').value = k.cost || ''; document.getElementById('f-fit').value = k.fit_score || ''; document.getElementById('f-views').value = k.avg_views || ''; document.getElementById('f-likes').value = k.avg_likes || ''; document.getElementById('f-gender').value = k.gender_ratio || ''; document.getElementById('f-age').value = k.age_group || '18-24'; document.getElementById('modal').classList.remove('hidden'); } catch (e) { toast('Failed to load', 'err'); } }
         function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+
+        // ══════════ API CONNECT MODAL ══════════
+        const API_MODAL_INFO = {
+            tiktok_creator: {
+                title: 'TikTok Creator Marketplace API',
+                icon: 'movie',
+                description: 'Connect your TikTok Developer App credentials to automatically sync KOL profiles, follower counts, engagement rates, and audience demographics from the Creator Marketplace.',
+                fields: [
+                    { label: 'App ID', placeholder: 'Your TikTok App ID' },
+                    { label: 'App Secret', placeholder: 'Your App Secret', type: 'password' }
+                ]
+            },
+            tiktok_shop: {
+                title: 'TikTok Shop Partner API',
+                icon: 'storefront',
+                description: 'Sync real GMV and commission data from your TikTok Shop affiliate campaigns to automatically validate optimizer predictions against actual sales.',
+                fields: [
+                    { label: 'Shop ID', placeholder: 'Your TikTok Shop ID' },
+                    { label: 'Access Token', placeholder: 'Partner Access Token', type: 'password' }
+                ]
+            },
+            third_party: {
+                title: 'Third-Party Analytics Platform',
+                icon: 'bar_chart_4_bars',
+                description: 'Connect AsiaKOL, Cube Asia, Nox Influencer, or similar SEA-focused analytics platforms to enrich KOL profiles with cross-platform data.',
+                fields: [
+                    { label: 'Platform', placeholder: 'e.g. AsiaKOL, Cube Asia, Nox...' },
+                    { label: 'API Key', placeholder: 'Platform API Key', type: 'password' }
+                ]
+            }
+        };
+        function openApiConnectModal(type) {
+            var info = API_MODAL_INFO[type] || {};
+            document.getElementById('api-modal-title').innerHTML =
+                '<span class="material-symbols-outlined text-primary">' + (info.icon || 'api') + '</span> ' + (info.title || 'Connect Integration');
+            var body = document.getElementById('api-modal-body');
+            body.innerHTML = '<p class="text-sm text-on-surface-variant leading-relaxed mb-3">' + (info.description || '') + '</p>' +
+                (info.fields || []).map(function(f) {
+                    return '<div class="space-y-xs"><label class="text-[12px] text-outline uppercase tracking-wider">' + f.label +
+                        '</label><input type="' + (f.type || 'text') + '" placeholder="' + f.placeholder +
+                        '" class="form-input w-full opacity-50 cursor-not-allowed" disabled /></div>';
+                }).join('');
+            document.getElementById('api-interest-email').value = '';
+            document.getElementById('api-interest-confirm').classList.add('hidden');
+            document.getElementById('api-connect-modal').classList.remove('hidden');
+        }
+        function closeApiModal() { document.getElementById('api-connect-modal').classList.add('hidden'); }
+        function submitApiInterest() {
+            var email = document.getElementById('api-interest-email').value.trim();
+            if (!email || !email.includes('@')) { toast('Please enter a valid email', 'err'); return; }
+            document.getElementById('api-interest-confirm').classList.remove('hidden');
+            document.getElementById('api-interest-email').value = '';
+        }
         function clearForm() { ['f-name', 'f-url', 'f-followers', 'f-eng', 'f-cost', 'f-fit', 'f-views', 'f-likes', 'f-gender'].forEach(id => { document.getElementById(id).value = ''; }); document.getElementById('f-m-country').value = 'MY'; document.getElementById('f-m-cat').value = 'beauty'; document.getElementById('f-age').value = '18-24'; }
         function getFormData() { const d = { name: document.getElementById('f-name').value.trim(), country: document.getElementById('f-m-country').value, category: document.getElementById('f-m-cat').value, followers: parseInt(document.getElementById('f-followers').value), engagement_rate: parseFloat(document.getElementById('f-eng').value), cost: parseFloat(document.getElementById('f-cost').value) }; const fit = document.getElementById('f-fit').value; if (fit) d.fit_score = parseFloat(fit); const url = document.getElementById('f-url').value.trim(); if (url) d.tiktok_url = url; const views = document.getElementById('f-views').value; if (views) d.avg_views = parseInt(views); const likes = document.getElementById('f-likes').value; if (likes) d.avg_likes = parseInt(likes); const gender = document.getElementById('f-gender').value; if (gender) d.gender_ratio = parseFloat(gender); d.age_group = document.getElementById('f-age').value; if (!d.name || isNaN(d.followers) || isNaN(d.engagement_rate) || isNaN(d.cost)) { toast('Please fill all required fields', 'err'); return null; } return d; }
         async function submitAdd() { const d = getFormData(); if (!d) return; try { const r = await fetch(`${API}/kols/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }); if (!r.ok) { const e = await r.json(); toast(e.detail || 'Error', 'err'); return; } const res = await r.json(); toast(`${d.name} added (ID: ${res.id})`); closeModal(); loadTable(); } catch (e) { toast('Failed', 'err'); } }
@@ -1510,7 +1815,9 @@
             const totalCost = plan ? plan.total_cost : lastOptimizeData.total_cost;
             const d = new Date();
             const catNames = { beauty: 'Beauty', fashion: 'Fashion', home: 'Home', fmcg: 'FMCG' };
-            document.getElementById('sc-name').value = `${catNames[lastPayload.category] || lastPayload.category} ${lastPayload.country} ${d.toLocaleDateString('en-US', {month:'short', year:'numeric'})}`;
+            const countryLabel = (lastPayload.countries && lastPayload.countries.length > 0)
+                ? lastPayload.countries.join('/') : 'All';
+            document.getElementById('sc-name').value = `${catNames[lastPayload.category] || lastPayload.category} ${countryLabel} ${d.toLocaleDateString('en-US', {month:'short', year:'numeric'})}`;
             document.getElementById('sc-pred-gmv').textContent = fmt(totalGmv);
             document.getElementById('sc-cost').textContent = fmt(totalCost);
             document.getElementById('sc-algo').textContent = lastOptimizeData.best_algorithm;
@@ -1527,7 +1834,7 @@
             const totalGmv = plan ? plan.total_gmv : lastOptimizeData.total_gmv;
             const totalCost = plan ? plan.total_cost : lastOptimizeData.total_cost;
             const payload = {
-                name, country: lastPayload.country, category: lastPayload.category,
+                name, countries: lastPayload.countries || [], category: lastPayload.category,
                 budget: lastPayload.budget, best_algorithm: lastOptimizeData.best_algorithm,
                 selected_kols: kols.map(k => ({ id: k.id, name: k.name, country: k.country, category: k.category, followers: k.followers, cost: k.cost, predicted_gmv: k.expected_gmv || 0, tier: k.tier || '' })),
                 total_cost: totalCost, predicted_gmv: totalGmv
@@ -1545,7 +1852,7 @@
                 const r = await fetch(`${API}/campaigns`);
                 if (!r.ok) throw new Error('Failed');
                 const d = await r.json();
-                renderCampaigns(d.campaigns || []);
+                renderCampaigns(Array.isArray(d) ? d : (d.campaigns || []));
             } catch (e) { toast('Failed to load campaigns', 'err'); }
         }
 
@@ -1576,11 +1883,11 @@
                 const accuracy = c.accuracy_pct != null
                     ? `<span class="font-data-mono font-bold" style="color:${c.accuracy_pct>=90?'#00C853':c.accuracy_pct>=70?'#F59E0B':'#FF0050'}">${c.accuracy_pct}%</span>`
                     : '<span class="text-on-surface-variant">—</span>';
-                const actualGmv = c.actual_gmv != null ? `<span class="font-data-mono text-secondary">${fmt(c.actual_gmv)}</span>` : '<span class="text-on-surface-variant">—</span>';
+                const actualGmv = c.actual_total_gmv != null ? `<span class="font-data-mono text-secondary">${fmt(c.actual_total_gmv)}</span>` : '<span class="text-on-surface-variant">—</span>';
                 const date = new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
                 return `<tr class="row-hover border-t border-[#353530]">
                     <td class="px-4 py-3"><div class="font-semibold text-white">${c.name}</div><div class="text-[11px] text-outline font-mono">${date} · ${c.best_algorithm}</div></td>
-                    <td class="px-4 py-3 text-[12px]">${catFlag[c.country]||''} ${c.country} · ${c.category}</td>
+                    <td class="px-4 py-3 text-[12px]">${formatCampaignCountries(c)} · ${c.category}</td>
                     <td class="px-4 py-3 text-right font-mono">${fmt(c.budget)}</td>
                     <td class="px-4 py-3 text-right font-mono text-primary">${fmt(c.predicted_gmv)}</td>
                     <td class="px-4 py-3 text-right">${actualGmv}</td>
@@ -1611,9 +1918,9 @@
 
         function renderCampaignDetail(c) {
             document.getElementById('cd-name').textContent = c.name;
-            document.getElementById('cd-meta').textContent = `${c.country} · ${c.category} · ${c.best_algorithm} · ${new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+            document.getElementById('cd-meta').textContent = `${formatCampaignCountries(c)} · ${c.category} · ${c.best_algorithm} · ${new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
             document.getElementById('cd-pred').textContent = fmt(c.predicted_gmv);
-            document.getElementById('cd-actual').textContent = c.actual_gmv != null ? fmt(c.actual_gmv) : '—';
+            document.getElementById('cd-actual').textContent = c.actual_total_gmv != null ? fmt(c.actual_total_gmv) : '—';
             const accEl = document.getElementById('cd-accuracy');
             accEl.textContent = c.accuracy_pct != null ? c.accuracy_pct + '%' : '—';
             accEl.style.color = c.accuracy_pct != null ? (c.accuracy_pct>=90?'#00C853':c.accuracy_pct>=70?'#F59E0B':'#FF0050') : '';
@@ -1624,9 +1931,9 @@
             statusEl.style.color = c.status === 'completed' ? '#00C853' : '#00F2EA';
             // Bar chart
             const bar = document.getElementById('cd-bar-chart');
-            if (c.actual_gmv != null) {
-                const maxVal = Math.max(c.predicted_gmv, c.actual_gmv, 1);
-                bar.innerHTML = `<div class="space-y-sm"><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Predicted</span><span class="font-data-mono text-on-surface">${fmt(c.predicted_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${(c.predicted_gmv/maxVal*100).toFixed(0)}%;background:#00F2EA"></div></div></div><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Actual</span><span class="font-data-mono text-secondary">${fmt(c.actual_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full bg-secondary" style="width:${(c.actual_gmv/maxVal*100).toFixed(0)}%"></div></div></div></div>`;
+            if (c.actual_total_gmv != null) {
+                const maxVal = Math.max(c.predicted_gmv, c.actual_total_gmv, 1);
+                bar.innerHTML = `<div class="space-y-sm"><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Predicted</span><span class="font-data-mono text-on-surface">${fmt(c.predicted_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${(c.predicted_gmv/maxVal*100).toFixed(0)}%;background:#00F2EA"></div></div></div><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Actual</span><span class="font-data-mono text-secondary">${fmt(c.actual_total_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full bg-secondary" style="width:${(c.actual_total_gmv/maxVal*100).toFixed(0)}%"></div></div></div></div>`;
             } else {
                 bar.innerHTML = '<p class="text-[11px] text-on-surface-variant">No actual results yet. Click "Record Actual Results" after the campaign ends.</p>';
             }
@@ -1664,7 +1971,7 @@
                 const r = await fetch(`${API}/campaigns/${currentCampaignId}/actual`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 if (!r.ok) throw new Error('Failed');
                 const d = await r.json();
-                toast(`Results recorded! Accuracy: ${d.campaign.accuracy_pct}%`);
+                toast(`Results recorded! Accuracy: ${d.accuracy_pct}%`);
                 closeActualModal();
                 loadCampaigns();
             } catch (e) { toast(e.message, 'err'); }
@@ -1750,670 +2057,6 @@
             } catch (e) { toast(e.message, 'err'); }
             finally {
                 btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">refresh</span> Simulate Update';
-                btn.disabled = false;
-            }
-        }
-
-    </script>
-</body>
-
-</html>
-kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
-    <div class="grid grid-cols-3 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-center"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Est. GMV</p><p class="font-title-md text-secondary font-data-mono font-bold">${fmt(kol.expected_gmv)}</p></div></div>
-    <div><div class="flex justify-between text-[10px] mb-1"><span class="text-on-surface-variant uppercase">GMV contribution</span><span class="text-secondary font-bold">${contrib}%</span></div><div class="contrib-bar"><div class="contrib-fill" style="width:${contrib}%"></div></div></div>
-    <div class="flex items-center gap-md text-[11px]">
-        ${riskHtml ? `<div class="flex items-center gap-xs">${riskHtml}</div>` : ''}
-        ${rankText ? `<div class="flex items-center gap-xs text-on-surface-variant"><span class="material-symbols-outlined text-[12px]">trending_up</span>${rankText}</div>` : ''}
-    </div>
-    <div class="text-[11px]"><div style="font-weight:600;color:#00C853;margin-bottom:6px">Why this creator?</div>${reasonsHtml}</div>
-  </div>`;
-        }
-
-        function techKolCard(kol) {
-            const tier = kol.tier || 'Micro', reasons = (kol.reasons || []).slice(0, 3);
-            const reasonsHtml = reasons.length ? `<div class="mt-md text-[11px] text-on-surface-variant/80 bg-surface-container-low p-md rounded-lg border border-outline-variant/30">${reasons.map(r => `<div class="mb-1">✅ ${r}</div>`).join('')}</div>` : '';
-            const enh = enhancedKolMap[kol.id] || {};
-            const rank = enh.cost_effectiveness_rank || '—';
-            const risk = enh.audience_overlap_risk != null ? enh.audience_overlap_risk : null;
-            let riskBadge = '';
-            if (risk !== null) {
-                const level = risk < 0.3 ? 'low' : risk < 0.6 ? 'med' : 'high';
-                const label = risk < 0.3 ? 'Low' : risk < 0.6 ? 'Med' : 'High';
-                riskBadge = `<div class="flex items-center gap-xs"><span class="risk-dot ${level}"></span><span class="risk-${level}">${label} overlap</span></div>`;
-            }
-            const rankText = rank !== '—' ? `<span class="text-on-surface-variant">#${rank} cost-effective</span>` : '';
-            return `<div class="kol-card glass-card rounded-xl p-lg flex flex-col space-y-md cursor-pointer" onclick="openKolDetail(${kol.id})">
-    <div class="flex justify-between items-start"><div class="flex items-center gap-md"><div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-[28px]">person</span></div><div><h4 class="font-title-md text-title-md text-on-surface">${kol.name}</h4><p class="text-[10px] text-on-surface-variant font-data-mono uppercase">${kol.category} · ${kol.country}</p></div></div><span class="${TIER_BADGE[tier] || 'tier-micro'} tier-chip">${TIER_EMOJI[tier] || ''} ${tier}</span></div>
-    <div class="grid grid-cols-2 gap-sm py-md border-y border-outline-variant/30"><div><p class="text-[10px] text-on-surface-variant uppercase">Followers</p><p class="font-title-md text-on-surface font-data-mono">${fmtF(kol.followers)}</p></div><div class="text-right"><p class="text-[10px] text-on-surface-variant uppercase">Hiring Cost</p><p class="font-title-md text-on-surface font-data-mono">${fmt(kol.cost)}</p></div></div>
-    <div class="space-y-xs"><div class="flex justify-between items-center text-[10px]"><span class="text-on-surface-variant uppercase">Fit Score</span><span class="text-secondary font-bold">${(kol.fit_score * 100).toFixed(0)}%</span></div><div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary rounded-full" style="width:${(kol.fit_score * 100).toFixed(0)}%"></div></div></div>
-    ${riskBadge || rankText ? `<div class="flex items-center gap-md text-[11px]">${riskBadge}${rankText}</div>` : ''}
-    <div class="flex justify-between items-center pt-xs"><div class="bg-secondary/15 px-md py-sm rounded-lg border border-secondary/20"><p class="text-[9px] text-secondary uppercase font-bold tracking-wider">Est. GMV</p><p class="text-title-md font-bold text-secondary font-data-mono">${fmt(kol.expected_gmv)}</p></div><button class="text-on-surface-variant hover:text-primary flex items-center gap-xs text-[11px] why-btn" onclick="event.stopPropagation()">Why? <span class="material-symbols-outlined text-[14px]">expand_more</span></button></div>
-    <div class="why-panel hidden">${reasonsHtml}</div></div>`;
-        }
-
-        document.getElementById('run-btn').addEventListener('click', async () => {
-            showPage('dashboard');
-            const btn = document.getElementById('run-btn'); btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">refresh</span>'; btn.disabled = true;
-            const payload = { budget: parseInt(budgetSlider.value), country: document.getElementById('country-select').value, category: document.getElementById('category-select').value, seed: parseInt(document.getElementById('seed-input').value) || 42 };
-            try {
-                const [optRes, plansRes] = await Promise.all([
-                    fetch(API + '/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
-                    fetch(API + '/optimize-plans', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-                ]);
-                if (!optRes.ok) { const err = await optRes.json(); throw new Error(err.detail || 'Request failed'); }
-                const data = await optRes.json();
-                if (plansRes.ok) { const plansData = await plansRes.json(); renderPlans(plansData.plans, data); }
-                else { allPlansData = null; }
-                try {
-                    const kolParams = new URLSearchParams({ limit: 200, country: payload.country, category: payload.category });
-                    const kolRes = await fetch(`${API}/kols?${kolParams}`);
-                    if (kolRes.ok) {
-                        const kolData = await kolRes.json();
-                        enhancedKolMap = {};
-                        kolData.kols.forEach(k => { enhancedKolMap[k.id] = k; });
-                    }
-                } catch (_) { enhancedKolMap = {}; }
-                lastOptimizeData = data;
-                lastPayload = payload;
-                renderDashboard(data, payload);
-                if (allPlansData) selectPlan(selectedPlanName);
-            } catch (e) { showError(e.message.includes('fetch') ? '⚠️ Backend unavailable — run: uvicorn backend.main:app --reload' : '⚠️ ' + e.message); }
-            finally { btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">bolt</span> Run Optimization'; btn.disabled = false; }
-        });
-
-        function renderPlans(plans, optData) {
-            if (!plans || !plans.length) { document.getElementById('plans-section').classList.add('hidden'); return; }
-            allPlansData = plans;
-            document.getElementById('plans-section').classList.remove('hidden');
-            const grid = document.getElementById('plans-grid');
-            const icons = { Aggressive: 'rocket_launch', Balanced: 'tune', Safe: 'shield' };
-            grid.innerHTML = plans.map((p, i) => {
-                const util = optData ? (p.total_cost / optData.budget * 100).toFixed(0) : '—';
-                const tb = p.tier_breakdown || { Mega: 0, Macro: 0, Micro: 0, Nano: 0 };
-                const warnings = (p.overlap_warnings || []).length;
-                return `<div class="plan-card glass-card rounded-xl p-lg flex flex-col space-y-md" onclick="selectPlan('${p.plan_name}')">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-sm">
-                    <span class="material-symbols-outlined text-[24px] text-on-surface-variant plan-icon">${icons[p.plan_name] || 'campaign'}</span>
-                    <h4 class="font-title-md text-title-md text-on-surface">${p.plan_name}</h4>
-                </div>
-                <span class="plan-active-badge text-[11px] font-bold" style="display:none">● Active</span>
-            </div>
-            <p class="text-[11px] text-on-surface-variant">${p.description}</p>
-            <div class="grid grid-cols-2 gap-sm">
-                <div><p class="text-[10px] text-on-surface-variant uppercase">GMV</p><p class="font-title-md text-secondary font-bold font-data-mono">${fmt(p.total_gmv)}</p></div>
-                <div><p class="text-[10px] text-on-surface-variant uppercase">ROI</p><p class="font-title-md text-on-surface font-data-mono">${p.roi.toFixed(2)}x</p></div>
-                <div><p class="text-[10px] text-on-surface-variant uppercase">Creators</p><p class="font-title-md text-on-surface font-data-mono">${p.selected_kols.length}</p></div>
-                <div><p class="text-[10px] text-on-surface-variant uppercase">Budget Use</p><p class="font-title-md text-on-surface font-data-mono ${util > 100 ? 'text-error' : ''}">${util}%</p></div>
-            </div>
-            <div class="flex flex-wrap gap-1">
-                ${['Mega','Macro','Micro','Nano'].map(t => tb[t] > 0 ? `<span class="tier-chip ${TIER_BADGE[t] || ''}" style="font-size:10px">${TIER_EMOJI[t] || ''} ${tb[t]}</span>` : '').join('')}
-            </div>
-            ${warnings > 0 ? `<div class="flex items-center gap-xs text-[11px] text-[#f1c40f]"><span class="material-symbols-outlined text-[14px]">warning</span> ${warnings} audience overlap${warnings > 1 ? 's' : ''}</div>` : ''}
-          </div>`;
-            }).join('');
-            selectPlan(selectedPlanName);
-        }
-
-        function selectPlan(name) {
-            selectedPlanName = name;
-            const col = PLAN_COLORS[name] || '#00F2EA';
-            document.querySelectorAll('.plan-card').forEach(c => {
-                const cardName = c.querySelector('h4').textContent;
-                const isSelected = cardName === name;
-                c.classList.toggle('selected', isSelected);
-                const badge = c.querySelector('.plan-active-badge');
-                if (badge) { badge.style.display = isSelected ? 'inline' : 'none'; badge.style.color = col; }
-                if (isSelected) { c.style.borderColor = col; c.style.boxShadow = `0 0 20px ${col}33`; const icon = c.querySelector('.plan-icon'); if (icon) icon.style.color = col; }
-                else { c.style.borderColor = '#353530'; c.style.boxShadow = ''; const icon = c.querySelector('.plan-icon'); if (icon) icon.style.color = ''; }
-            });
-            document.querySelectorAll('.plan-toggle-btn').forEach(b => { b.classList.toggle('active', b.textContent.trim() === name); });
-            if (!allPlansData) return;
-            const plan = allPlansData.find(p => p.plan_name === name);
-            if (!plan) return;
-            const sorted = [...plan.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
-            document.getElementById('biz-count').textContent = sorted.length;
-            document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, plan.total_gmv)).join('');
-            document.getElementById('biz-gmv').textContent = fmt(plan.total_gmv);
-            document.getElementById('biz-roi').textContent = plan.roi.toFixed(2) + 'x';
-            document.getElementById('biz-cost').textContent = fmt(plan.total_cost);
-            document.getElementById('biz-subtitle').textContent = document.getElementById('biz-subtitle').textContent.replace(/\d+ creators$/, sorted.length + ' creators');
-        }
-
-        function renderDashboard(data, payload) {
-            if (data.candidates === 0) { showError('No creators in the pool. Go to Creators page to add your KOLs first.'); return; }
-            document.getElementById('empty-state').classList.add('hidden');
-            document.getElementById('results-section').classList.remove('hidden');
-            document.getElementById('view-toggle').classList.remove('hidden');
-            const poolWarn = document.getElementById('pool-size-warning');
-            if (poolWarn) {
-                if (data.candidates < 20) {
-                    poolWarn.textContent = `⚠️ Small pool (${data.candidates} creators). With fewer than 20 candidates the search space is tiny — all stochastic algorithms may converge to the same solution. Consider widening your country/category filter or adding more KOLs.`;
-                    poolWarn.classList.remove('hidden');
-                } else {
-                    poolWarn.classList.add('hidden');
-                }
-            }
-            const catN = { beauty: 'Beauty & Cosmetics', fashion: 'Fashion & Lifestyle', home: 'Home & Living', fmcg: 'FMCG' };
-            const coN = { MY: 'Malaysia', ID: 'Indonesia', TH: 'Thailand', PH: 'Philippines', SG: 'Singapore', VN: 'Vietnam' };
-            const sorted = [...data.selected_kols].sort((a, b) => b.expected_gmv - a.expected_gmv);
-            document.getElementById('biz-subtitle').textContent = `${catN[payload.category] || payload.category} campaign · ${coN[payload.country] || payload.country} · ${sorted.length} creators`;
-            document.getElementById('biz-cost').textContent = fmt(data.total_cost);
-            document.getElementById('biz-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% of ' + fmt(payload.budget) + ' budget';
-            document.getElementById('biz-gmv').textContent = fmt(data.total_gmv);
-            document.getElementById('biz-roi').textContent = data.roi.toFixed(2) + 'x';
-            document.getElementById('biz-count').textContent = sorted.length;
-            document.getElementById('biz-kol-grid').innerHTML = sorted.map(k => bizKolCard(k, data.total_gmv)).join('');
-            document.getElementById('biz-footer-msg').textContent = `This portfolio is predicted to generate ${fmt(data.total_gmv)} in GMV with an ROI of ${data.roi.toFixed(2)}x on your ${fmt(payload.budget)} budget.`;
-            const recommended = getRecommendedResult(data.results);
-            const recommendedName = recommended ? recommended.algorithm : data.best_algorithm;
-            document.getElementById('m-algo').textContent = recommendedName;
-            document.getElementById('m-gmv').textContent = fmt(data.total_gmv);
-            document.getElementById('m-cost').textContent = fmt(data.total_cost);
-            document.getElementById('m-util').textContent = (data.total_cost / payload.budget * 100).toFixed(1) + '% Utilization';
-            document.getElementById('m-kols').textContent = sorted.length;
-            document.getElementById('m-cands').textContent = data.candidates;
-            (function() {
-                const badge = document.getElementById('algo-status-badge');
-                const dot   = document.getElementById('algo-status-dot');
-                const txt   = document.getElementById('algo-status-text');
-                if (!badge || !data.results) return;
-                const total = 6, found = Object.keys(data.results).length;
-                const ok = found >= total;
-                dot.style.background  = ok ? '#00C853' : '#FF0050';
-                badge.style.borderColor = ok ? 'rgba(0,200,83,0.3)' : 'rgba(255,0,80,0.3)';
-                txt.textContent = ok ? `${found}/${total} algorithms` : `${found}/${total} — restart server`;
-                txt.style.color = ok ? '#00C853' : '#FF0050';
-                badge.classList.remove('hidden');
-            })();
-            renderConvergence(data.results);
-            renderBenchmark(data.results, recommendedName);
-            try {
-                const acGrid = document.getElementById('algo-compare-grid');
-                const acSection = document.getElementById('algo-compare-section');
-                if (acGrid && acSection && data.results) {
-                    const algoMeta = [
-                        { key: 'genetic_algorithm',   short: 'GA',      color: '#A855F7' },
-                        { key: 'tabu_search',         short: 'Tabu',    color: '#06B6D4' },
-                        { key: 'greedy_ranking',      short: 'Greedy',  color: '#F59E0B' },
-                        { key: 'simulated_annealing', short: 'SA',      color: '#00C853' },
-                        { key: 'hill_climber',        short: 'HC',      color: '#FB923C' },
-                        { key: 'random_search',       short: 'Random',  color: '#4a4a45' },
-                    ].filter(a => !!data.results[a.key]);
-                    const bestGmv = algoMeta.reduce((m, a) => Math.max(m, data.results[a.key].total_gmv), 0);
-                    acGrid.style.gridTemplateColumns = `repeat(${algoMeta.length}, minmax(0, 1fr))`;
-                    acGrid.innerHTML = algoMeta.map(a => {
-                        const r = data.results[a.key];
-                        const isBest = r.total_gmv >= bestGmv && bestGmv > 0;
-                        const pct = bestGmv > 0 ? (r.total_gmv / bestGmv * 100).toFixed(0) : 0;
-                        return `<div class="glass-card rounded-xl p-md flex flex-col gap-xs" style="${isBest ? 'box-shadow:0 0 14px ' + a.color + '44;border-color:' + a.color + '88' : ''}">
-                            <div class="flex justify-between items-center">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider" style="color:${a.color}">${a.short}</span>
-                                ${isBest ? '<span class="material-symbols-outlined text-[12px] text-secondary">star</span>' : ''}
-                            </div>
-                            <p class="font-data-mono font-bold text-[13px] text-on-surface leading-none">${fmt(r.total_gmv)}</p>
-                            <p class="text-[10px] text-on-surface-variant leading-snug">${r.roi.toFixed(2)}x &middot; ${r.selected_count} KOLs</p>
-                            <div class="h-[3px] w-full bg-surface-container-highest rounded-full overflow-hidden">
-                                <div class="h-full rounded-full" style="width:${pct}%;background:${a.color}"></div>
-                            </div>
-                        </div>`;
-                    }).join('');
-                    acSection.classList.remove('hidden');
-                }
-            } catch(_) {}
-            const techGrid = document.getElementById('tech-kol-grid');
-            techGrid.innerHTML = sorted.map(techKolCard).join('');
-            techGrid.querySelectorAll('.why-btn').forEach(btn => { btn.addEventListener('click', () => { btn.closest('.kol-card').querySelector('.why-panel').classList.toggle('hidden'); }); });
-            setView('business');
-        }
-
-        // ══════════ RUNTIME BENCHMARK ══════════
-        async function runBenchmark() {
-            const btn = document.getElementById('bench-run-btn');
-            const n = parseInt(document.getElementById('bench-n').value) || 50;
-            const budget = parseInt(budgetSlider.value) || 5000;
-            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">refresh</span> Running...';
-            btn.disabled = true;
-            try {
-                const r = await fetch(`${API}/scalability`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ n, budget, seed: parseInt(document.getElementById('seed-input').value) || 42 }) });
-                if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Benchmark failed'); }
-                const d = await r.json();
-                renderBenchmarkResults(d);
-            } catch (e) { showError('⚠️ ' + e.message); }
-            finally { btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">play_arrow</span> Run Benchmark'; btn.disabled = false; }
-        }
-
-        function renderBenchmarkResults(d) {
-            document.getElementById('bench-results').classList.remove('hidden');
-            const algos = [
-                { key: 'greedy_ranking',      label: 'Greedy Ranking',      color: '#F59E0B' },
-                { key: 'tabu_search',         label: 'Tabu Search',         color: '#06B6D4' },
-                { key: 'simulated_annealing', label: 'Simulated Annealing', color: '#00C853' },
-                { key: 'genetic_algorithm',   label: 'Genetic Algorithm',   color: '#A855F7' },
-                { key: 'hill_climber',        label: 'Hill Climber',        color: '#FB923C' },
-                { key: 'random_search',       label: 'Random Search',       color: '#4a4a45' },
-            ].filter(a => !!d[a.key]);
-            const entries = algos.map(a => ({ ...a, entry: d[a.key] }));
-            const maxTime = Math.max(...entries.map(e => e.entry.time_seconds), 0.001);
-            const chart = document.getElementById('bench-time-chart');
-            chart.innerHTML = entries.map(e => {
-                const pct = maxTime > 0 ? (e.entry.time_seconds / maxTime * 100).toFixed(0) : 0;
-                const w = Math.max(2, pct);
-                return `<div class="flex items-center gap-md">
-                    <span class="text-[10px] font-bold uppercase tracking-wider w-[110px] text-right flex-shrink-0" style="color:${e.color}">${e.label}</span>
-                    <div class="flex-1 h-5 bg-surface-container-highest rounded-full overflow-hidden relative">
-                        <div class="h-full rounded-full flex items-center justify-end pr-xs transition-all duration-500" style="width:${w}%;background:${e.color};min-width:${Math.max(24, w)}%">
-                            <span class="text-[9px] font-data-mono font-bold text-black" style="${w < 15 ? 'display:none' : ''}">${e.entry.time_seconds.toFixed(3)}s</span>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-            const tbody = document.getElementById('bench-time-body');
-            const bestGmv = entries.reduce((m, e) => Math.max(m, e.entry.total_gmv), 0);
-            tbody.innerHTML = entries.map(e => {
-                const r = e.entry;
-                const isBest = r.total_gmv >= bestGmv && bestGmv > 0;
-                return `<tr class="${isBest ? 'sa-highlight' : ''}">
-                    <td class="px-lg py-md"><div class="flex items-center gap-sm"><span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${e.color}"></span><span class="font-bold text-on-surface text-sm">${e.label}</span></div></td>
-                    <td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.time_seconds.toFixed(4)}s</td>
-                    <td class="px-md py-md text-right font-data-mono ${isBest ? 'text-secondary font-bold' : 'text-on-surface-variant'}">${fmt(r.total_gmv)}</td>
-                    <td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.roi.toFixed(2)}x</td>
-                    <td class="px-md py-md text-right font-data-mono text-on-surface-variant">${r.selected_count}</td>
-                </tr>`;
-            }).join('');
-            const fastest = entries.reduce((a, b) => a.entry.time_seconds < b.entry.time_seconds ? a : b);
-            const best = entries.reduce((a, b) => b.entry.total_gmv > a.entry.total_gmv ? b : a);
-            const note = document.getElementById('bench-time-note').querySelector('p');
-            note.innerHTML = `<span class="font-bold" style="color:${fastest.color}">${fastest.label}</span> was fastest at <span class="font-data-mono">${fastest.entry.time_seconds.toFixed(4)}s</span>. <span class="font-bold" style="color:${best.color}">${best.label}</span> achieved highest GMV (<span class="font-data-mono text-secondary">${fmt(best.entry.total_gmv)}</span>). Pool size: <span class="font-data-mono">${d.n}</span>, Budget: <span class="font-data-mono">${fmt(d.budget)}</span>.`;
-        }
-
-        // ══════════ KOL DETAIL MODAL ══════════
-        async function openKolDetail(id) {
-            currentKolId = id;
-            const overlay = document.getElementById('kol-detail-overlay');
-            overlay.classList.remove('hidden');
-            document.getElementById('kd-name').textContent = 'Loading...';
-            document.getElementById('kd-meta').textContent = '';
-            document.getElementById('kd-tier').textContent = '...';
-            document.getElementById('kd-stats').innerHTML = '';
-            document.getElementById('kd-solo-gmv').textContent = '—';
-            document.getElementById('kd-rank').textContent = '—';
-            document.getElementById('kd-risk').textContent = '—';
-            document.getElementById('kd-gender-label').textContent = '—';
-            document.getElementById('kd-gender-bar').style.width = '50%';
-            document.getElementById('kd-age').textContent = '—';
-            document.getElementById('kd-reasons').innerHTML = '';
-            document.getElementById('kd-risk-dot').className = 'risk-dot low';
-            document.getElementById('kd-history-content').innerHTML = '<p class="text-[11px] text-on-surface-variant">Loading history...</p>';
-            try {
-                const [kolRes, histRes] = await Promise.all([
-                    fetch(`${API}/kol/${id}`),
-                    fetch(`${API}/kols/${id}/history`)
-                ]);
-                if (!kolRes.ok) throw new Error('Not found');
-                const d = await kolRes.json();
-                renderKolDetail(d);
-                if (histRes.ok) { renderKolHistory(await histRes.json()); }
-                else { document.getElementById('kd-history-content').innerHTML = '<p class="text-[11px] text-on-surface-variant">No history yet. Edit the creator or click Simulate Update to start tracking.</p>'; }
-            } catch (e) {
-                document.getElementById('kd-name').textContent = 'Error loading creator';
-            }
-        }
-
-        function renderKolDetail(d) {
-            document.getElementById('kd-name').textContent = d.name;
-            document.getElementById('kd-meta').textContent = `${d.category} · ${d.country} · ${fmtF(d.followers)} followers`;
-            const tier = d.tier || 'Micro';
-            const tierSpan = document.getElementById('kd-tier');
-            tierSpan.textContent = `${TIER_EMOJI[tier] || ''} ${tier}`;
-            tierSpan.className = `tier-chip ${TIER_BADGE[tier] || 'tier-micro'}`;
-            document.getElementById('kd-stats').innerHTML = [
-                { label: 'Followers', v: fmtF(d.followers) },
-                { label: 'Engagement', v: (d.engagement_rate * 100).toFixed(1) + '%' },
-                { label: 'Fit Score', v: (d.fit_score * 100).toFixed(0) + '%' },
-                { label: 'Hiring Cost', v: fmt(d.cost) },
-                { label: 'Est. GMV', v: fmt(d.expected_gmv), cls: 'text-secondary font-bold' },
-            ].map(s => `<div class="text-center p-sm rounded-lg bg-surface-container-low"><p class="text-[10px] text-on-surface-variant uppercase">${s.label}</p><p class="font-title-md font-data-mono ${s.cls || 'text-on-surface'}">${s.v}</p></div>`).join('');
-            const gRatio = d.gender_ratio != null ? d.gender_ratio : 0.5;
-            document.getElementById('kd-gender-label').textContent = `${(gRatio * 100).toFixed(0)}% Female / ${((1 - gRatio) * 100).toFixed(0)}% Male`;
-            document.getElementById('kd-gender-bar').style.width = `${(gRatio * 100).toFixed(0)}%`;
-            document.getElementById('kd-gender-bar').className = `demo-fill ${gRatio > 0.5 ? 'female' : 'male'}`;
-            document.getElementById('kd-age').textContent = d.age_group || 'Unknown';
-            document.getElementById('kd-solo-gmv').textContent = fmt(d.predicted_gmv_solo || d.expected_gmv);
-            document.getElementById('kd-rank').textContent = d.cost_effectiveness_rank ? `#${d.cost_effectiveness_rank}` : '—';
-            const risk = d.audience_overlap_risk != null ? d.audience_overlap_risk : 0;
-            const riskLevel = risk < 0.3 ? 'low' : risk < 0.6 ? 'med' : 'high';
-            const riskLabel = risk < 0.3 ? 'Low' : risk < 0.6 ? 'Medium' : 'High';
-            document.getElementById('kd-risk').textContent = `${riskLabel} (${(risk * 100).toFixed(0)}%)`;
-            document.getElementById('kd-risk-dot').className = `risk-dot ${riskLevel}`;
-            const reasons = d.reasons || [];
-            document.getElementById('kd-reasons').innerHTML = reasons.length
-                ? reasons.map((r, i) => `<div class="flex items-start gap-sm text-body-base text-on-surface-variant"><span class="text-secondary font-bold">${i + 1}.</span><span>${r}</span></div>`).join('')
-                : '<p class="text-on-surface-variant">No reasons available.</p>';
-        }
-
-        function closeKolDetail() { document.getElementById('kol-detail-overlay').classList.add('hidden'); }
-
-        // ══════════ CREATORS: CRUD ══════════
-        let currentPage = 0; const PG = 20; let editingId = null;
-        async function loadTable() { const country = document.getElementById('f-country').value, category = document.getElementById('f-category').value, tier = document.getElementById('f-tier').value, params = new URLSearchParams({ limit: PG, offset: currentPage * PG }); if (country) params.set('country', country); if (category) params.set('category', category); if (tier) params.set('tier', tier); try { const r = await fetch(`${API}/kols?${params}`); const d = await r.json(); renderTable(d.kols, d.total); } catch (e) { toast('Backend unavailable', 'err'); } }
-        function renderTable(kols, total) { document.getElementById('count-badge').textContent = `${total} creators`; document.getElementById('page-info').textContent = total ? `${currentPage * PG + 1}–${Math.min((currentPage + 1) * PG, total)} of ${total}` : ''; document.getElementById('prev-btn').disabled = currentPage === 0; document.getElementById('next-btn').disabled = (currentPage + 1) * PG >= total; const tbody = document.getElementById('kol-tbody'); if (!kols.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center py-12 text-outline">No creators. Click <b>Add Creator</b> to get started.</td></tr>'; return; } tbody.innerHTML = kols.map(k => { const tier = k.tier || 'Micro'; return `<tr class="row-hover border-t border-[#353530]"><td class="px-4 py-3"><div class="font-semibold text-white">${k.name}</div><div class="text-[11px] text-outline font-mono">${k.category} · #${k.id}</div></td><td class="px-4 py-3">${k.country}</td><td class="px-4 py-3 capitalize">${k.category}</td><td class="px-4 py-3 text-right font-mono">${fmtF(k.followers)}</td><td class="px-4 py-3 text-right font-mono">${(k.engagement_rate * 100).toFixed(1)}%</td><td class="px-4 py-3 text-right font-mono">${fmt(k.cost)}</td><td class="px-4 py-3 text-center"><span class="${TIER_BADGE[tier]}" style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${tier}</span></td><td class="px-4 py-3 text-right font-mono text-secondary">${fmt(k.expected_gmv)}</td><td class="px-4 py-3 text-center"><button onclick="openEditModal(${k.id})" class="text-outline hover:text-secondary transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button><button onclick="deleteKol(${k.id},'${k.name.replace(/'/g, "\\'")}')" class="text-outline hover:text-error transition-colors ml-1"><span class="material-symbols-outlined text-[18px]">delete</span></button></td></tr>`; }).join(''); }
-        function changePage(d) { currentPage = Math.max(0, currentPage + d); loadTable(); }
-        function openAddModal() { editingId = null; document.getElementById('modal-title').textContent = 'Add New Creator'; document.getElementById('modal-submit').textContent = 'Save Creator'; document.getElementById('modal-submit').onclick = submitAdd; clearForm(); document.getElementById('modal').classList.remove('hidden'); }
-        async function openEditModal(id) { editingId = id; document.getElementById('modal-title').textContent = 'Edit Creator'; document.getElementById('modal-submit').textContent = 'Update'; document.getElementById('modal-submit').onclick = submitEdit; try { const r = await fetch(`${API}/kol/${id}`); const k = await r.json(); document.getElementById('f-name').value = k.name || ''; document.getElementById('f-url').value = k.tiktok_url || ''; document.getElementById('f-m-country').value = k.country || 'MY'; document.getElementById('f-m-cat').value = k.category || 'beauty'; document.getElementById('f-followers').value = k.followers || ''; document.getElementById('f-eng').value = k.engagement_rate || ''; document.getElementById('f-cost').value = k.cost || ''; document.getElementById('f-fit').value = k.fit_score || ''; document.getElementById('f-views').value = k.avg_views || ''; document.getElementById('f-likes').value = k.avg_likes || ''; document.getElementById('f-gender').value = k.gender_ratio || ''; document.getElementById('f-age').value = k.age_group || '18-24'; document.getElementById('modal').classList.remove('hidden'); } catch (e) { toast('Failed to load', 'err'); } }
-        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-        function clearForm() { ['f-name', 'f-url', 'f-followers', 'f-eng', 'f-cost', 'f-fit', 'f-views', 'f-likes', 'f-gender'].forEach(id => { document.getElementById(id).value = ''; }); document.getElementById('f-m-country').value = 'MY'; document.getElementById('f-m-cat').value = 'beauty'; document.getElementById('f-age').value = '18-24'; }
-        function getFormData() { const d = { name: document.getElementById('f-name').value.trim(), country: document.getElementById('f-m-country').value, category: document.getElementById('f-m-cat').value, followers: parseInt(document.getElementById('f-followers').value), engagement_rate: parseFloat(document.getElementById('f-eng').value), cost: parseFloat(document.getElementById('f-cost').value) }; const fit = document.getElementById('f-fit').value; if (fit) d.fit_score = parseFloat(fit); const url = document.getElementById('f-url').value.trim(); if (url) d.tiktok_url = url; const views = document.getElementById('f-views').value; if (views) d.avg_views = parseInt(views); const likes = document.getElementById('f-likes').value; if (likes) d.avg_likes = parseInt(likes); const gender = document.getElementById('f-gender').value; if (gender) d.gender_ratio = parseFloat(gender); d.age_group = document.getElementById('f-age').value; if (!d.name || isNaN(d.followers) || isNaN(d.engagement_rate) || isNaN(d.cost)) { toast('Please fill all required fields', 'err'); return null; } return d; }
-        async function submitAdd() { const d = getFormData(); if (!d) return; try { const r = await fetch(`${API}/kols/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }); if (!r.ok) { const e = await r.json(); toast(e.detail || 'Error', 'err'); return; } const res = await r.json(); toast(`${d.name} added (ID: ${res.id})`); closeModal(); loadTable(); } catch (e) { toast('Failed', 'err'); } }
-        async function submitEdit() { const d = getFormData(); if (!d) return; try { const r = await fetch(`${API}/kols/${editingId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }); if (!r.ok) { const e = await r.json(); toast(e.detail || 'Error', 'err'); return; } toast(`${d.name} updated`); closeModal(); loadTable(); } catch (e) { toast('Failed', 'err'); } }
-        async function deleteKol(id, name) { if (!confirm(`Delete "${name}"?`)) return; try { const r = await fetch(`${API}/kols/${id}`, { method: 'DELETE' }); if (!r.ok) { toast('Delete failed', 'err'); return; } toast(`${name} deleted`); loadTable(); } catch (e) { toast('Failed', 'err'); } }
-        async function importCSV(input) { const file = input.files[0]; if (!file) return; const form = new FormData(); form.append('file', file); try { const r = await fetch(`${API}/kols/import-csv`, { method: 'POST', body: form }); const d = await r.json(); if (!r.ok) { toast(d.detail || 'Import failed', 'err'); return; } toast(`Imported ${d.added} creators` + (d.errors.length ? ` (${d.errors.length} errors)` : '')); loadTable(); } catch (e) { toast('Import failed', 'err'); } input.value = ''; }
-        async function resetDatabase() { if (!confirm('⚠️ Clear ALL creator data?\nThis cannot be undone.')) return; if (!confirm('Final confirmation?')) return; try { const r = await fetch(`${API}/kols/reset`, { method: 'POST' }); if (!r.ok) { toast('Reset failed', 'err'); return; } toast('Database cleared'); currentPage = 0; loadTable(); } catch (e) { toast('Failed', 'err'); } }
-
-        // ══════════ CAMPAIGN ATTRIBUTION ══════════
-        function openSaveCampaignModal() {
-            if (!lastOptimizeData || !lastPayload) { toast('Run an optimization first', 'err'); return; }
-            const plan = allPlansData ? allPlansData.find(p => p.plan_name === selectedPlanName) : null;
-            const kols = plan ? plan.selected_kols : lastOptimizeData.selected_kols;
-            const totalGmv = plan ? plan.total_gmv : lastOptimizeData.total_gmv;
-            const totalCost = plan ? plan.total_cost : lastOptimizeData.total_cost;
-            const d = new Date();
-            const catNames = { beauty: 'Beauty', fashion: 'Fashion', home: 'Home', fmcg: 'FMCG' };
-            document.getElementById('sc-name').value = `${catNames[lastPayload.category] || lastPayload.category} ${lastPayload.country} ${d.toLocaleDateString('en-US', {month:'short', year:'numeric'})}`;
-            document.getElementById('sc-pred-gmv').textContent = fmt(totalGmv);
-            document.getElementById('sc-cost').textContent = fmt(totalCost);
-            document.getElementById('sc-algo').textContent = lastOptimizeData.best_algorithm;
-            document.getElementById('sc-kols').textContent = kols.length + ' creators';
-            document.getElementById('save-campaign-modal').classList.remove('hidden');
-        }
-        function closeSaveCampaignModal() { document.getElementById('save-campaign-modal').classList.add('hidden'); }
-
-        async function saveCampaign() {
-            const name = document.getElementById('sc-name').value.trim();
-            if (!name) { toast('Enter a campaign name', 'err'); return; }
-            const plan = allPlansData ? allPlansData.find(p => p.plan_name === selectedPlanName) : null;
-            const kols = plan ? plan.selected_kols : lastOptimizeData.selected_kols;
-            const totalGmv = plan ? plan.total_gmv : lastOptimizeData.total_gmv;
-            const totalCost = plan ? plan.total_cost : lastOptimizeData.total_cost;
-            const payload = {
-                name, country: lastPayload.country, category: lastPayload.category,
-                budget: lastPayload.budget, best_algorithm: lastOptimizeData.best_algorithm,
-                selected_kols: kols.map(k => ({ id: k.id, name: k.name, country: k.country, category: k.category, followers: k.followers, cost: k.cost, predicted_gmv: k.expected_gmv || 0, tier: k.tier || '' })),
-                total_cost: totalCost, predicted_gmv: totalGmv
-            };
-            try {
-                const r = await fetch(`${API}/campaigns`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Save failed'); }
-                toast('Campaign saved! View it in the Campaigns tab.');
-                closeSaveCampaignModal();
-            } catch (e) { toast(e.message, 'err'); }
-        }
-
-        async function loadCampaigns() {
-            try {
-                const r = await fetch(`${API}/campaigns`);
-                if (!r.ok) throw new Error('Failed');
-                const d = await r.json();
-                renderCampaigns(d.campaigns || []);
-            } catch (e) { toast('Failed to load campaigns', 'err'); }
-        }
-
-        function renderCampaigns(campaigns) {
-            const empty = document.getElementById('campaigns-empty');
-            const tableWrap = document.getElementById('campaigns-table-wrap');
-            const tbody = document.getElementById('campaigns-tbody');
-            if (!campaigns.length) {
-                empty.classList.remove('hidden'); tableWrap.classList.add('hidden');
-                document.getElementById('c-total').textContent = '0';
-                document.getElementById('c-completed').textContent = '0';
-                document.getElementById('c-accuracy').textContent = '—';
-                document.getElementById('c-pred-gmv').textContent = '$0';
-                return;
-            }
-            empty.classList.add('hidden'); tableWrap.classList.remove('hidden');
-            const completed = campaigns.filter(c => c.status === 'completed');
-            const accuracies = completed.filter(c => c.accuracy_pct != null).map(c => c.accuracy_pct);
-            document.getElementById('c-total').textContent = campaigns.length;
-            document.getElementById('c-completed').textContent = completed.length;
-            document.getElementById('c-accuracy').textContent = accuracies.length ? (accuracies.reduce((a,b)=>a+b,0)/accuracies.length).toFixed(1)+'%' : '—';
-            document.getElementById('c-pred-gmv').textContent = fmt(campaigns.reduce((s,c)=>s+(c.predicted_gmv||0),0));
-            const catFlag = {MY:'🇲🇾',ID:'🇮🇩',TH:'🇹🇭',PH:'🇵🇭',SG:'🇸🇬',VN:'🇻🇳'};
-            tbody.innerHTML = campaigns.map(c => {
-                const statusBadge = c.status === 'completed'
-                    ? '<span style="background:rgba(0,200,83,0.15);color:#00C853;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">✓ Completed</span>'
-                    : '<span style="background:rgba(0,242,234,0.1);color:#00F2EA;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">● Active</span>';
-                const accuracy = c.accuracy_pct != null
-                    ? `<span class="font-data-mono font-bold" style="color:${c.accuracy_pct>=90?'#00C853':c.accuracy_pct>=70?'#F59E0B':'#FF0050'}">${c.accuracy_pct}%</span>`
-                    : '<span class="text-on-surface-variant">—</span>';
-                const actualGmv = c.actual_gmv != null ? `<span class="font-data-mono text-secondary">${fmt(c.actual_gmv)}</span>` : '<span class="text-on-surface-variant">—</span>';
-                const date = new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-                return `<tr class="row-hover border-t border-[#353530]">
-                    <td class="px-4 py-3"><div class="font-semibold text-white">${c.name}</div><div class="text-[11px] text-outline font-mono">${date} · ${c.best_algorithm}</div></td>
-                    <td class="px-4 py-3 text-[12px]">${catFlag[c.country]||''} ${c.country} · ${c.category}</td>
-                    <td class="px-4 py-3 text-right font-mono">${fmt(c.budget)}</td>
-                    <td class="px-4 py-3 text-right font-mono text-primary">${fmt(c.predicted_gmv)}</td>
-                    <td class="px-4 py-3 text-right">${actualGmv}</td>
-                    <td class="px-4 py-3 text-right">${accuracy}</td>
-                    <td class="px-4 py-3 text-center">${statusBadge}</td>
-                    <td class="px-4 py-3 text-center"><div class="flex gap-2 justify-center">
-                        <button onclick="openCampaignDetail(${c.id})" class="text-outline hover:text-primary transition-colors" title="View"><span class="material-symbols-outlined text-[18px]">visibility</span></button>
-                        ${c.status==='active'?`<button onclick="openActualModal(${c.id},${c.predicted_gmv})" class="text-outline hover:text-secondary transition-colors" title="Record Actual"><span class="material-symbols-outlined text-[18px]">edit_note</span></button>`:''}
-                        <button onclick="deleteCampaign(${c.id})" class="text-outline hover:text-error transition-colors" title="Delete"><span class="material-symbols-outlined text-[18px]">delete</span></button>
-                    </div></td>
-                </tr>`;
-            }).join('');
-        }
-
-        async function openCampaignDetail(id) {
-            currentCampaignId = id;
-            document.getElementById('cd-name').textContent = 'Loading...';
-            document.getElementById('campaign-detail-modal').classList.remove('hidden');
-            try {
-                const r = await fetch(`${API}/campaigns/${id}`);
-                if (!r.ok) throw new Error('Not found');
-                renderCampaignDetail(await r.json());
-            } catch (e) { toast('Failed to load campaign', 'err'); }
-        }
-        function closeCampaignDetail() { document.getElementById('campaign-detail-modal').classList.add('hidden'); }
-
-        function renderCampaignDetail(c) {
-            document.getElementById('cd-name').textContent = c.name;
-            document.getElementById('cd-meta').textContent = `${c.country} · ${c.category} · ${c.best_algorithm} · ${new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
-            document.getElementById('cd-pred').textContent = fmt(c.predicted_gmv);
-            document.getElementById('cd-actual').textContent = c.actual_gmv != null ? fmt(c.actual_gmv) : '—';
-            const accEl = document.getElementById('cd-accuracy');
-            accEl.textContent = c.accuracy_pct != null ? c.accuracy_pct + '%' : '—';
-            accEl.style.color = c.accuracy_pct != null ? (c.accuracy_pct>=90?'#00C853':c.accuracy_pct>=70?'#F59E0B':'#FF0050') : '';
-            document.getElementById('cd-budget').textContent = fmt(c.budget);
-            document.getElementById('cd-cost').textContent = fmt(c.total_cost);
-            const statusEl = document.getElementById('cd-status');
-            statusEl.textContent = c.status === 'completed' ? '✓ Completed' : '● Active';
-            statusEl.style.color = c.status === 'completed' ? '#00C853' : '#00F2EA';
-            const bar = document.getElementById('cd-bar-chart');
-            if (c.actual_gmv != null) {
-                const maxVal = Math.max(c.predicted_gmv, c.actual_gmv, 1);
-                bar.innerHTML = `<div class="space-y-sm"><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Predicted</span><span class="font-data-mono text-on-surface">${fmt(c.predicted_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${(c.predicted_gmv/maxVal*100).toFixed(0)}%;background:#00F2EA"></div></div></div><div><div class="flex justify-between text-[11px] mb-1"><span class="text-on-surface-variant font-bold uppercase">Actual</span><span class="font-data-mono text-secondary">${fmt(c.actual_gmv)}</span></div><div class="h-5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full rounded-full bg-secondary" style="width:${(c.actual_gmv/maxVal*100).toFixed(0)}%"></div></div></div></div>`;
-            } else {
-                bar.innerHTML = '<p class="text-[11px] text-on-surface-variant">No actual results yet. Click "Record Actual Results" after the campaign ends.</p>';
-            }
-            document.getElementById('cd-kol-body').innerHTML = (c.selected_kols||[]).map(k => {
-                const kActual = (c.kol_actuals||[]).find(a=>a.id===k.id);
-                return `<tr class="border-t border-[#353530]"><td class="px-4 py-2 text-[12px]">${k.name}<span class="text-outline text-[11px] ml-2">${k.tier||''}</span></td><td class="px-4 py-2 text-right font-mono text-[12px] text-primary">${fmt(k.predicted_gmv)}</td><td class="px-4 py-2 text-right font-mono text-[12px]">${kActual?`<span class="text-secondary">${fmt(kActual.actual_gmv)}</span>`:'—'}</td></tr>`;
-            }).join('');
-            const notesSection = document.getElementById('cd-notes-section');
-            notesSection.classList.toggle('hidden', !c.notes);
-            if (c.notes) document.getElementById('cd-notes').textContent = c.notes;
-            const recordBtn = document.getElementById('cd-record-btn');
-            recordBtn.classList.toggle('hidden', c.status !== 'active');
-            recordBtn.onclick = () => { closeCampaignDetail(); openActualModal(c.id, c.predicted_gmv); };
-        }
-
-        function openActualModal(campaignId, predictedGmv) {
-            currentCampaignId = campaignId;
-            document.getElementById('ar-predicted').textContent = fmt(predictedGmv);
-            document.getElementById('ar-actual').value = '';
-            document.getElementById('ar-notes').value = '';
-            document.getElementById('actual-results-modal').classList.remove('hidden');
-        }
-        function closeActualModal() { document.getElementById('actual-results-modal').classList.add('hidden'); }
-
-        async function submitActualResults() {
-            const actual = parseFloat(document.getElementById('ar-actual').value);
-            const notes = document.getElementById('ar-notes').value.trim();
-            if (isNaN(actual) || actual < 0) { toast('Enter a valid GMV amount', 'err'); return; }
-            try {
-                const payload = { actual_total_gmv: actual };
-                if (notes) payload.notes = notes;
-                const r = await fetch(`${API}/campaigns/${currentCampaignId}/actual`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-                if (!r.ok) throw new Error('Failed');
-                const d = await r.json();
-                toast(`Results recorded! Accuracy: ${d.campaign.accuracy_pct}%`);
-                closeActualModal();
-                loadCampaigns();
-            } catch (e) { toast(e.message, 'err'); }
-        }
-
-        async function deleteCampaign(id) {
-            if (!confirm('Delete this campaign?')) return;
-            try {
-                const r = await fetch(`${API}/campaigns/${id}`, { method: 'DELETE' });
-                if (!r.ok) throw new Error('Delete failed');
-                toast('Campaign deleted'); loadCampaigns();
-            } catch (e) { toast(e.message, 'err'); }
-        }
-
-        // ══════════ KOL HISTORY & SPARKLINES ══════════
-        function renderSparkline(values, color) {
-            if (!values || values.length < 2) return values && values.length === 1 ? '<span class="text-[10px] text-on-surface-variant">1 pt</span>' : '<span class="text-[10px] text-on-surface-variant">—</span>';
-            const W = 90, H = 32;
-            const min = Math.min(...values), max = Math.max(...values), range = max - min;
-            const step = W / (values.length - 1);
-            const pts = values.map((v, i) => {
-                const x = (i * step).toFixed(1);
-                const y = range > 0 ? (H - ((v - min) / range) * (H - 6) - 3).toFixed(1) : (H / 2).toFixed(1);
-                return `${x},${y}`;
-            }).join(' ');
-            const trend = values[values.length-1] >= values[0] ? '↑' : '↓';
-            const trendColor = values[values.length-1] >= values[0] ? '#00C853' : '#FF0050';
-            return `<span style="color:${trendColor};font-size:11px;font-weight:bold">${trend}</span><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:inline-block;vertical-align:middle;margin-left:4px"><polyline fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" points="${pts}"/></svg>`;
-        }
-
-        function renderKolHistory(data) {
-            const content = document.getElementById('kd-history-content');
-            if (!data || !data.snapshots || data.snapshots.length === 0) {
-                content.innerHTML = '<p class="text-[11px] text-on-surface-variant">No snapshots yet. Edit the creator or click <strong>Simulate Update</strong> to start tracking trends.</p>';
-                return;
-            }
-            const snaps = [...data.snapshots].reverse();
-            const engVals = snaps.map(s => s.engagement_rate).filter(v => v != null);
-            const fitVals = snaps.map(s => s.fit_score).filter(v => v != null);
-            const folVals = snaps.map(s => s.followers).filter(v => v != null);
-            const latestEng = engVals.length ? (engVals[engVals.length-1]*100).toFixed(1)+'%' : '—';
-            const latestFit = fitVals.length ? (fitVals[fitVals.length-1]*100).toFixed(0)+'%' : '—';
-            const latestFol = folVals.length ? fmtF(folVals[folVals.length-1]) : '—';
-            content.innerHTML = `
-                <div class="grid grid-cols-3 gap-md">
-                    <div class="text-center p-md rounded-lg bg-surface-container-low">
-                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Engagement Rate</p>
-                        <div class="flex items-center justify-center gap-xs">${renderSparkline(engVals,'#00F2EA')}</div>
-                        <p class="font-data-mono font-bold text-primary text-[14px] mt-xs">${latestEng}</p>
-                    </div>
-                    <div class="text-center p-md rounded-lg bg-surface-container-low">
-                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Fit Score</p>
-                        <div class="flex items-center justify-center gap-xs">${renderSparkline(fitVals,'#00C853')}</div>
-                        <p class="font-data-mono font-bold text-secondary text-[14px] mt-xs">${latestFit}</p>
-                    </div>
-                    <div class="text-center p-md rounded-lg bg-surface-container-low">
-                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Followers</p>
-                        <div class="flex items-center justify-center gap-xs">${renderSparkline(folVals,'#A855F7')}</div>
-                        <p class="font-data-mono font-bold text-on-surface text-[14px] mt-xs">${latestFol}</p>
-                    </div>
-                </div>
-                <p class="text-[10px] text-on-surface-variant mt-sm text-center">${data.count} snapshot${data.count!==1?'s':''} recorded</p>
-            `;
-        }
-
-        async function simulateKolUpdate() {
-            if (!currentKolId) return;
-            const btn = document.getElementById('kd-simulate-btn');
-            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[14px]">refresh</span> Simulating...';
-            btn.disabled = true;
-            try {
-                const r = await fetch(`${API}/kols/${currentKolId}/simulate-update`, { method: 'POST' });
-                if (!r.ok) throw new Error('Simulate failed');
-                const d = await r.json();
-                const ch = d.changes;
-                toast(`Updated! Eng ${(ch.engagement_rate.before*100).toFixed(1)}%→${(ch.engagement_rate.after*100).toFixed(1)}%, Fit ${(ch.fit_score.before*100).toFixed(0)}%→${(ch.fit_score.after*100).toFixed(0)}%`);
-                const [histRes, kolRes] = await Promise.all([
-                    fetch(`${API}/kols/${currentKolId}/history`),
-                    fetch(`${API}/kol/${currentKolId}`)
-                ]);
-                if (histRes.ok) renderKolHistory(await histRes.json());
-                if (kolRes.ok) renderKolDetail(await kolRes.json());
-            } catch (e) { toast(e.message, 'err'); }
-            finally {
-                btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">refresh</span> Simulate Update';
-                btn.disabled = false;
-            }
-        }
-
-    </script>
-</body>
-
-</html>
-oFixed(0)+'%' : '—';
-            const latestFol = folVals.length ? fmtF(folVals[folVals.length-1]) : '—';
-            content.innerHTML = `
-                <div class="grid grid-cols-3 gap-md">
-                    <div class="text-center p-md rounded-lg bg-surface-container-low">
-                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Engagement Rate</p>
-                        <div class="flex items-center justify-center gap-xs">${renderSparkline(engVals,'#00F2EA')}</div>
-                        <p class="font-data-mono font-bold text-primary text-[14px] mt-xs">${latestEng}</p>
-                    </div>
-                    <div class="text-center p-md rounded-lg bg-surface-container-low">
-                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Fit Score</p>
-                        <div class="flex items-center justify-center gap-xs">${renderSparkline(fitVals,'#00C853')}</div>
-                        <p class="font-data-mono font-bold text-secondary text-[14px] mt-xs">${latestFit}</p>
-                    </div>
-                    <div class="text-center p-md rounded-lg bg-surface-container-low">
-                        <p class="text-[10px] text-on-surface-variant uppercase mb-sm">Followers</p>
-                        <div class="flex items-center justify-center gap-xs">${renderSparkline(folVals,'#A855F7')}</div>
-                        <p class="font-data-mono font-bold text-on-surface text-[14px] mt-xs">${latestFol}</p>
-                    </div>
-                </div>
-                <p class="text-[10px] text-on-surface-variant mt-sm text-center">${data.count} snapshot${data.count!==1?'s':''} recorded</p>
-            `;
-        }
-
-        async function simulateKolUpdate() {
-            if (!currentKolId) return;
-            const btn = document.getElementById('kd-simulate-btn');
-            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[14px]">refresh</span> Simulating...';
-            btn.disabled = true;
-            try {
-                const r = await fetch(`${API}/kols/${currentKolId}/simulate-update`, { method: 'POST' });
-                if (!r.ok) throw new Error('Simulate failed');
-                const d = await r.json();
-                const ch = d.changes;
-                toast(`Updated! Eng ${(ch.engagement_rate.before*100).toFixed(1)}% to ${(ch.engagement_rate.after*100).toFixed(1)}%, Fit ${(ch.fit_score.before*100).toFixed(0)}% to ${(ch.fit_score.after*100).toFixed(0)}%`);
-                const [histRes, kolRes] = await Promise.all([
-                    fetch(`${API}/kols/${currentKolId}/history`),
-                    fetch(`${API}/kol/${currentKolId}`)
-                ]);
-                if (histRes.ok) renderKolHistory(await histRes.json());
-                if (kolRes.ok) renderKolDetail(await kolRes.json());
-            } catch (e) { toast(e.message, 'err'); }
-            finally {
-                btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">refresh</span> Simulate Update';
-                btn.disabled = false;
-            }
-        }
-
-    </script>
-</body>
-
-</html>
-rHTML = '<span class="material-symbols-outlined text-[14px]">refresh</span> Simulate Update';
                 btn.disabled = false;
             }
         }
