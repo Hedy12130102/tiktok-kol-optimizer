@@ -64,7 +64,7 @@ where `engagement_factor = sqrt(engagement_rate / 0.132)` and `fit_factor = sqrt
 
 `sqrt(followers)` replaces the linear `followers × engagement × fit` formula. Rationale:
 
-- A Mega KOL (3.2M followers) has only ~5.7× the traction of a Micro KOL (100K), not 32×.
+- A Mega KOL (3.2M followers) has only ≈5.7× the traction of a Micro KOL (100K), not 32×.
 - This prevents the optimizer from always selecting the single biggest KOL, making mixed-tier portfolios (Mega + Micro + Nano) naturally emerge.
 - Consistent with industry research showing follower count has sub-linear impact on sales conversion (Hughes et al., 2019; Leung et al., 2022).
 
@@ -90,7 +90,7 @@ Estimated GDP per capita (nominal, 2024) relative multipliers for Southeast Asia
 - AsiaKOL Vietnam Influencer Marketing Guide 2024 — Vietnam-specific CTR/CVR data
 - World Bank GDP per capita data 2024
 
-The multipliers reflect both raw purchasing power and the maturity of TikTok Shop integration in each market. Singapore (GDP/cap ~$90K) has the highest checkout completion rate and largest average basket; Vietnam has a massive and rapidly growing TikTok user base but low average ticket size (~$5–$7 overall video commerce AOV).
+The multipliers reflect both raw purchasing power and the maturity of TikTok Shop integration in each market. Singapore (GDP/cap ≈$90K) has the highest checkout completion rate and largest average basket; Vietnam has a massive and rapidly growing TikTok user base but low average ticket size (≈$5–$7 overall video commerce AOV).
 
 ---
 
@@ -120,7 +120,7 @@ Percentage of product page clicks that result in a purchase. FMCG has the highes
 
 ### 5.3 Average Order Value (AOV, USD)
 
-Fashion has the highest AOV; FMCG has the lowest due to everyday low-price items. Country variations reflect local pricing and purchasing power. FMCG AOV is a blend of food (~$12–22), personal care (~$20–35), and household products (~$15–28).
+Fashion has the highest AOV; FMCG has the lowest due to everyday low-price items. Country variations reflect local pricing and purchasing power. FMCG AOV is a blend of food (≈$12–22), personal care (≈$20–35), and household products (≈$15–28).
 
 | Category ↓ / Country → | MY | ID | TH | PH | SG | VN |
 |------------------------|-----|-----|-----|-----|-----|-----|
