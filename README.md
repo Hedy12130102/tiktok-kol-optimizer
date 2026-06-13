@@ -55,91 +55,65 @@ Structured search beats naïve hill-climbing by **76–161%**, and the advantage
 
 ---
 
+## Table of Contents
+
+- [Why It Matters](#-why-it-matters)
+- [Proven Results](#-proven-results)
+- [Tech Stack](#-tech-stack)
+- [Features](#features)
+- [Algorithms](#algorithms)
+- [Project Structure](#project-structure)
+- [Quick Start](#quick-start)
+- [API Overview](#api-overview)
+- [Testing](#testing)
+- [Data Flow](#data-flow)
+- [Why Structured Search Wins](#why-structured-search-wins-technical-deep-dive)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
 ## Features
 
-### 1. Campaign Optimizer (Dashboard)
+The platform is organised into three product modules backed by two intelligence layers:
 
-The core feature. A merchant inputs parameters and the system returns the mathematically optimal KOL portfolio from six competing algorithms.
+| Module | What it does | Highlights |
+|---|---|---|
+| 🎯 **Campaign Optimizer** | Runs six algorithms on your filtered creator pool and returns the budget-optimal portfolio | Winning portfolio · GMV/ROI benchmark · live convergence chart |
+| 👥 **Creator Management** | Build, import, and curate your own KOL database | CRUD · CSV import/export · metric-trend sparklines |
+| 📈 **Campaign Attribution** | Closes the loop by comparing predicted vs actual GMV | Accuracy % · per-campaign history |
+| 🧠 **Explainable AI** | Plain-English justification for every pick | 3+ data-driven reasons per creator |
+| ⭐ **CreatorScore & Tiers** | Composite quality score + tier classification | Leaderboards · badges · ranking |
 
-**Inputs (sidebar):**
-- **Marketing Budget** — slider from $100 to $20,000. All algorithms guarantee the total hiring cost stays within this limit.
-- **Target Countries** — multi-select: Malaysia, Indonesia, Thailand, Philippines, Singapore, Vietnam, or All Countries. Selecting multiple countries pools creators from all chosen markets.
-- **Product Category** — Beauty, Fashion, Home & Living, or FMCG.
-- **Advanced Settings** — collapse/expand panel containing Random Seed (for reproducible results) and other tuning options.
+### 🎯 Campaign Optimizer
 
-**What happens when you click "Run Optimization":**
-1. The backend filters the KOL pool by country + category.
-2. All six algorithms run on the filtered pool:
-   - **Simulated Annealing (SA)** — accepts temporarily worse solutions to escape local optima; primary solver.
-   - **Hill Climber (HC)** — greedy local search, fast but gets trapped in local optima.
-   - **Random Search (RS)** — pure random sampling, serves as a lower-bound baseline.
-   - **Genetic Algorithm (GA)** — population-based evolutionary search with crossover and mutation; greedy-seeded initial population.
-   - **Tabu Search (TS)** — greedy-initialized local search with a tabu list to avoid revisiting recent moves; aspiration criterion allows breaking tabu for new global bests.
-   - **Greedy Ranking (GR)** — sorts KOLs by GMV/cost ratio and greedily fills budget; deterministic upper-bound reference.
-3. The algorithm with the highest predicted GMV is declared the winner.
+The core engine. Choose a **budget**, one or more **target markets**, and a **product category**; the backend filters the creator pool and runs all six algorithms in parallel, then surfaces the highest-GMV portfolio.
 
-**Outputs displayed:**
-- **5 metric cards** — Best Algorithm, Predicted GMV, Budget Used (with utilization %), KOLs Selected, Candidate Pool Size.
-- **Convergence Chart** — SVG line chart showing all six algorithms' best GMV over iterations. SA's curve shows initial dips (accepting worse solutions) then surging; HC and TS plateau early; GA converges steadily; GR hits its answer instantly.
-- **Algorithm Benchmark Table** — side-by-side comparison of GMV and ROI for all six algorithms, with the winner highlighted.
-- **Best KOL Matrix** — card grid of selected creators, each showing tier badge, followers, cost, engagement rate, fit score bar, estimated GMV, and a "Why?" explainer button.
+- **Inputs** — budget ($100–$20,000), any of six SEA markets (MY · ID · TH · PH · SG · VN), a product category (Beauty · Fashion · Home & Living · FMCG), and an optional random seed for reproducible runs.
+- **Results** — five headline metrics (winning algorithm, predicted GMV, budget utilization, creators selected, candidate-pool size); an SVG **convergence chart** tracing all six algorithms; a side-by-side **benchmark table** (GMV + ROI, winner highlighted); and the **KOL matrix** — one card per selected creator showing tier, reach, cost, engagement, fit, estimated GMV, and a **"Why?"** explainer.
+- **Save** any result as a named campaign for later attribution.
 
-**Save Campaign:** After running optimization, click "Save Campaign" to record the prediction as a named campaign for later attribution tracking.
+### 👥 Creator Management
 
----
+Bring your own creators or curate the seeded dataset.
 
-### 2. Creator Management
+- **CRUD + bulk operations** — add via a 12-field form, **import/export CSV** (with a downloadable template), inline edit/delete, filter by country/category/tier (paginated), and a double-confirmed full reset.
+- **Metric trends** — each creator has a detail view with sparkline history for engagement, fit, and followers (↑/↓ trend arrows). **Simulate Update** applies realistic random drift to preview how a live TikTok-API refresh would move the numbers.
+- **Roadmap connectors** — stubs for the TikTok Creator Marketplace API, TikTok Shop Partner API, and third-party analytics; "Coming Soon" cards capture early-access interest.
 
-Merchants can build their own KOL database. The Creators page opens with a **Data Sources** panel:
+### 📈 Campaign Attribution
 
-**Manual Import (Active):**
-- **Add Creator** — 12-field form (Name, TikTok URL, Country, Category, Followers, Engagement Rate, Commission Rate, Fit Score, Avg Views, Avg Likes, Female Audience Ratio, Age Group).
-- **Import CSV** — bulk upload with required columns `name, country, category, followers, engagement_rate, cost` and optional extended fields.
-- **Download Template** — pre-filled CSV with correct headers and one example row.
-- **Export** — download entire KOL database as CSV.
-- **Edit / Delete** — inline table actions with delete confirmation.
-- **Reset All** — clears the entire database (double confirmation required).
-- **Filters** — by Country, Category, or Tier; pagination at 20 per page.
+Turn one-shot predictions into a feedback loop. Save an optimization as a campaign, then after it runs record the **actual GMV** — the system computes `accuracy % = actual / predicted × 100` and renders a predicted-vs-actual breakdown per creator. Over many campaigns this becomes an attribution history that shows how well the GMV model tracks reality.
 
-**Future API Integrations (Coming Soon):**
-- TikTok Creator Marketplace API — direct creator search and invite
-- TikTok Shop Partner API — live sales data and affiliate metrics
-- Analytics Platforms — third-party engagement data (e.g., Sprout Social, Brandwatch)
+### 🧠 Explainable AI
 
-Click any Coming Soon card to register interest for early access.
+No black boxes: every recommended creator ships with **3+ human-readable reasons** generated from its own data — for example:
 
-**KOL Detail Modal:** Click any creator row to open a detail view showing full metrics and the **Metric Trends** section — sparkline charts for engagement rate, fit score, and followers over time, with trend arrows (↑ green / ↓ red). Click **Simulate Update** to apply a realistic TikTok API refresh with random drift and see the sparklines update live.
+> "Malaysia audience match is 92%, well above the 80% threshold" · "Engagement rate 15.0% is 87% above the beauty category average" · "Predicted ROI is 45% above the pool average — high cost-effectiveness"
 
----
+### ⭐ CreatorScore & Tier Classification
 
-### 3. Campaign Attribution
-
-Track real-world campaign outcomes against optimization predictions.
-
-**Workflow:**
-1. Run optimizer → click "Save Campaign" → give the campaign a name.
-2. After the campaign ends, open the Campaigns page, find the campaign, and click "Record Actual GMV".
-3. Enter the actual total GMV achieved. The system computes **accuracy %** = (actual / predicted) × 100.
-
-**Campaign table** shows: name, status (Active / Completed), country, category, predicted GMV, actual GMV, accuracy, and algorithm used.
-
-**Campaign detail modal** shows a bar chart comparing predicted vs. actual GMV and a breakdown per selected KOL.
-
----
-
-### 4. Explainable AI (Why Recommended?)
-
-Every selected KOL comes with 3+ human-readable reasons generated from the KOL's actual data:
-- "Malaysia audience match is 92%, well above the 80% threshold"
-- "Engagement rate 15.0% is 87% above the beauty category average"
-- "Micro KOL with 80K followers — high conversion rate and precise audience targeting"
-- "Predicted ROI is 45% above the pool average — high cost-effectiveness"
-
----
-
-### 5. CreatorScore
-
-Each KOL is assigned a composite quality score in [0, 1]:
+Each creator gets a composite quality score in [0, 1] — used for leaderboards, badges, and reason generation:
 
 ```
 CreatorScore = 0.30 × norm(followers)
@@ -148,24 +122,33 @@ CreatorScore = 0.30 × norm(followers)
              + 0.20 × norm(expected_gmv / cost)
 ```
 
-Used for leaderboard ranking, quality display, and reason generation.
+…and a **tier** derived from follower count:
 
----
-
-### 6. KOL Tier Classification
-
-| Tier | Followers | Characteristics |
-|------|-----------|-----------------|
-| Mega | > 1,000,000 | Maximum brand awareness, highest cost |
-| Macro | 100,000 – 1,000,000 | Broad coverage with credibility |
+| Tier | Followers | Profile |
+|------|-----------|---------|
+| Mega  | > 1,000,000 | Maximum brand awareness, highest cost |
+| Macro | 100,000 – 1,000,000 | Broad reach with credibility |
 | Micro | 10,000 – 100,000 | Highest conversion, precise targeting |
-| Nano | < 10,000 | Niche communities, lowest cost |
+| Nano  | < 10,000 | Niche communities, lowest cost |
 
-The optimizer typically selects a **mixed-tier portfolio** rather than spending on a single Mega KOL — this is where SA, GA, and TS outperform HC.
+The optimizer deliberately favours a **mixed-tier portfolio** over a single Mega creator — precisely where structured search beats naïve hill-climbing (see [Proven Results](#-proven-results)).
 
 ---
 
 ## Algorithms
+
+All six solvers operate on the same binary-selection problem (each KOL is in or out, subject to the budget) and the same fitness function (`−GMV + budget_penalty + overlap_penalty`). They differ in *how* they search the 2ᴺ portfolio space:
+
+| Algorithm | Class | Determinism | Per-run speed | Role |
+|---|---|---|---|---|
+| **Genetic Algorithm** | Population metaheuristic | Stochastic | Slow | Best quality at large pools |
+| **Greedy Ranking** | Constructive + 2-opt local search | Deterministic | **Fastest** | Near-best & instant; interactive default |
+| **Tabu Search** | Memory-based local search | Mostly deterministic | Medium (O(N²)) | Strong for N ≤ 100 |
+| **Simulated Annealing** | Trajectory metaheuristic | Stochastic | Slowest | Robust escape from local optima |
+| **Random Search** | Unstructured sampling | Stochastic | Fast | Lower-bound baseline |
+| **Hill Climber** | Naïve local search | Stochastic | Fast | Control baseline (the "trap") |
+
+> Benchmarked quality and runtime across N = 50–500 are in [Proven Results](#-proven-results); the mechanism behind the gap is in [Why Structured Search Wins](#why-structured-search-wins-technical-deep-dive).
 
 ### Simulated Annealing (Primary Solver)
 
@@ -270,7 +253,12 @@ tiktok-kol-optimizer/
 
 ## Quick Start
 
-**1. Install dependencies**
+### Prerequisites
+
+- **Python 3.10+**
+- pip (and, optionally, a virtual environment)
+
+### 1. Install dependencies
 
 ```bash
 git clone https://github.com/Hedy12130102/tiktok-kol-optimizer.git
@@ -278,32 +266,32 @@ cd tiktok-kol-optimizer
 pip install -r requirements.txt
 ```
 
-**2. Generate sample data** (optional — skip if using manual input)
+### 2. Generate sample data (optional)
+
+A pre-generated `data/sample_kols.json` ships with the repo, so this step is only needed to reseed or resize the pool:
 
 ```bash
-python data/generator.py           # 300 KOLs (default)
-python data/generator.py --num 500 # custom size
+python data/generator.py              # 300 KOLs (default)
+python data/generator.py --num 500    # custom pool size
+python data/generator.py --num 500 --seed 7   # reproducible custom seed
 ```
 
-**3. Start the backend**
+### 3. Start the backend
 
-Windows (double-click or run in terminal):
-```
+```bash
+# Windows (double-click or run in terminal)
 start_server.bat
-```
 
-macOS / Linux:
-```bash
+# macOS / Linux
 uvicorn backend.main:app --reload
 ```
 
-**4. Open the app**
+### 4. Open the app
 
-```
-http://localhost:8000/ui
-```
-
-Swagger API docs: `http://localhost:8000/docs`
+| URL | Purpose |
+|---|---|
+| http://localhost:8000/ui | Web application (Optimizer · Creators · Campaigns) |
+| http://localhost:8000/docs | Interactive Swagger API docs |
 
 ---
 
@@ -361,11 +349,19 @@ Full specification: [`docs/API_SPEC.md`](docs/API_SPEC.md)
 
 ---
 
-## Run Tests
+## Testing
+
+The suite has **110 tests** covering the fitness function, all six algorithms, scoring/explainer logic, and every API endpoint (optimization, CRUD, KOL history, campaign attribution).
 
 ```bash
+# Run the full suite
 pytest tests/ --tb=short
+
+# With coverage
+pytest tests/ --cov=engine --cov=backend
 ```
+
+CI runs the suite on every push and pull request to `dev`/`master` via [GitHub Actions](.github/workflows/ci.yml).
 
 ---
 
@@ -404,6 +400,21 @@ Hill Climber selects expensive Mega/Macro KOLs early, exhausts the budget, and g
 
 ---
 
+## Contributing
+
+Contributions are welcome. To propose a change:
+
+1. Fork the repo and create a feature branch off `dev`.
+2. Make your change and **add or update tests** — the suite must stay green (`pytest tests/`).
+3. Keep the experiment figures and `docs/` in sync if you touch the engine or data model.
+4. Open a pull request against `dev` with a clear description; CI must pass.
+
+For larger ideas (new algorithms, a real TikTok data integration, multi-objective optimization), please open an issue first to discuss the design.
+
+---
+
 ## License
 
-MIT
+Released under the **MIT License** — see [`LICENSE`](LICENSE) for the full text.
+
+Market multipliers and distributions are calibrated from publicly available industry reports; sources are documented in [`docs/data_source.md`](docs/data_source.md).
