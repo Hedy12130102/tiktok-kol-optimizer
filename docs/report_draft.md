@@ -46,6 +46,18 @@ This is the 0-1 knapsack problem, which is NP-hard in the general case and requi
 
 ## (d) Methodology
 
+### 2.0 Research & Information Methodology
+
+Before any code, the project followed a deliberate four-step process to identify, select, process, and analyze the information the system depends on.
+
+**Identify.** We first framed the business problem (Section c) and decomposed it into the information it requires: (i) a *creator model* — what attributes describe a KOL and drive sales (followers, engagement, audience fit, demographics); (ii) a *market model* — how a view converts to revenue in each Southeast-Asian market and category (click-through, conversion, order value, purchasing power); and (iii) a *cost model* — how creators are actually paid on TikTok Shop. This told us exactly which quantities had to be sourced or estimated.
+
+**Select.** Because TikTok exposes no public creator API and real fees/audience data are commercially confidential (NDAs), primary collection was infeasible, so we selected *secondary* sources under four criteria: authority (named industry analysts, consultancies, and government bodies), recency (2024–2026), regional relevance (SEA / the six target markets), and public availability. The retained set — IMF WEO, e-Conomy SEA (Google/Temasek/Bain), Cube Asia, Statista, McKinsey, Brandwatch/TTS Vibes, Kantar/NielsenIQ — is mapped to each parameter group in §2.4.1. In parallel we selected the *algorithms* to study as a deliberate spectrum from naïve to advanced (Random Search and Hill Climber as controls; Greedy Ranking as a constructive heuristic; Simulated Annealing, Genetic Algorithm, and Tabu Search as metaheuristics) so the comparison isolates the value of each search strategy.
+
+**Process.** Raw benchmark figures were processed into (i) lookup tables of CTR/CVR/AOV/purchasing-power keyed by (category, country) (§2.4.2, §5 of `data_source.md`); (ii) a parametric GMV model with diminishing returns and quality normalisation (§2.2); and (iii) a reproducible synthetic-data generator that samples a realistic long-tailed creator population with tier-specific engagement and commission distributions (§2.4.3–2.4.4). The optimization problem itself was processed into a binary-vector formulation with a single scalar fitness function combining GMV, a near-hard budget penalty, and an audience-overlap penalty (§2.1).
+
+**Analyze.** Finally, the processed artefacts are analyzed empirically (Section e): a reproducible, multi-seed benchmark measures solution quality and runtime across pool sizes; convergence and parameter-sensitivity studies explain *why* the algorithms differ; generated distributions are checked back against the source benchmarks; and 110 automated tests guard functional correctness. The remainder of Section (d) details each model the analysis rests on.
+
 ### 2.1 Problem Formulation
 
 Each solution is a binary vector:
@@ -90,7 +102,7 @@ GMV_i = sqrt(followers_i)
       × 200
 ```
 
-where `engagement_factor = sqrt(engagement_rate / 0.132)` and `fit_factor = sqrt(fit_score / 0.650)`. Both use `sqrt(·)` for diminishing returns and are normalised to the dataset mean (ENG_BASE=0.132, FIT_BASE=0.650) so that the average KOL gets a quality multiplier of 1.0. The `sqrt(followers)` term models diminishing returns — a 3.2M-follower Mega KOL has ~5.7× the traction of a 100K Micro KOL, not 32×. CTR, CVR, AOV, and purchasing power multipliers are calibrated from Southeast Asian industry benchmarks (full tables and provenance in §2.4 and `docs/data_source.md`).
+where `engagement_factor = sqrt(engagement_rate / 0.132)` and `fit_factor = sqrt(fit_score / 0.650)`. Both use `sqrt(·)` for diminishing returns and are normalised to the dataset mean (ENG_BASE=0.132, FIT_BASE=0.650) so that the average KOL gets a quality multiplier of 1.0. The `sqrt(followers)` term models diminishing returns — a 3.2M-follower Mega KOL has ≈5.7× the traction of a 100K Micro KOL, not 32×. CTR, CVR, AOV, and purchasing power multipliers are calibrated from Southeast Asian industry benchmarks (full tables and provenance in §2.4 and `docs/data_source.md`).
 
 **Worked example (sanity check).** A Micro beauty creator in Malaysia with 100,000 followers, engagement_rate = 0.10, fit_score = 0.80:
 
@@ -107,7 +119,7 @@ This lands within the plausible range for a single mid-tier beauty creator's mon
 
 ### 2.3 Algorithms
 
-**Simulated Annealing (SA)** — Thermal-adaptive hybrid neighbourhood (single bit-flip, structural swap, and occasional multi-swap jumps). Acceptance probability P = exp(-δ/T). Parameters: T0=15,000; T_min=10; α=0.95; 150 iterations per temperature step (~143 temperature levels, ~21K evaluations). SA is the primary solver.
+**Simulated Annealing (SA)** — Thermal-adaptive hybrid neighbourhood (single bit-flip, structural swap, and occasional multi-swap jumps). Acceptance probability P = exp(-δ/T). Parameters: T0=15,000; T_min=10; α=0.95; 150 iterations per temperature step (≈143 temperature levels, ≈21K evaluations). SA is the primary solver.
 
 **Hill Climber (HC)** — Greedy local search. At each iteration it flips one *randomly chosen* bit and accepts the move only if it strictly lowers cost (raises GMV), for a fixed 5,000 iterations. Fast (O(1) evaluation per iteration) but gets trapped in local optima when expensive KOLs fill the budget and no single flip improves the portfolio.
 
@@ -126,19 +138,19 @@ A core deliverable of this project is not merely running textbook algorithms but
 **Simulated Annealing — thermal-adaptive hybrid neighbourhood.**
 The textbook SA neighbourhood is a single bit-flip, which changes the portfolio size one creator at a time and therefore struggles to "trade" one Mega KOL for several Micros (the move would have to remove the Mega and add several Micros across many separate, mostly-worsening flips). Our operator instead mixes three move types per iteration:
 - **40% single bit-flip** — fine-grained add/remove.
-- **~50% structural swap** — drop one selected KOL and add one unselected KOL, keeping total cost roughly constant while exploring budget-equivalent alternatives.
+- **≈50% structural swap** — drop one selected KOL and add one unselected KOL, keeping total cost roughly constant while exploring budget-equivalent alternatives.
 - **10% multi-swap (2–3 simultaneous flips)** — large jumps that let the search leap between the "many small KOLs" and "few big KOLs" basins in a single step, crucial on small filtered pools.
 
-We also add an **empty-portfolio guard** (force-add a random KOL if a neighbour selects nothing) and **calibrate the temperature to the GMV landscape** (single-KOL GMV deltas are ~$2K–$8K, so T0 = 15,000 yields an initial acceptance probability of ~60–85% for worsening moves, cooling to near-zero acceptance by the final temperature level).
+We also add an **empty-portfolio guard** (force-add a random KOL if a neighbour selects nothing) and **calibrate the temperature to the GMV landscape** (single-KOL GMV deltas are ≈$2K–$8K, so T0 = 15,000 yields an initial acceptance probability of ≈60–85% for worsening moves, cooling to near-zero acceptance by the final temperature level).
 
 **Genetic Algorithm — greedy seeding + budget-aware initialisation + elitism.**
 Three enhancements over a random-initialised GA: (1) **individual 0 is a greedy ratio-sorted solution**, giving the population an immediately strong member to recombine; (2) **the remaining individuals are seeded at a budget-aware inclusion probability** `p = clamp(budget / avg_cost / N, 0.1, 0.6)` so the initial population is roughly feasible instead of mostly over-budget (a uniform 50% inclusion would put almost every individual far over budget at large N); (3) **elitism** copies the best individual into each new generation, guaranteeing monotonic non-degradation. Budget feasibility is handled by the fitness penalty rather than an explicit repair operator, so infeasible children are simply out-competed and bred out.
 
 **Tabu Search — aspiration criterion + no-improvement early stopping + randomised tie-breaking.**
-Beyond the basic tabu list (tenure = 8), we add: (1) an **aspiration criterion** that overrides the tabu status of a move if it produces a new global best (never refuse a genuinely improving move); (2) **no-improvement early stopping** (`patience = 150`) that terminates once the global best has stalled, cutting wall-clock time dramatically without quality loss (this is why TS runs in ~1 s at N=100 rather than tens of seconds); and (3) **randomised tie-breaking** (30% chance to accept an equal-cost neighbour) to avoid deterministic cycling on plateaus.
+Beyond the basic tabu list (tenure = 8), we add: (1) an **aspiration criterion** that overrides the tabu status of a move if it produces a new global best (never refuse a genuinely improving move); (2) **no-improvement early stopping** (`patience = 150`) that terminates once the global best has stalled, cutting wall-clock time dramatically without quality loss (this is why TS runs in ≈1 s at N=100 rather than tens of seconds); and (3) **randomised tie-breaking** (30% chance to accept an equal-cost neighbour) to avoid deterministic cycling on plateaus.
 
 **Greedy Ranking — three-phase local search, not a naïve fill.**
-The "baseline" is itself improved into a small local-search pipeline: **Phase 1** ratio-sorted greedy fill; **Phase 2** 2-opt swap (replace a selected KOL with an unselected one whenever it lowers cost and stays within budget); **Phase 3** drop-improvement (remove any KOL whose removal lowers cost — this matters when every KOL fits the budget and the only gains come from cutting audience-overlap penalty). These phases are why GR is competitive with the metaheuristics at scale (§3.2) despite being deterministic and ~10× faster.
+The "baseline" is itself improved into a small local-search pipeline: **Phase 1** ratio-sorted greedy fill; **Phase 2** 2-opt swap (replace a selected KOL with an unselected one whenever it lowers cost and stays within budget); **Phase 3** drop-improvement (remove any KOL whose removal lowers cost — this matters when every KOL fits the budget and the only gains come from cutting audience-overlap penalty). These phases are why GR is competitive with the metaheuristics at scale (§3.2) despite being deterministic and ≈10× faster.
 
 **Random Search — budget-aware sampling.**
 Pure uniform 50/50 sampling would put almost every sampled portfolio massively over budget at large N (and thus at the same `−GMV + huge penalty` cost), making RS a degenerate, uninformative baseline. We instead include each KOL with probability `≈ budget / avg_cost / N`, so sampled portfolios sit near the feasible boundary and RS remains a *meaningful* lower bound rather than a flat line.
@@ -171,7 +183,7 @@ The GMV model (§2.2) draws four market multipliers from lookup tables keyed by 
 
 - **CTR 2.2–4.4%** and **CVR 4.5–10.8%** — both are highest for FMCG (impulse, low price friction) and lowest for Home & Living (long consideration cycle), and highest in TH/SG, lowest in PH. These ranges sit squarely within published social-commerce benchmarks, where video-driven discovery yields far higher click-through than display advertising (typically <1%) but needs strong creative alignment to convert.
 - **AOV $11–$72** — highest for Fashion and in Singapore (premium market), lowest for FMCG and in Vietnam (price-sensitive, low-ticket). Magnitudes match reported per-order baskets for each vertical.
-- **Purchasing-power multiplier 0.55–1.3** — anchored to GDP/capita: SG 1.3 (~$90.7K/cap, highest checkout completion and basket size), MY 1.0 baseline (~$13.5K), down to VN 0.55 (~$4.7K, huge but low-ticket TikTok base). This term captures residual behavioural effects (checkout completion, payment success, returns) beyond raw AOV.
+- **Purchasing-power multiplier 0.55–1.3** — anchored to GDP/capita: SG 1.3 (≈$90.7K/cap, highest checkout completion and basket size), MY 1.0 baseline (≈$13.5K), down to VN 0.55 (≈$4.7K, huge but low-ticket TikTok base). This term captures residual behavioural effects (checkout completion, payment success, returns) beyond raw AOV.
 
 Because these multipliers are *relative*, the absolute GMV scale is then fixed by the single constant SCALE = 200, validated by the worked example in §2.2 (a 100K beauty/MY creator ≈ $7.6K).
 
@@ -227,6 +239,17 @@ The frontend is served directly from FastAPI (`/ui`) as a static single-page app
 
 ## (e) Validation / Verification
 
+### 3.0 Validation Strategy
+
+The project's outcomes are validated at four complementary levels, so that "it works" means both *correct* and *effective*:
+
+1. **Functional correctness (does the code do what it claims?)** — 110 automated `pytest` tests assert algorithm interface contracts (valid binary states, budget compliance), fitness/penalty behaviour, scoring and explainer logic, and the full REST surface (optimization, CRUD, KOL history, campaign attribution). They run in CI on every push (§3.9).
+2. **Empirical effectiveness (does it produce good portfolios?)** — controlled simulation experiments measure *solution quality* (predicted GMV) and *runtime* across pool sizes, with every algorithm compared on identical data under identical budgets (§3.1–3.6).
+3. **Data plausibility (is the input model realistic?)** — the synthetic generator's output distributions are checked back against the published benchmarks they target (e.g. generated vs real engagement rates per tier, §2.4.3), and the GMV formula is sanity-checked with a worked example (§2.2).
+4. **Reproducibility (can the results be trusted and repeated?)** — fixed seeds, shared generated pools, and multi-seed averaging make every number in this section regenerable from `experiments/` with no hidden state.
+
+The subsections below detail the experiments, simulations, and evaluations that implement levels 2–4; level 1 is summarised in §3.9.
+
 ### 3.1 Experimental Setup
 
 The primary cross-pool benchmark (`experiments/scalability.py`) runs all six algorithms at N ∈ {50, 100, 200, 500} with a **fixed budget of $5,000**, repeated over **10 seeds** (42–51). For each (algorithm, N) cell we record mean ± standard deviation of both the best predicted GMV and the wall-clock runtime.
@@ -262,7 +285,7 @@ The central experiment: all six algorithms run at N ∈ {50, 100, 200, 500} with
 
 1. **Hill Climber is the weakest at every scale, and its gap widens with N.** The best algorithm beats HC by 76% at N=50, rising monotonically to 161% at N=500. The commission-rate dataset creates a severe local-optima trap: a single random bit-flip cannot escape a portfolio that has spent its budget on a few expensive Macro/Mega creators, whereas every other method discovers mixed-tier Micro+Nano portfolios. This directly confirms the budget-exhaustion trap hypothesis.
 
-2. **GA and 2-opt Greedy Ranking lead at scale.** GA tops N=500 ($73.3K) and GR tops N=200 ($64.4K); the two are within ~2% of each other at N≥200. Greedy Ranking is not a naïve baseline here — after its ratio-sorted fill it runs 2-opt swaps and drop-improvement, which is why it stays competitive with population search while being roughly 4–10× faster (see §3.6).
+2. **GA and 2-opt Greedy Ranking lead at scale.** GA tops N=500 ($73.3K) and GR tops N=200 ($64.4K); the two are within ≈2% of each other at N≥200. Greedy Ranking is not a naïve baseline here — after its ratio-sorted fill it runs 2-opt swaps and drop-improvement, which is why it stays competitive with population search while being roughly 4–10× faster (see §3.6).
 
 3. **TS matches the leaders up to N=100.** Tabu Search ties GA/GR at N=100 ($53.2K) and is near them at N=50; we cap it at N≤100 because its full O(N²) neighbourhood enumeration scales poorly, even with the no-improvement early stopping that keeps its wall-clock time low on the tested pools.
 
@@ -276,13 +299,13 @@ See `docs/figures/scalability_gmv.png` for the GMV-vs-N curves and `docs/figures
 
 Pulling the GMV (§3.2), runtime (§3.6) and convergence (§3.5) evidence together, each algorithm occupies a distinct point in the quality/speed/robustness space:
 
-**Greedy Ranking (GR) — the efficiency champion.** Deterministic, ~0.03–0.35 s, and yet 2nd-best at N=500 and best at N=200. Its three-phase design (ratio-sort → 2-opt → drop) extracts almost all the available GMV in a single forward pass plus a handful of local repairs. Its only structural weakness is that it commits to one greedy basin: with no stochastic component it cannot discover a portfolio that requires temporarily *worsening* the GMV/cost ratio. On this dataset that basin happens to be excellent, so GR shines — but on an adversarial instance designed to punish ratio-greedy choices it would have no escape hatch.
+**Greedy Ranking (GR) — the efficiency champion.** Deterministic, ≈0.03–0.35 s, and yet 2nd-best at N=500 and best at N=200. Its three-phase design (ratio-sort → 2-opt → drop) extracts almost all the available GMV in a single forward pass plus a handful of local repairs. Its only structural weakness is that it commits to one greedy basin: with no stochastic component it cannot discover a portfolio that requires temporarily *worsening* the GMV/cost ratio. On this dataset that basin happens to be excellent, so GR shines — but on an adversarial instance designed to punish ratio-greedy choices it would have no escape hatch.
 
-**Genetic Algorithm (GA) — the quality champion at scale.** Best at N=500 ($73.3K). Crossover is the differentiator: it recombines good *partial* portfolios ("these three high-ROI Nano creators" + "this efficient Macro") that trajectory methods can only reach one flip at a time. The cost is runtime (~1.4 s at N=500, the slowest after SA) and the largest hyper-parameter surface (population, generations, tournament size, crossover/mutation rates). Greedy seeding guarantees it never does *worse* than GR's starting point, and elitism guarantees monotonic improvement.
+**Genetic Algorithm (GA) — the quality champion at scale.** Best at N=500 ($73.3K). Crossover is the differentiator: it recombines good *partial* portfolios ("these three high-ROI Nano creators" + "this efficient Macro") that trajectory methods can only reach one flip at a time. The cost is runtime (≈1.4 s at N=500, the slowest after SA) and the largest hyper-parameter surface (population, generations, tournament size, crossover/mutation rates). Greedy seeding guarantees it never does *worse* than GR's starting point, and elitism guarantees monotonic improvement.
 
 **Tabu Search (TS) — strong but quadratic.** Ties the leaders through N=100 ($53.2K) by systematically scanning the full neighbourhood and using memory to avoid cycling. The aspiration criterion prevents it from refusing a genuinely best-ever move, and early stopping keeps it fast in wall-clock terms. The hard limit is algorithmic: the O(N²) per-iteration scan makes it the wrong tool for large pools, which is why we cap it at N ≤ 100.
 
-**Simulated Annealing (SA) — robust escape, middle-tier output here.** SA is the only method with a *provable* mechanism for escaping local optima (Metropolis acceptance), and its convergence curves (§3.5) show the characteristic late jump as the temperature falls. But under its live-default evaluation budget (~21K evaluations spread over the whole landscape, starting from an *empty* portfolio rather than a greedy seed) it lands below GA/GR/TS at large N. It is the slowest method because it performs the most evaluations. SA's quality is the most *tunable* of the six — more iterations per temperature level is the direct lever (see Conclusion, future work).
+**Simulated Annealing (SA) — robust escape, middle-tier output here.** SA is the only method with a *provable* mechanism for escaping local optima (Metropolis acceptance), and its convergence curves (§3.5) show the characteristic late jump as the temperature falls. But under its live-default evaluation budget (≈21K evaluations spread over the whole landscape, starting from an *empty* portfolio rather than a greedy seed) it lands below GA/GR/TS at large N. It is the slowest method because it performs the most evaluations. SA's quality is the most *tunable* of the six — more iterations per temperature level is the direct lever (see Conclusion, future work).
 
 **Random Search (RS) — honest baseline.** With budget-aware sampling it is genuinely competitive at N=50 (it edges the field on that small, easy pool, within one σ of GA/GR/TS) and then flattens as N grows and the feasible space explodes. It has no learning mechanism, so it is exactly the lower bound a structured method should beat — and at N ≥ 200 it clearly trails GA/GR while still comfortably beating HC.
 
@@ -292,12 +315,12 @@ Pulling the GMV (§3.2), runtime (§3.6) and convergence (§3.5) evidence togeth
 
 | Algorithm | Class | Per-run cost | GMV at N=500 | Determinism | Core improvement | Main limitation | Best used when |
 |---|---|---|---|---|---|---|---|
-| Greedy Ranking | Constructive + local search | ~0.35 s (fastest) | $71.9K (2nd) | Deterministic | 2-opt + drop phases | Single greedy basin, no stochastic escape | Interactive / real-time; need a fast strong answer |
-| Genetic Algorithm | Population metaheuristic | ~1.37 s | **$73.3K (best)** | Stochastic | Greedy seed + budget-aware init + elitism | Slow; many hyper-parameters | Large pools, quality matters most, runtime relaxed |
-| Tabu Search | Memory-based local search | ~1.0 s @N=100 (O(N²)) | n/a (capped) | Mostly deterministic | Aspiration + early stop | Quadratic per-iteration scan | Small/medium pools (N ≤ 100) |
-| Simulated Annealing | Trajectory metaheuristic | ~3.96 s (slowest) | $53.4K (mid) | Stochastic | Thermal-adaptive hybrid moves | Fixed eval budget thin at large N; empty start | Rugged landscapes; when tuned for more evaluations |
-| Random Search | Unstructured sampling | ~0.57 s | $54.7K (mid-low) | Stochastic | Budget-aware inclusion prob | No learning; plateaus | Sanity-check lower bound only |
-| Hill Climber | Naïve local search | ~0.37 s | $28.1K (worst) | Stochastic | (intentionally none — control) | Trapped in first basin | Never for production; control baseline |
+| Greedy Ranking | Constructive + local search | ≈0.35 s (fastest) | $71.9K (2nd) | Deterministic | 2-opt + drop phases | Single greedy basin, no stochastic escape | Interactive / real-time; need a fast strong answer |
+| Genetic Algorithm | Population metaheuristic | ≈1.37 s | **$73.3K (best)** | Stochastic | Greedy seed + budget-aware init + elitism | Slow; many hyper-parameters | Large pools, quality matters most, runtime relaxed |
+| Tabu Search | Memory-based local search | ≈1.0 s @N=100 (O(N²)) | n/a (capped) | Mostly deterministic | Aspiration + early stop | Quadratic per-iteration scan | Small/medium pools (N ≤ 100) |
+| Simulated Annealing | Trajectory metaheuristic | ≈3.96 s (slowest) | $53.4K (mid) | Stochastic | Thermal-adaptive hybrid moves | Fixed eval budget thin at large N; empty start | Rugged landscapes; when tuned for more evaluations |
+| Random Search | Unstructured sampling | ≈0.57 s | $54.7K (mid-low) | Stochastic | Budget-aware inclusion prob | No learning; plateaus | Sanity-check lower bound only |
+| Hill Climber | Naïve local search | ≈0.37 s | $28.1K (worst) | Stochastic | (intentionally none — control) | Trapped in first basin | Never for production; control baseline |
 
 ---
 
@@ -305,7 +328,7 @@ Pulling the GMV (§3.2), runtime (§3.6) and convergence (§3.5) evidence togeth
 
 The ranking above is not absolute — it is produced by an interaction of problem and algorithm properties. The most important factors:
 
-1. **Pool size N (the dominant factor).** As N grows with the budget fixed, the pool contains *more* cheap high-ROI Micro/Nano creators, so the achievable GMV rises for every method that can exploit them — GA/GR climb from ~$42K (N=50) to ~$73K (N=500). HC cannot exploit them (it stays trapped), so its GMV is almost flat (~$24K→$28K). The consequence is that the **relative gap widens with N** (+76% → +161%): N does not just scale the numbers, it amplifies the *quality difference* between trapped and untrapped search. N also drives cost asymmetrically — TS's O(N²) scan is the only runtime that grows quadratically.
+1. **Pool size N (the dominant factor).** As N grows with the budget fixed, the pool contains *more* cheap high-ROI Micro/Nano creators, so the achievable GMV rises for every method that can exploit them — GA/GR climb from ≈$42K (N=50) to ≈$73K (N=500). HC cannot exploit them (it stays trapped), so its GMV is almost flat (≈$24K→$28K). The consequence is that the **relative gap widens with N** (+76% → +161%): N does not just scale the numbers, it amplifies the *quality difference* between trapped and untrapped search. N also drives cost asymmetrically — TS's O(N²) scan is the only runtime that grows quadratically.
 
 2. **Budget level and cost model.** The budget sets how many creators are selected and therefore the search difficulty. A *tight* budget selects very few creators, shrinking the effective search space until all methods converge to the same trivial answer (the degenerate case we avoid). A *looser* budget lets more creators fit, so portfolio composition — and thus the ability to escape the greedy basin — matters more. The commission-rate cost model (§2.4.4) is what couples cost to value and creates the trap in the first place; under a flat per-creator fee the single-biggest-KOL heuristic would win and the algorithms would barely differ.
 
@@ -313,7 +336,7 @@ The ranking above is not absolute — it is produced by an interaction of proble
 
 4. **Starting point — greedy seeding is the single biggest lever.** The three methods that begin from a ratio-sorted greedy solution (GR, GA, TS) dominate the three that begin from an empty or random portfolio (SA, HC, RS) at every large N. The convergence panels (§3.5) make this visceral: GR/GA/TS are near their final value within hundreds of evaluations, while SA must climb for thousands. A strong initial solution is worth more here than any amount of clever exploration from a cold start.
 
-5. **Evaluation budget and neighbourhood design.** For the trajectory methods, *how many* solutions are evaluated and *which* neighbours are reachable matter enormously. SA's ~21K evaluations sound like a lot, but spread over a large landscape from a cold start they under-deliver versus GA's ~7,200 *seeded, recombined* evaluations. SA's hybrid swap/multi-swap neighbourhood (§2.3.1) is precisely what lets it eventually escape — without it, SA would degenerate toward HC.
+5. **Evaluation budget and neighbourhood design.** For the trajectory methods, *how many* solutions are evaluated and *which* neighbours are reachable matter enormously. SA's ≈21K evaluations sound like a lot, but spread over a large landscape from a cold start they under-deliver versus GA's ≈7,200 *seeded, recombined* evaluations. SA's hybrid swap/multi-swap neighbourhood (§2.3.1) is precisely what lets it eventually escape — without it, SA would degenerate toward HC.
 
 6. **Problem structure (the GMV model).** The `sqrt(followers)` diminishing-returns term plus the proportional commission cost are what make mixed-tier portfolios optimal. These two modelling choices, not the algorithms, decide *whether the trap exists at all*. They are calibrated (§2.4) so the trap is realistic rather than contrived — but it is worth stating plainly that the algorithm ranking is conditional on this model.
 
@@ -323,13 +346,13 @@ The ranking above is not absolute — it is produced by an interaction of proble
 
 See `docs/figures/convergence_panels.png` (three-panel N=20/50/100, proportional budget) and `docs/figures/convergence.png` (the 8-KOL "trap" demo from `run_comparison.py`, budget=$5,000).
 
-**At N=20:** Every algorithm *except* Hill Climber converges to the same optimum (~$2,540) within a few hundred iterations — the pool is small enough that GA, TS, SA, GR and even Random Search all find it. HC alone is trapped well below (~$1,780), unable to improve its greedy portfolio with a single bit-flip.
+**At N=20:** Every algorithm *except* Hill Climber converges to the same optimum (≈$2,540) within a few hundred iterations — the pool is small enough that GA, TS, SA, GR and even Random Search all find it. HC alone is trapped well below (≈$1,780), unable to improve its greedy portfolio with a single bit-flip.
 
-**At N=50:** GA and RS settle at the top (~$8,500) quickly. SA is the interesting case: it sits on an intermediate shelf (~$6,600) for most of the run and only jumps up to ~$8,500 late (around iteration 8,000), illustrating the temperature-driven escape from a local optimum. TS and GR plateau a little lower (~$7,300–7,800), and HC is trapped at ~$5,100 and never escapes.
+**At N=50:** GA and RS settle at the top (≈$8,500) quickly. SA is the interesting case: it sits on an intermediate shelf (≈$6,600) for most of the run and only jumps up to ≈$8,500 late (around iteration 8,000), illustrating the temperature-driven escape from a local optimum. TS and GR plateau a little lower (≈$7,300–7,800), and HC is trapped at ≈$5,100 and never escapes.
 
-**At N=100:** GA, TS and GR jump to the best value (~$26K) almost immediately thanks to greedy seeding / ratio-sorting, and RS reaches a respectable ~$22K. SA climbs *steadily* from a low start but, under its fixed evaluation budget, finishes well below the leaders (~$17–18K) at this scale. HC stays flat near the bottom. This panel is the clearest picture of why SA forms a middle tier at large N in §3.2.
+**At N=100:** GA, TS and GR jump to the best value (≈$26K) almost immediately thanks to greedy seeding / ratio-sorting, and RS reaches a respectable ≈$22K. SA climbs *steadily* from a low start but, under its fixed evaluation budget, finishes well below the leaders (≈$17–18K) at this scale. HC stays flat near the bottom. This panel is the clearest picture of why SA forms a middle tier at large N in §3.2.
 
-**8-KOL trap demo (`convergence.png`):** On the hand-built scenario where one expensive Macro creator tempts a greedy solver, all global methods (SA, GA, TS) and Greedy Ranking reach ~$37–38K while HC settles slightly lower (~$36.4K), confirming the trap on a minimal, human-readable instance.
+**8-KOL trap demo (`convergence.png`):** On the hand-built scenario where one expensive Macro creator tempts a greedy solver, all global methods (SA, GA, TS) and Greedy Ranking reach ≈$37–38K while HC settles slightly lower (≈$36.4K), confirming the trap on a minimal, human-readable instance.
 
 ---
 
@@ -346,7 +369,7 @@ See `docs/figures/scalability_time.png`. Mean wall-clock seconds over 10 seeds (
 | Tabu Search | 0.52s | 1.00s | — | — |
 | Simulated Annealing | 1.44s | 1.88s | 2.53s | 3.96s |
 
-Greedy Ranking is the fastest method by an order of magnitude *and* one of the strongest at scale, making it the best quality-per-second option for interactive use. SA is the slowest because it performs the most evaluations (~143 temperature levels × 150 iterations); its runtime grows roughly linearly in N. TS's no-improvement early stopping keeps it near 1s through N=100, but its per-iteration O(N²) neighbourhood scan is why we still cap it at N≤100. GA sits in between, buying its strong large-N quality with ~1.4s at N=500.
+Greedy Ranking is the fastest method by an order of magnitude *and* one of the strongest at scale, making it the best quality-per-second option for interactive use. SA is the slowest because it performs the most evaluations (≈143 temperature levels × 150 iterations); its runtime grows roughly linearly in N. TS's no-improvement early stopping keeps it near 1s through N=100, but its per-iteration O(N²) neighbourhood scan is why we still cap it at N≤100. GA sits in between, buying its strong large-N quality with ≈1.4s at N=500.
 
 ---
 
@@ -381,8 +404,31 @@ Total: **110 tests**. Run with: `pytest tests/ --tb=short`
 
 ## (f) Conclusion
 
-This project demonstrates that every structured search method consistently outperforms the naïve random-flip Hill Climber for the KOL portfolio selection problem across all tested pool sizes (N=50 to N=500). The performance gap between HC and the best algorithm widens monotonically from 76% at N=50 to 161% at N=500, directly confirming the budget-exhaustion local-optima trap hypothesis: as more diverse KOLs become available, HC's inability to escape its initial portfolio with a single bit-flip becomes increasingly costly. At scale the lead is shared by the Genetic Algorithm and the 2-opt-augmented Greedy Ranking — GA wins at N=500 and GR at N=200, within ~2% of each other — with Tabu Search matching them up to N=100. Notably, Greedy Ranking delivers near-best quality at an order-of-magnitude lower runtime, making it the strongest choice for interactive use, while GA is the method to beat when pools grow large and runtime is less constrained. Simulated Annealing, under its live-default parameters, trails the leaders at large N; tuning its evaluation budget upward (more iterations per temperature level) is the most direct lever for closing that gap.
+### Summary
 
-Beyond the optimization core, the system adds two practically important features: **KOL metric trend tracking** (time-series snapshots enabling merchants to observe creator performance drift over time) and **campaign attribution** (closing the feedback loop between algorithm predictions and real campaign outcomes). Together, these transform the tool from a one-shot recommender into a campaign management platform.
+This project formulated TikTok Shop KOL portfolio selection as a budget-constrained 0-1 knapsack variant and delivered an end-to-end system around it: six optimization algorithms, a calibrated Southeast-Asian GMV model, a FastAPI backend with a single-page web app, explainable per-creator recommendations, KOL metric-history tracking, and closed-loop campaign attribution — all validated by a reproducible multi-seed benchmark and 110 automated tests.
 
-Future work could extend the GMV model with actual TikTok Shop API data if partner access becomes available, add multi-objective optimization (GMV + audience diversity), and explore reinforcement learning approaches that improve the GMV model from attribution feedback over time.
+### Key Findings
+
+- **Structured search decisively beats naïve local search.** Every method outperforms the random-flip Hill Climber at every pool size, and the advantage widens monotonically from **+76% (N=50) to +161% (N=500)**, directly confirming the budget-exhaustion local-optima trap hypothesis.
+- **The lead at scale is shared by GA and an improved Greedy Ranking.** GA tops N=500 ($73.3K) and the 2-opt-augmented GR tops N=200 ($64.4K), within ≈2% of each other; Tabu Search matches them through N=100.
+- **A well-engineered greedy heuristic is the efficiency champion.** GR delivers near-best quality at an order-of-magnitude lower runtime — the best quality-per-second and the right default for interactive use.
+- **Simulated Annealing is the most tunable middle-tier method**, trailing at large N only because its fixed evaluation budget starts from a cold (empty) portfolio.
+- **The single biggest lever on quality is the starting point**: greedy-seeded methods (GR/GA/TS) dominate cold-start methods (SA/HC/RS), and the relative ranking is shaped most by pool size N, the budget/cost model, and seed variance (§3.4).
+
+### Achievements & Contributions
+
+- A deployable optimizer that returns a budget-feasible, **mixed-tier** portfolio in seconds, each pick justified by 3+ human-readable reasons.
+- Concrete algorithm **improvements over textbook baselines** — SA's thermal-adaptive hybrid neighbourhood, GA's greedy seeding + budget-aware init + elitism, TS's aspiration criterion + early stopping, and GR's 2-opt + drop phases — together with a rigorous, reproducible benchmark that *quantifies* the value of each.
+- A fully **documented, calibrated synthetic data model** for SEA TikTok Shop that makes the optimization trap realistic, plus two product layers — metric-history tracking and campaign attribution — that turn a one-shot recommender into a campaign-management loop.
+
+### Reflection & Insights
+
+The most instructive surprise was that a well-engineered *greedy* method (Greedy Ranking with 2-opt) rivals population metaheuristics on this problem at a fraction of the cost — a reminder that problem-specific construction heuristics often match general-purpose search, and that "more sophisticated" is not automatically "better." The work also showed how fragile single-seed conclusions are: a stable ranking only emerged after averaging ten seeds, which reshaped how we report every result (variance-aware, with ties acknowledged). Finally, building the attribution loop made concrete that an optimizer is only as trustworthy as its objective model — motivating calibration against real outcomes as the natural next step.
+
+### Future Work
+
+- **Calibrate against reality.** Connect the (currently stubbed) TikTok Shop Partner API to replace synthetic GMV with measured affiliate sales, and report calibrated prediction accuracy through the existing attribution pipeline.
+- **Multi-objective optimization.** Optimize GMV *and* audience diversity/reach on a Pareto front rather than a single scalarized objective.
+- **Close SA's large-N gap.** Increase SA's evaluations per temperature level or add random restarts, and warm-start all solvers from the greedy seed.
+- **Learning from feedback.** Explore approaches that improve the GMV model over time from accumulated campaign-attribution data.
