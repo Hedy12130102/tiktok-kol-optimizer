@@ -64,7 +64,124 @@ def _approx_expected_gmv(country: str, category: str, followers: int,
     )
 
 
-def generate_kols(num=300, json_output_path="data/sample_kols.json",
+_COUNTRIES  = ["MY", "ID", "TH", "PH", "SG", "VN"]
+_CATEGORIES = ["beauty", "fashion", "home", "fmcg"]
+
+# Handle-like name fragments per category, for synthetic creators that need to
+# read as plausible TikTok accounts rather than "KOL_123".
+_NAME_PARTS = {
+    "beauty":  ["glowlab", "skinsense", "beautybox", "makeupdaily", "luxederma", "radiant", "glossy"],
+    "fashion": ["styledby", "wardrobe", "trendthreads", "ootd", "fitcheck", "couture", "streetfit"],
+    "home":    ["homestyle", "cozyliving", "nestit", "decorhub", "kitchenly", "casamood", "tidyhome"],
+    "fmcg":    ["dailypick", "snackbox", "freshmart", "pantrygo", "tastybites", "grocerly", "sip.daily"],
+}
+
+
+def _slice_name(category, country, n, rng):
+    base = rng.choice(_NAME_PARTS.get(category, ["creator"]))
+    return f"{base}.{country.lower()}{n:02d}"
+
+
+def _make_kol(idx, country, category, rng, name=None, source=None):
+    """Build one realistic synthetic creator record for a fixed market+category.
+
+    `rng` may be the `random` module or a `random.Random` instance (both expose
+    randint/uniform/choice), so callers control reproducibility.
+    """
+    tier_roll = rng.uniform(0, 100)
+    if tier_roll < 40.0:
+        followers = rng.randint(1000, 9999)
+    elif tier_roll < 75.0:
+        followers = rng.randint(10000, 100000)
+    elif tier_roll < 95.0:
+        followers = rng.randint(100001, 1000000)
+    else:
+        followers = rng.randint(1000001, 5000000)
+
+    # Engagement rate: tier-specific, calibrated to real TikTok benchmarks
+    # Source: Brandwatch / TTS Vibes 2025
+    #   Nano  (<10K):     avg 17-18%, range 10-30%
+    #   Micro (10K-100K): avg 6-8%,   range 4-15%
+    #   Macro (100K-1M):  avg 5-7%,   range 3-10%
+    #   Mega  (>1M):      avg 4-6%,   range 2-8%
+    if followers < 10_000:
+        base = rng.uniform(0.10, 0.30)
+    elif followers < 100_000:
+        base = rng.uniform(0.04, 0.15)
+    elif followers < 1_000_000:
+        base = rng.uniform(0.03, 0.10)
+    else:
+        base = rng.uniform(0.02, 0.08)
+    engagement_rate = round(max(0.001, min(0.30, base * rng.uniform(0.85, 1.15))), 4)
+
+    fit_score = rng.uniform(0.3, 1.0)
+
+    # ── Commission rate (replaces flat-fee cost) ──────────────────
+    # Sources: TikTok Shop Affiliate Commission Benchmarks 2025-2026
+    # Higher-tier KOLs negotiate lower commission rates because they
+    # deliver higher absolute volume.
+    #   Nano  (<10K):     25-35%  — low reach, high rate
+    #   Micro (10K-100K): 18-28%
+    #   Macro (100K-1M):  12-22%
+    #   Mega  (>1M):       5-15%  — high volume, low rate
+    if followers >= 1_000_000:
+        commission_rate = round(rng.uniform(0.05, 0.15), 4)
+    elif followers >= 100_000:
+        commission_rate = round(rng.uniform(0.12, 0.22), 4)
+    elif followers >= 10_000:
+        commission_rate = round(rng.uniform(0.18, 0.28), 4)
+    else:
+        commission_rate = round(rng.uniform(0.25, 0.35), 4)
+
+    # ── Cost = commission_rate × expected_gmv ────────────────────
+    approx_gmv = _approx_expected_gmv(country, category, followers,
+                                       engagement_rate, fit_score)
+    cost = round(commission_rate * approx_gmv, 2)
+
+    noise    = rng.randint(-int(followers * 0.05), int(followers * 0.05))
+    avg_views = max(0, int(followers * 0.3 + noise))
+    avg_likes = int(avg_views * engagement_rate)
+
+    record = {
+        "id": idx, "name": name or f"KOL_{idx}",
+        "country": country,
+        "category": category,
+        "followers": followers,
+        "engagement_rate": engagement_rate,
+        "fit_score": round(fit_score, 4),
+        "commission_rate": commission_rate,
+        "cost": cost,
+        "avg_views": avg_views,
+        "avg_likes": avg_likes,
+        "gender_ratio": round(rng.uniform(0.0, 1.0), 2),
+        "age_group": rng.choice(["18-24", "25-34", "35+"]),
+    }
+    if source:
+        record["source"] = source
+    return record
+
+
+def generate_for_slices(targets: dict, start_id: int = 1, seed: int = 42,
+                        source: str = "synthetic") -> list:
+    """Generate creators for specific (country, category) slices.
+
+    `targets` maps (country, category) -> how many creators to create.
+    Returns a list of records with sequential ids starting at `start_id`,
+    each tagged with the given `source`.
+    """
+    rng = random.Random(seed)
+    out, idx = [], start_id
+    for (country, category), count in sorted(targets.items()):
+        for n in range(1, int(count) + 1):
+            name = _slice_name(category, country, n, rng)
+            rec = _make_kol(idx, country, category, rng, name=name, source=source)
+            rec["cost_estimated"] = True   # demo price, not a negotiated quote
+            out.append(rec)
+            idx += 1
+    return out
+
+
+def generate_kols(num=2000, json_output_path="data/sample_kols.json",
                   csv_output_path="data/influencers_mock.csv", seed=42):
     if num < 1:
         raise ValueError("num must be a positive integer")
@@ -73,82 +190,11 @@ def generate_kols(num=300, json_output_path="data/sample_kols.json",
         if p and os.path.dirname(p):
             os.makedirs(os.path.dirname(p), exist_ok=True)
 
-    countries  = ["MY", "ID", "TH", "PH", "SG", "VN"]
-    categories = ["beauty", "fashion", "home", "fmcg"]
     kols = []
-
     for i in range(1, num + 1):
-        tier_roll = random.uniform(0, 100)
-        if tier_roll < 40.0:
-            followers = random.randint(1000, 9999)
-        elif tier_roll < 75.0:
-            followers = random.randint(10000, 100000)
-        elif tier_roll < 95.0:
-            followers = random.randint(100001, 1000000)
-        else:
-            followers = random.randint(1000001, 5000000)
-
-        # Engagement rate: tier-specific, calibrated to real TikTok benchmarks
-        # Source: Brandwatch / TTS Vibes 2025
-        #   Nano  (<10K):     avg 17-18%, range 10-30%
-        #   Micro (10K-100K): avg 6-8%,   range 4-15%
-        #   Macro (100K-1M):  avg 5-7%,   range 3-10%
-        #   Mega  (>1M):      avg 4-6%,   range 2-8%
-        if followers < 10_000:
-            base = random.uniform(0.10, 0.30)
-        elif followers < 100_000:
-            base = random.uniform(0.04, 0.15)
-        elif followers < 1_000_000:
-            base = random.uniform(0.03, 0.10)
-        else:
-            base = random.uniform(0.02, 0.08)
-        engagement_rate = round(max(0.001, min(0.30, base * random.uniform(0.85, 1.15))), 4)
-
-        fit_score = random.uniform(0.3, 1.0)
-
-        country = random.choice(countries)
-        category = random.choice(categories)
-
-        # ── Commission rate (replaces flat-fee cost) ──────────────────
-        # Sources: TikTok Shop Affiliate Commission Benchmarks 2025-2026
-        # Higher-tier KOLs negotiate lower commission rates because they
-        # deliver higher absolute volume.
-        #   Nano  (<10K):     25-35%  — low reach, high rate
-        #   Micro (10K-100K): 18-28%
-        #   Macro (100K-1M):  12-22%
-        #   Mega  (>1M):       5-15%  — high volume, low rate
-        if followers >= 1_000_000:
-            commission_rate = round(random.uniform(0.05, 0.15), 4)
-        elif followers >= 100_000:
-            commission_rate = round(random.uniform(0.12, 0.22), 4)
-        elif followers >= 10_000:
-            commission_rate = round(random.uniform(0.18, 0.28), 4)
-        else:
-            commission_rate = round(random.uniform(0.25, 0.35), 4)
-
-        # ── Cost = commission_rate × expected_gmv ────────────────────
-        approx_gmv = _approx_expected_gmv(country, category, followers,
-                                           engagement_rate, fit_score)
-        cost = round(commission_rate * approx_gmv, 2)
-
-        noise    = random.randint(-int(followers * 0.05), int(followers * 0.05))
-        avg_views = max(0, int(followers * 0.3 + noise))
-        avg_likes = int(avg_views * engagement_rate)
-
-        kols.append({
-            "id": i, "name": f"KOL_{i}",
-            "country": country,
-            "category": category,
-            "followers": followers,
-            "engagement_rate": engagement_rate,
-            "fit_score": round(fit_score, 4),
-            "commission_rate": commission_rate,
-            "cost": cost,
-            "avg_views": avg_views,
-            "avg_likes": avg_likes,
-            "gender_ratio": round(random.uniform(0.0, 1.0), 2),
-            "age_group": random.choice(["18-24", "25-34", "35+"])
-        })
+        country  = random.choice(_COUNTRIES)
+        category = random.choice(_CATEGORIES)
+        kols.append(_make_kol(i, country, category, random))
 
     with open(json_output_path, "w", encoding="utf-8") as f:
         json.dump(kols, f, indent=4, ensure_ascii=False)
