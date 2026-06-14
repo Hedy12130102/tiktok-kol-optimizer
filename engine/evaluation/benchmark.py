@@ -4,7 +4,6 @@ Benchmark — runs all six algorithms on the same KOL pool and returns
 a structured comparison dict.  Used by:
   - experiments/run_comparison.py  (convergence curves)
   - experiments/scalability.py     (time vs quality at different N)
-  - backend /scalability endpoint
 """
 import time
 import csv

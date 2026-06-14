@@ -1,5 +1,4 @@
 from typing import Dict, List
-import math
 from .models import KOL
 
 # Penalty weight for audience overlap — higher = stronger discouragement

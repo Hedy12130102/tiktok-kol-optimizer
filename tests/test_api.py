@@ -306,36 +306,58 @@ def test_top_kols_no_filter():
 
 
 # ════════════════════════════════════════════════════════════════
-#  POST /scalability
+#  POST /simulate-scale  (synthetic creator-pool-size simulator)
 # ════════════════════════════════════════════════════════════════
-def test_scalability_returns_all_six_algorithms():
-    response = client.post("/scalability", json={"n": 50, "budget": 5000, "seed": 42})
+def test_simulate_scale_returns_monotonic_curve():
+    response = client.post("/simulate-scale", json={"budget": 5000, "seed": 42})
     assert response.status_code == 200
     data = response.json()
-    assert data["n"] == 50
-    for algo_key in ["simulated_annealing", "hill_climber", "random_search",
-                     "genetic_algorithm", "tabu_search", "greedy_ranking"]:
-        assert algo_key in data, f"{algo_key} missing from /scalability response"
-        algo = data[algo_key]
-        assert algo["time_seconds"] >= 0
-        assert algo["total_gmv"] >= 0
-        assert algo["selected_count"] >= 0
+    pts = data["points"]
+    assert len(pts) >= 2
+    # sizes are ascending and the achievable curve is non-decreasing (nested pools)
+    assert pts == sorted(pts, key=lambda p: p["n"])
+    gmvs = [p["gmv"] for p in pts]
+    assert gmvs == sorted(gmvs), "achievable GMV must be monotonic in pool size"
+    for p in pts:
+        assert p["gmv"] >= p["baseline_gmv"] >= 0
+        assert p["selected_count"] >= 0
 
 
-def test_scalability_rejects_n_too_small():
-    response = client.post("/scalability", json={"n": 5, "budget": 5000})
+def test_simulate_scale_target_returns_needed_n():
+    response = client.post("/simulate-scale", json={"budget": 5000, "seed": 42, "target_gmv": 50000})
+    assert response.status_code == 200
+    data = response.json()
+    needed = data["needed_n"]
+    # needed_n is either None or one of the swept sizes whose gmv meets the target
+    if needed is not None:
+        hit = next(p for p in data["points"] if p["n"] == needed)
+        assert hit["gmv"] >= 50000
+
+
+def test_simulate_scale_custom_sizes():
+    response = client.post("/simulate-scale", json={"budget": 5000, "seed": 1, "sizes": [30, 120]})
+    assert response.status_code == 200
+    assert [p["n"] for p in response.json()["points"]] == [30, 120]
+
+
+def test_simulate_scale_rejects_zero_budget():
+    response = client.post("/simulate-scale", json={"budget": 0})
     assert response.status_code == 422
-    assert "n" in response.json()["detail"].lower()
 
 
-def test_scalability_rejects_n_too_large():
-    response = client.post("/scalability", json={"n": 501, "budget": 5000})
-    assert response.status_code == 422
-
-
-def test_scalability_rejects_zero_budget():
-    response = client.post("/scalability", json={"n": 50, "budget": 0})
-    assert response.status_code == 422
+# ════════════════════════════════════════════════════════════════
+#  POST /kols/reset  — restores the seed baseline
+# ════════════════════════════════════════════════════════════════
+def test_reset_restores_seed_baseline():
+    """Reset should restore the library to the seed baseline, not empty it."""
+    # Remove a known creator, then reset and confirm the library is whole again.
+    client.delete("/kol/1")
+    response = client.post("/kols/reset")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] > 0, "reset should restore creators, not clear them"
+    # The previously deleted creator is back.
+    assert client.get("/kol/1").status_code == 200
 
 
 # ═══════════════════════════════════════════════════════════

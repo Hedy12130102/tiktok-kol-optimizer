@@ -8,7 +8,7 @@ Endpoints
   GET  /kols             Filtered & paginated KOL list
   GET  /kol/{id}         Single KOL detail with scores & reasons
   GET  /top-kols         Top 10 KOLs by creator score
-  POST /scalability      Algorithm performance at different pool sizes
+  POST /simulate-scale   Synthetic pool-size simulator (achievable GMV vs creator count)
 
 Run:  uvicorn backend.main:app --reload
 Docs: http://localhost:8000/docs
@@ -18,7 +18,6 @@ import json
 import math
 import os
 import sys
-import time
 from typing import Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,7 +61,9 @@ VALID_COUNTRIES = ["MY", "ID", "TH", "PH", "SG", "VN"]
 VALID_CATEGORIES = ["beauty", "fashion", "home", "fmcg"]
 VALID_TIERS = ["Mega", "Macro", "Micro", "Nano"]
 
-DATA_PATH = os.path.join(
+# Overridable via KOL_DATA_PATH so tests run against an isolated copy instead
+# of the production library (keeps `pytest` from mutating data/sample_kols.json).
+DATA_PATH = os.environ.get("KOL_DATA_PATH") or os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "data",
     "sample_kols.json",
@@ -79,10 +80,12 @@ class OptimizeRequest(BaseModel):
     seed: int = 42
 
 
-class ScalabilityRequest(BaseModel):
-    n: int
+class SimulateScaleRequest(BaseModel):
+    """Inputs for the synthetic Creator-Pool-Size simulator."""
     budget: float
     seed: int = 42
+    sizes: List[int] = []                 # pool sizes to sweep; empty = default sweep
+    target_gmv: Optional[float] = None     # optional GMV goal → server returns needed_n
 
 
 class KOLResult(BaseModel):
@@ -101,6 +104,8 @@ class KOLResult(BaseModel):
     reasons: List[str] = []
     age_group: str = ""
     gender_ratio: float = 0.5
+    source: str = "fastmoss"          # "fastmoss" (real import) | "synthetic" (demo fill)
+    cost_estimated: bool = False      # True when cost was inferred, not a real quote
 
 
 class KOLDetail(KOLResult):
@@ -185,38 +190,55 @@ class TopKOLResponse(BaseModel):
     top_kols: List[KOLResult]
 
 
-class ScalabilityEntry(BaseModel):
-    time_seconds: float
-    total_gmv: float
+class ScalePoint(BaseModel):
+    n: int                  # pool size (number of synthetic creators)
+    gmv: float              # best achievable GMV at this size (optimized)
+    baseline_gmv: float     # random-search baseline at this size (for contrast)
     roi: float
     selected_count: int
 
 
-class ScalabilityResponse(BaseModel):
-    n: int
+class SimulateScaleResponse(BaseModel):
     budget: float
-    simulated_annealing: ScalabilityEntry
-    hill_climber: ScalabilityEntry
-    random_search: ScalabilityEntry
-    genetic_algorithm: ScalabilityEntry
-    tabu_search: ScalabilityEntry
-    greedy_ranking: ScalabilityEntry
+    seed: int
+    target_gmv: Optional[float] = None
+    needed_n: Optional[int] = None   # smallest swept size whose GMV ≥ target (None = not reached)
+    points: List[ScalePoint]
 
 
 # ════════════════════════════════════════════════════════════════
 #  Helpers
 # ════════════════════════════════════════════════════════════════
+# Presentation-only metadata (source, cost_estimated) that the engine KOL
+# dataclass deliberately doesn't carry. Refreshed on every load so any endpoint
+# building KOLResults (list, detail, optimize, top) can surface the badges.
+_KOL_META: dict = {}
+
+
+def _refresh_meta(raw_list: List[dict]):
+    _KOL_META.clear()
+    for d in raw_list:
+        _KOL_META[d["id"]] = {
+            "source": d.get("source", "fastmoss"),
+            "cost_estimated": bool(d.get("cost_estimated", False)),
+        }
+
+
 def load_kols() -> List[KOL]:
     try:
         with open(DATA_PATH, encoding="utf-8") as f:
-            return [_dict_to_kol(d) for d in json.load(f)]
+            raw = json.load(f)
+        _refresh_meta(raw)
+        return [_dict_to_kol(d) for d in raw]
     except (FileNotFoundError, json.JSONDecodeError) as e:
         raise HTTPException(status_code=500, detail=f"Data file error: {e}")
 
 
 def load_raw_kols() -> List[dict]:
     with open(DATA_PATH, encoding="utf-8") as f:
-        return json.load(f)
+        raw = json.load(f)
+    _refresh_meta(raw)
+    return raw
 
 
 _KOL_FIELDS = {"id", "name", "country", "category",
@@ -246,6 +268,8 @@ def to_kol_result(k: KOL, score: float, all_kols: List[KOL]) -> KOLResult:
         gender_ratio=k.gender_ratio,
         creator_score=score,
         reasons=generate_reasons(k, all_kols),
+        source=_KOL_META.get(k.id, {}).get("source", "fastmoss"),
+        cost_estimated=_KOL_META.get(k.id, {}).get("cost_estimated", False),
     )
 
 
@@ -442,6 +466,41 @@ def run_single_optimization(
     return results[best_key]
 
 
+def run_greedy_only(filtered: List[KOL], budget: float, seed: int, scores: List[float]) -> AlgorithmResult:
+    """Greedy Ranking only — used by the Safe plan, which always picks Greedy.
+
+    Running all six algorithms just to discard five of them is wasted work that
+    grows with pool size and budget, so the Safe plan calls this directly.
+    """
+    gr_state, _, gr_hist = greedy_ranking(filtered, budget, seed=seed)
+    return build_algorithm_result("Greedy Ranking", gr_state, _downsample(gr_hist), filtered, scores)
+
+
+def run_plan_optimizers(
+    filtered: List[KOL],
+    budget: float,
+    seed: int,
+    scores: List[float],
+    sa_T0: float = 15000.0,
+    sa_max_iter: int = 150,
+) -> Dict[str, AlgorithmResult]:
+    """Run only the consistently strong solvers (SA, GA, Greedy) for the plans.
+
+    The Aggressive/Balanced plans just need the best portfolio under a criterion;
+    the weak baselines (Random Search, Hill Climber) never win, and Tabu Search's
+    O(N^2) cost dominates runtime — so they're skipped here. The full six-way
+    comparison still runs in /optimize for the Technical benchmark view.
+    """
+    sa_state, _, sa_hist = simulated_annealing(filtered, budget, seed=seed, T0=sa_T0, max_iter=sa_max_iter)
+    ga_state, _, ga_hist = genetic_algorithm(filtered, budget, seed=seed)
+    gr_state, _, gr_hist = greedy_ranking(filtered, budget, seed=seed)
+    return {
+        "simulated_annealing": build_algorithm_result("Simulated Annealing", sa_state, _downsample(sa_hist), filtered, scores),
+        "genetic_algorithm":   build_algorithm_result("Genetic Algorithm",   ga_state, _downsample(ga_hist), filtered, scores),
+        "greedy_ranking":      build_algorithm_result("Greedy Ranking",       gr_state, _downsample(gr_hist), filtered, scores),
+    }
+
+
 # ════════════════════════════════════════════════════════════════
 #  Endpoints
 # ════════════════════════════════════════════════════════════════
@@ -499,6 +558,25 @@ def connect_integration(req: ApiConnectionRequest):
         "message": f"Integration '{req.integration_type}' is not yet available."
     }
 
+# Cap how many candidates the metaheuristics actually search over. A large
+# connected creator library can hold hundreds of creators in a single
+# market+category slice; running six algorithms (and ×3 for the plan variants)
+# over all of them is slow and unnecessary. We pre-screen to the top-K by
+# CreatorScore — a realistic shortlisting step that keeps /optimize responsive
+# no matter how big the library grows, while leaving the search space large
+# enough that the algorithms still produce meaningfully different solutions.
+CANDIDATE_CAP = 80
+
+
+def shortlist_candidates(kols: List[KOL], scores: List[float], cap: int = CANDIDATE_CAP):
+    """Return the top-`cap` creators by CreatorScore, with their aligned scores."""
+    if len(kols) <= cap:
+        return kols, scores
+    top = sorted(range(len(kols)), key=lambda i: scores[i], reverse=True)[:cap]
+    top.sort()
+    return [kols[i] for i in top], [scores[i] for i in top]
+
+
 @app.post("/optimize", response_model=OptimizeResponse)
 def optimize(req: OptimizeRequest):
     """Run all six algorithms and return the best KOL matrix."""
@@ -530,6 +608,7 @@ def optimize(req: OptimizeRequest):
         )
 
     scores = compute_creator_score(filtered)
+    filtered, scores = shortlist_candidates(filtered, scores)
 
     sa_state, _, sa_hist = simulated_annealing(filtered, req.budget, seed=req.seed)
     hc_state, _, hc_hist = hill_climber(filtered, req.budget, seed=req.seed)
@@ -608,11 +687,12 @@ def optimize_plans(req: OptimizeRequest):
         )
 
     scores = compute_creator_score(filtered)
+    filtered, scores = shortlist_candidates(filtered, scores)
 
     # ── Aggressive: 120% budget → pick algorithm with max GMV ──────────────
     aggressive_budget = req.budget * 1.2
-    agg_results = run_all_optimizations(filtered, aggressive_budget, req.seed, scores,
-                                        sa_T0=20000.0, sa_max_iter=300)
+    agg_results = run_plan_optimizers(filtered, aggressive_budget, req.seed, scores,
+                                      sa_T0=20000.0, sa_max_iter=200)
     agg_key = max(agg_results, key=lambda k: agg_results[k].total_gmv)
     agg_result = agg_results[agg_key]
     agg_tier = compute_tier_breakdown(agg_result.selected_kols)
@@ -621,8 +701,8 @@ def optimize_plans(req: OptimizeRequest):
     # ── Balanced: 100% budget → pick algorithm with max sqrt(GMV × ROI) ────
     #    Geometric mean of GMV and ROI rewards both scale and efficiency;
     #    it differs from Aggressive whenever ROI varies meaningfully across algos.
-    bal_results = run_all_optimizations(filtered, req.budget, req.seed + 1, scores,
-                                        sa_T0=15000.0, sa_max_iter=150)
+    bal_results = run_plan_optimizers(filtered, req.budget, req.seed + 1, scores,
+                                      sa_T0=15000.0, sa_max_iter=150)
     bal_key = max(bal_results,
                   key=lambda k: math.sqrt(bal_results[k].total_gmv * max(bal_results[k].roi, 0.01)))
     bal_result = bal_results[bal_key]
@@ -633,9 +713,7 @@ def optimize_plans(req: OptimizeRequest):
     #    Greedy sorts by GMV/cost and greedily fills the budget, giving the
     #    provably best cost-effectiveness ratio in the pool.
     safe_budget = req.budget * 0.8
-    safe_results = run_all_optimizations(filtered, safe_budget, req.seed + 2, scores,
-                                         sa_T0=8000.0, sa_max_iter=100)
-    safe_result = safe_results["greedy_ranking"]   # always best ROI
+    safe_result = run_greedy_only(filtered, safe_budget, req.seed + 2, scores)   # always best ROI
     safe_tier = compute_tier_breakdown(safe_result.selected_kols)
     safe_overlap = detect_audience_overlap(safe_result.selected_kols, filtered)
 
@@ -778,51 +856,74 @@ def top_kols(
     return TopKOLResponse(country=country, category=category, top_kols=top)
 
 
-@app.post("/scalability", response_model=ScalabilityResponse)
-def scalability(req: ScalabilityRequest):
+_DEFAULT_SCALE_SIZES = [25, 50, 100, 200, 300, 500]
+
+
+@app.post("/simulate-scale", response_model=SimulateScaleResponse)
+def simulate_scale(req: SimulateScaleRequest):
     """
-    Run all 6 algorithms on a freshly generated pool of size n
-    and return execution time + final GMV for each.
+    Creator-Pool-Size simulator — answers "how big a creator library do I need
+    to reach my target GMV?".
+
+    Runs entirely on freshly generated **synthetic** creators (a generic mixed
+    pool), independent of the user's real library. For each pool size it reports
+    the achievable GMV (best of the strong solvers) plus a random-search baseline,
+    so the frontend can plot achievable-GMV-vs-pool-size and read off the size
+    needed to hit a target.
     """
-    if req.n < 10 or req.n > 500:
-        raise HTTPException(status_code=422, detail="n must be between 10 and 500")
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
 
+    # Normalise the requested sweep: clamp to [10, 500], de-dup, cap count, sort.
+    sizes = sorted({max(10, min(500, int(s))) for s in (req.sizes or _DEFAULT_SCALE_SIZES)})[:8]
+    if not sizes:
+        sizes = list(_DEFAULT_SCALE_SIZES)
+
+    # Generate ONE synthetic pool at the largest size, then slice it for the
+    # smaller sizes → a clean monotonic curve from a single generation pass.
     import tempfile
     from data.generator import generate_kols
+    max_n = sizes[-1]
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_json = os.path.join(tmpdir, f"kols_{req.n}_{req.seed}.json")
-        tmp_csv  = os.path.join(tmpdir, f"kols_{req.n}_{req.seed}.csv")
         kol_dicts = generate_kols(
-            num=req.n,
-            json_output_path=tmp_json,
-            csv_output_path=tmp_csv,
+            num=max_n,
+            json_output_path=os.path.join(tmpdir, f"scale_{max_n}_{req.seed}.json"),
+            csv_output_path=os.path.join(tmpdir, f"scale_{max_n}_{req.seed}.csv"),
             seed=req.seed,
         )
-    kols = [_dict_to_kol(d) for d in kol_dicts]
+    full_pool = [_dict_to_kol(d) for d in kol_dicts]
 
-    def run(algo_fn) -> ScalabilityEntry:
-        t0 = time.perf_counter()
-        state, _, _hist = algo_fn(kols, req.budget, seed=req.seed)
-        elapsed = time.perf_counter() - t0
-        summary = summarize_state(state, kols)
-        return ScalabilityEntry(
-            time_seconds=round(elapsed, 4),
-            total_gmv=round(summary["total_gmv"], 2),
-            roi=round(summary["roi"], 4),
-            selected_count=int(summary["selected_count"]),
-        )
+    points: List[ScalePoint] = []
+    best_run = 0.0   # running max → monotonic achievable curve (pools are nested)
+    base_run = 0.0
+    for n in sizes:
+        pool = full_pool[:n]
+        # Achievable = best of the strong solvers AND the baseline (skip O(N^2) Tabu).
+        ga = summarize_state(genetic_algorithm(pool, req.budget, seed=req.seed)[0], pool)
+        gr = summarize_state(greedy_ranking(pool, req.budget, seed=req.seed)[0], pool)
+        rs = summarize_state(random_search(pool, req.budget, seed=req.seed)[0], pool)
+        cand = max((ga, gr, rs), key=lambda s: s["total_gmv"])
+        best_run = max(best_run, cand["total_gmv"])
+        base_run = max(base_run, rs["total_gmv"])
+        points.append(ScalePoint(
+            n=n,
+            gmv=round(best_run, 2),
+            baseline_gmv=round(base_run, 2),
+            roi=round(cand["roi"], 4),
+            selected_count=int(cand["selected_count"]),
+        ))
 
-    return ScalabilityResponse(
-        n=req.n,
+    needed_n = None
+    if req.target_gmv and req.target_gmv > 0:
+        hit = next((p.n for p in points if p.gmv >= req.target_gmv), None)
+        needed_n = hit
+
+    return SimulateScaleResponse(
         budget=req.budget,
-        simulated_annealing=run(simulated_annealing),
-        hill_climber=run(hill_climber),
-        random_search=run(random_search),
-        genetic_algorithm=run(genetic_algorithm),
-        tabu_search=run(tabu_search),
-        greedy_ranking=run(greedy_ranking),
+        seed=req.seed,
+        target_gmv=req.target_gmv,
+        needed_n=needed_n,
+        points=points,
     )
 
 

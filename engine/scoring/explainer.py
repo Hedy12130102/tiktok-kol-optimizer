@@ -82,7 +82,7 @@ def generate_reasons(kol: KOL, all_kols: List[KOL]) -> List[str]:
     if kol.engagement_rate >= avg_eng * 1.2:
         reasons.append(
             f"Engagement rate {eng_pct}% is {round((kol.engagement_rate/avg_eng - 1)*100)}% "
-            f"above the {category} category average"
+            f"above the candidate-pool average"
         )
     else:
         reasons.append(
