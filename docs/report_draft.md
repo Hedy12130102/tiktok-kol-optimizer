@@ -215,11 +215,41 @@ The generator is fully reproducible — `generate_kols(num=300, seed=42)` (CLI: 
 
 ### 2.5 System Architecture
 
-The system is a four-layer monolith — a single-page client, a FastAPI service that both serves that client and exposes the typed REST API, a pure-Python optimization engine, and a JSON-file data layer with offline data-prep scripts (`experiments/gen_architecture.py` regenerates the diagram).
+The system is a four-layer monolith — a single-page client, a FastAPI service that both serves that client and exposes the typed REST API, a pure-Python optimization engine, and a JSON-file data layer seeded offline from real exports. The flowchart below traces an end-to-end optimization request through those layers:
 
-![System architecture diagram](figures/system_architecture.png)
+```mermaid
+flowchart TD
+    U(["Browser SPA<br/>vanilla JS · Tailwind"])
+    API["FastAPI service<br/>main.py · crud.py · campaigns.py"]
 
-*Figure. Layered architecture and request flow. The browser SPA talks to FastAPI over HTTP/JSON and is itself served back as static files (no separate web server). The API layer (`main.py` optimization + simulator, `crud.py` creator management, `campaigns.py` attribution) makes in-process calls into the optimization engine and reads/writes the JSON stores. The engine (six optimizers, CreatorScore/Explainer/ROI, the fitness objective, and the SEA GMV model with top-K candidate shortlisting) is dependency-free. The data layer is seeded offline by `build_seed.py` (from real FastMoss CSV/Excel) and `fill_slices.py` (synthetic slice fill), with `generator.py` producing the synthetic pools used by the simulator and benchmarks. Integration connectors (TikTok Creator Marketplace, TikTok Shop, third-party analytics) are roadmap stubs.*
+    subgraph ENGINE["Optimization engine · pure Python (no web/DB deps)"]
+        direction TB
+        SC["Filter pool by market/category<br/>+ shortlist top-K by CreatorScore"]
+        OPT["Run 6 optimizers<br/>SA · HC · RS · GA · Tabu · Greedy"]
+        BEST["Select best portfolio<br/>max predicted GMV"]
+        EXP["Explainer + ROI + tiers"]
+        SC --> OPT --> BEST --> EXP
+    end
+
+    subgraph DATA["Data layer · JSON persistence"]
+        direction LR
+        K[("sample_kols.json")]
+        H[("kol_history.json")]
+        C[("campaigns.json")]
+    end
+
+    PREP["Data prep (offline)<br/>build_seed.py · fill_slices.py · generator.py"]
+    EXT["Integration stubs (roadmap)<br/>TikTok Creator Mktplace · Shop · 3rd-party"]
+
+    U -->|"HTTP / JSON request"| API
+    API -.->|"serves SPA (static)"| U
+    API -->|"/optimize · /simulate-scale"| SC
+    EXP -->|"best KOL matrix + reasons"| API
+    API <-->|"CRUD · import · backfill · attribution"| DATA
+    SC -.->|"read library"| K
+    PREP -->|"seed / fill"| K
+    EXT -.->|"future sync"| API
+```
 
 Key architectural choices: the engine takes no web/database dependencies, so it is unit-testable in isolation and reusable from both the API and the `experiments/` harness; candidate shortlisting (top-K by CreatorScore before optimization) decouples `/optimize` latency from library size; and all persistence is plain JSON behind a small data-access seam (`KOL_DATA_PATH` is env-overridable), which is what lets the test suite run against an isolated dataset without touching production data.
 
