@@ -62,7 +62,6 @@ Structured search beats naïve hill-climbing by **50–200%**, and the advantage
 - [Tech Stack](#-tech-stack)
 - [Features](#features)
 - [Algorithms](#algorithms)
-- [How It Works](#how-it-works)
 - [Project Structure](#project-structure)
 - [Quick Start](#quick-start)
 - [API Overview](#api-overview)
@@ -194,28 +193,6 @@ Greedy-initialized deterministic local search with short-term memory.
 ### Greedy Ranking (Deterministic Baseline)
 
 Sorts KOLs by predicted GMV-per-dollar and greedily fills the budget. Instant and deterministic. Serves as an upper-bound reference for what a simple heuristic achieves.
-
----
-
-## How It Works
-
-From the merchant's point of view, the whole tool is five simple steps with one feedback loop:
-
-```mermaid
-flowchart TD
-    A([Start]) --> B["1 · Set your budget, target market<br/>and product category"]
-    B --> C["2 · The app finds the best mix of<br/>creators that fits your budget"]
-    C --> D["3 · Review the picks — each with a<br/>plain-English reason"]
-    D --> E{Enough creators<br/>in your niche?}
-    E -->|No| F["Import your own creators, or use the<br/>simulator to see how many you need"]
-    F --> B
-    E -->|Yes| G["4 · Launch the campaign"]
-    G --> H["5 · Enter the actual sales when it ends"]
-    H --> I["See predicted vs actual accuracy —<br/>each campaign sharpens the next"]
-    I --> A
-```
-
-Under the hood it's a four-layer app — browser SPA → FastAPI → a dependency-free Python optimization engine → JSON storage. See [`docs/report_draft.md`](docs/report_draft.md) §2.5 for the technical system architecture.
 
 ---
 

@@ -42,24 +42,6 @@ This is the 0-1 knapsack problem, which is NP-hard in the general case and requi
 3. Enable merchants to track creator metric changes over time and validate campaign predictions against real outcomes.
 4. Produce a reproducible, multi-seed benchmark across pool sizes N ∈ {50, 100, 200, 500}.
 
-### 1.4 How a Merchant Uses the System
-
-From the merchant's point of view the whole tool is five simple steps with one feedback loop:
-
-```mermaid
-flowchart TD
-    A([Start]) --> B["1 · Set your budget, target market<br/>and product category"]
-    B --> C["2 · The app finds the best mix of<br/>creators that fits your budget"]
-    C --> D["3 · Review the picks — each with a<br/>plain-English reason"]
-    D --> E{Enough creators<br/>in your niche?}
-    E -->|No| F["Import your own creators, or use the<br/>simulator to see how many you need"]
-    F --> B
-    E -->|Yes| G["4 · Launch the campaign"]
-    G --> H["5 · Enter the actual sales when it ends"]
-    H --> I["See predicted vs actual accuracy —<br/>each campaign sharpens the next"]
-    I --> A
-```
-
 ---
 
 ## (d) Methodology
