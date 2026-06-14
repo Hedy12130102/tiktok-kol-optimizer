@@ -97,8 +97,6 @@ def test_summarize_state_no_overlap():
 
 def test_gmv_differs_by_category():
     """Different categories must produce different GMV for identical KOL metrics."""
-    baseline = KOL(id=1, name="T", country="MY", category="beauty",
-                   followers=100000, engagement_rate=0.1, fit_score=0.7, cost=1000)
     gmv_values = set()
     for cat in ["beauty", "fashion", "home", "fmcg"]:
         k = KOL(id=1, name="T", country="MY", category=cat,

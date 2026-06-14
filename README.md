@@ -49,7 +49,7 @@ Structured search beats naïve hill-climbing by **50–200%**, and the advantage
 | **Optimization engine** | Pure-Python implementations of Simulated Annealing, Genetic Algorithm, Tabu Search, Hill Climber, Random Search, Greedy Ranking |
 | **Backend API** | FastAPI + Pydantic — 20+ typed REST endpoints, auto-generated Swagger docs |
 | **Frontend** | Single-page app (vanilla JS + Tailwind CSS), served directly by FastAPI — no separate web server |
-| **Data & analytics** | NumPy / Pandas; JSON persistence; CSV/Excel import (openpyxl) + export; calibrated SEA market model |
+| **Data & analytics** | NumPy; JSON persistence; CSV/Excel import (openpyxl) + export; calibrated SEA market model |
 | **Experiments** | Matplotlib figure pipeline; seeded, fully reproducible benchmarks |
 | **Quality** | 111 pytest tests (isolated from production data); GitHub Actions CI on every push |
 

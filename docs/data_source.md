@@ -214,14 +214,14 @@ else:                          # Mega
 engagement_rate = max(0.001, min(0.30, base * random.uniform(0.85, 1.15)))
 ```
 
-Generated distributions vs real benchmarks:
+Generated distributions vs real benchmarks (measured on a 5,000-KOL pool, `seed=42`):
 
 | Tier | Generated avg | Generated range | Real benchmark |
 |------|--------------|-----------------|----------------|
-| Nano | 19.6% | 10.0% – 30.0% | 17–18% |
-| Micro | 9.8% | 4.2% – 17.1% | 6–8% |
-| Macro | 7.1% | 3.3% – 10.5% | 5–7% |
-| Mega | 5.7% | 2.9% – 8.2% | 4–6% |
+| Nano | 19.7% | 8.6% – 30.0% | 17–18% |
+| Micro | 9.5% | 3.5% – 16.7% | 6–8% |
+| Macro | 6.4% | 2.6% – 11.3% | 5–7% |
+| Mega | 5.1% | 1.7% – 8.8% | 4–6% |
 
 **Why the previous formula failed:** The old formula `max(0.01, 100000/followers)` returned values ≥1.0 for any creator below 100K followers, causing `min(0.3, ...)` to cap all Nano and Micro creators at exactly 30%. This eliminated the tier-based differentiation that the optimizer relies on.
 

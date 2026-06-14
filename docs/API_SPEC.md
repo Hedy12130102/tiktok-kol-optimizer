@@ -48,8 +48,8 @@ Returned inside any endpoint that returns KOL data.
 | `engagement_rate` | `float` | Historical engagement rate, range 0–1 | `0.0842` |
 | `fit_score` | `float` | Cultural fit score for target market, range 0–1 | `0.76` |
 | `cost` | `float` | Hiring fee in USD | `1200.00` |
-| `expected_gmv` | `float` | Predicted GMV (see data_source.md for formula) | `15966.40` |
-| `tier` | `str` | KOL tier classification | `"Micro"` |
+| `expected_gmv` | `float` | Predicted GMV (see data_source.md for formula) | `10790.85` |
+| `tier` | `str` | KOL tier classification (250K followers → Macro) | `"Macro"` |
 | `creator_score` | `float` | Composite score 0–1 | `0.683` |
 | `reasons` | `List[str]` | Why this KOL is recommended (≥3 items) | `["High engagement rate", ...]` |
 | `source` | `str` | Data provenance: `fastmoss` (real import) or `synthetic` (demo fill) | `"fastmoss"` |

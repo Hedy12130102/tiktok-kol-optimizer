@@ -17,9 +17,7 @@ Docs: http://localhost:8000/docs
 import json
 import math
 import os
-import random
 import sys
-import time
 from typing import Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware

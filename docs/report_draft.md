@@ -204,10 +204,10 @@ The 300-creator population is sampled as follows, with each choice justified aga
 
 | Tier | Generated avg | Generated range | Real benchmark (Brandwatch/TTS 2025) |
 |------|--------------|-----------------|--------------------------------------|
-| Nano  | 19.6% | 10.0–30.0% | 17–18% |
-| Micro | 9.8%  | 4.2–17.1%  | 6–8%   |
-| Macro | 7.1%  | 3.3–10.5%  | 5–7%   |
-| Mega  | 5.7%  | 2.9–8.2%   | 4–6%   |
+| Nano  | 19.7% | 8.6–30.0% | 17–18% |
+| Micro | 9.5%  | 3.5–16.7% | 6–8%   |
+| Macro | 6.4%  | 2.6–11.3% | 5–7%   |
+| Mega  | 5.1%  | 1.7–8.8%  | 4–6%   |
 
 The generated averages run slightly hot but preserve the correct ordering and spread — the property the optimizer actually depends on. (An earlier `100000/followers` formula was discarded because it capped *every* sub-100K creator at exactly 30%, destroying tier differentiation; see `data_source.md §6.2`.)
 - **Fit score — U[0.3, 1.0].** Bounded above zero because any creator a brand is even considering has at least minimal market alignment.

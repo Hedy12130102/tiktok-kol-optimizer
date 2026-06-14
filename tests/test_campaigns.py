@@ -5,9 +5,6 @@ Run:  pytest tests/test_campaigns.py -v
 """
 import os
 import sys
-import json
-import tempfile
-import shutil
 
 import pytest
 
