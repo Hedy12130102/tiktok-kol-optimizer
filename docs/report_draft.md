@@ -215,25 +215,13 @@ The generator is fully reproducible — `generate_kols(num=300, seed=42)` (CLI: 
 
 ### 2.5 System Architecture
 
-```
-frontend/index.html  (single-page app, vanilla JS, Tailwind CSS)
-        │
-        │  HTTP/JSON
-        ▼
-backend/main.py      (FastAPI, /optimize endpoint, 6 algorithms)
-backend/crud.py      (KOL CRUD, /kols/{id}/history, /simulate-update)
-backend/campaigns.py (Campaign Attribution CRUD)
-        │
-        ├── engine/optimization/  (SA, HC, RS, GA, TS, GR)
-        ├── engine/scoring/       (CreatorScore, Explainer, ROI)
-        ├── engine/fitness.py     (objective function)
-        └── data/
-            ├── sample_kols.json
-            ├── kol_history.json  (metric snapshots over time)
-            └── campaigns.json    (attribution records)
-```
+The system is a four-layer monolith — a single-page client, a FastAPI service that both serves that client and exposes the typed REST API, a pure-Python optimization engine, and a JSON-file data layer with offline data-prep scripts (`experiments/gen_architecture.py` regenerates the diagram).
 
-The frontend is served directly from FastAPI (`/ui`) as a static single-page application, requiring no separate web server.
+![System architecture diagram](figures/system_architecture.png)
+
+*Figure. Layered architecture and request flow. The browser SPA talks to FastAPI over HTTP/JSON and is itself served back as static files (no separate web server). The API layer (`main.py` optimization + simulator, `crud.py` creator management, `campaigns.py` attribution) makes in-process calls into the optimization engine and reads/writes the JSON stores. The engine (six optimizers, CreatorScore/Explainer/ROI, the fitness objective, and the SEA GMV model with top-K candidate shortlisting) is dependency-free. The data layer is seeded offline by `build_seed.py` (from real FastMoss CSV/Excel) and `fill_slices.py` (synthetic slice fill), with `generator.py` producing the synthetic pools used by the simulator and benchmarks. Integration connectors (TikTok Creator Marketplace, TikTok Shop, third-party analytics) are roadmap stubs.*
+
+Key architectural choices: the engine takes no web/database dependencies, so it is unit-testable in isolation and reusable from both the API and the `experiments/` harness; candidate shortlisting (top-K by CreatorScore before optimization) decouples `/optimize` latency from library size; and all persistence is plain JSON behind a small data-access seam (`KOL_DATA_PATH` is env-overridable), which is what lets the test suite run against an isolated dataset without touching production data.
 
 ---
 
@@ -243,7 +231,7 @@ The frontend is served directly from FastAPI (`/ui`) as a static single-page app
 
 The project's outcomes are validated at four complementary levels, so that "it works" means both *correct* and *effective*:
 
-1. **Functional correctness (does the code do what it claims?)** — 110 automated `pytest` tests assert algorithm interface contracts (valid binary states, budget compliance), fitness/penalty behaviour, scoring and explainer logic, and the full REST surface (optimization, CRUD, KOL history, campaign attribution). They run in CI on every push (§3.9).
+1. **Functional correctness (does the code do what it claims?)** — 111 automated `pytest` tests assert algorithm interface contracts (valid binary states, budget compliance), fitness/penalty behaviour, scoring and explainer logic, and the full REST surface (optimization, CRUD, KOL history, campaign attribution). They run in CI on every push (§3.9).
 2. **Empirical effectiveness (does it produce good portfolios?)** — controlled simulation experiments measure *solution quality* (predicted GMV) and *runtime* across pool sizes, with every algorithm compared on identical data under identical budgets (§3.1–3.6).
 3. **Data plausibility (is the input model realistic?)** — the synthetic generator's output distributions are checked back against the published benchmarks they target (e.g. generated vs real engagement rates per tier, §2.4.3), and the GMV formula is sanity-checked with a worked example (§2.2).
 4. **Reproducibility (can the results be trusted and repeated?)** — fixed seeds, shared generated pools, and multi-seed averaging make every number in this section regenerable from `experiments/` with no hidden state.

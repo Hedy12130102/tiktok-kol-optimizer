@@ -62,6 +62,7 @@ Structured search beats naïve hill-climbing by **50–200%**, and the advantage
 - [Tech Stack](#-tech-stack)
 - [Features](#features)
 - [Algorithms](#algorithms)
+- [Architecture](#architecture)
 - [Project Structure](#project-structure)
 - [Quick Start](#quick-start)
 - [API Overview](#api-overview)
@@ -196,6 +197,16 @@ Sorts KOLs by predicted GMV-per-dollar and greedily fills the budget. Instant an
 
 ---
 
+## Architecture
+
+A four-layer monolith: a single-page client, a FastAPI service that both serves that client and exposes the typed REST API, a dependency-free Python optimization engine, and a JSON-file data layer seeded offline from real exports.
+
+![System architecture](docs/figures/system_architecture.png)
+
+The engine takes no web/database dependencies (unit-testable in isolation and reused by the `experiments/` harness); candidate shortlisting decouples `/optimize` latency from library size; and persistence sits behind a small, env-overridable data seam (`KOL_DATA_PATH`) so tests run against an isolated dataset. Regenerate the diagram with `python experiments/gen_architecture.py`.
+
+---
+
 ## Project Structure
 
 ```
@@ -239,7 +250,8 @@ tiktok-kol-optimizer/
 ├── experiments/
 │   ├── run_comparison.py    # Convergence curve experiment (6 algorithms)
 │   ├── scalability.py       # N=50 to 500 scaling benchmark (6 algorithms)
-│   └── gen_figures.py       # Generates all docs/figures/ charts
+│   ├── gen_figures.py       # Generates convergence / comparison charts
+│   └── gen_architecture.py  # Generates the system architecture diagram
 ├── tests/
 │   ├── conftest.py          # Isolates tests onto a throwaway data dir (env-path override)
 │   ├── test_fitness.py
