@@ -22,7 +22,7 @@
 5. [GET /kols](#5-get-kols)
 6. [GET /kol/{id}](#6-get-kolid)
 7. [GET /top-kols](#7-get-top-kols)
-8. [POST /scalability](#8-post-scalability)
+8. [POST /simulate-scale](#8-post-simulate-scale)
 9. [Creator CRUD](#9-creator-crud)
 10. [KOL History Tracking](#10-kol-history-tracking)
 11. [Campaign Attribution](#11-campaign-attribution)
@@ -52,6 +52,8 @@ Returned inside any endpoint that returns KOL data.
 | `tier` | `str` | KOL tier classification | `"Micro"` |
 | `creator_score` | `float` | Composite score 0–1 | `0.683` |
 | `reasons` | `List[str]` | Why this KOL is recommended (≥3 items) | `["High engagement rate", ...]` |
+| `source` | `str` | Data provenance: `fastmoss` (real import) or `synthetic` (demo fill) | `"fastmoss"` |
+| `cost_estimated` | `bool` | `true` when `cost` was inferred from follower tier, not a real quote | `false` |
 
 ---
 
@@ -254,33 +256,40 @@ Returns the top 10 KOLs ranked by `creator_score`.
 
 ---
 
-## 8. POST /scalability
+## 8. POST /simulate-scale
 
-Runs all six algorithms on a dynamically generated pool of size `n`.
+**Creator Pool Simulator.** Generates a *synthetic* creator pool, then reports the achievable GMV as the pool grows — answering "how many creators do I need to reach a target GMV?". This is a planning tool on synthetic data and is independent of the real seed library used by `/optimize`.
+
+For each size it optimizes a sliced subpool (best of GA / Greedy / Random, with a running-max so the curve is monotonic since pools are nested) and records a random-search baseline for contrast. Tabu Search is excluded (its O(N²) scan is too slow for a sweep).
 
 **Request Body:**
 ```json
-{ "n": 200, "budget": 5000.0, "seed": 42 }
+{ "budget": 5000.0, "seed": 42, "sizes": [25, 50, 100, 200, 300, 500], "target_gmv": 150000.0 }
 ```
 
-| Field | Validation |
-|-------|------------|
-| `n` | 10–500 |
-| `budget` | > 0 |
+| Field | Validation | Default |
+|-------|------------|---------|
+| `budget` | > 0 | — |
+| `seed` | int | 42 |
+| `sizes` | list of ints (clamped to 10–500) | `[25, 50, 100, 200, 300, 500]` |
+| `target_gmv` | optional, > 0 | `null` |
 
 **Response `200 OK`:**
 ```json
 {
-  "n": 200,
   "budget": 5000.0,
-  "simulated_annealing": { "time_seconds": 2.34, "total_gmv": 48200.0, "roi": 10.15, "selected_count": 6 },
-  "hill_climber":        { "time_seconds": 0.81, "total_gmv": 41300.0, "roi": 8.63,  "selected_count": 4 },
-  "random_search":       { "time_seconds": 0.52, "total_gmv": 27800.0, "roi": 5.96,  "selected_count": 3 },
-  "genetic_algorithm":   { "time_seconds": 1.73, "total_gmv": 45600.0, "roi": 9.82,  "selected_count": 5 },
-  "tabu_search":         { "time_seconds": 0.94, "total_gmv": 43100.0, "roi": 9.34,  "selected_count": 5 },
-  "greedy_ranking":      { "time_seconds": 0.03, "total_gmv": 39800.0, "roi": 8.51,  "selected_count": 5 }
+  "seed": 42,
+  "target_gmv": 150000.0,
+  "needed_n": 300,
+  "points": [
+    { "n": 25,  "gmv": 18450.0,  "baseline_gmv": 12100.0, "roi": 3.69, "selected_count": 4 },
+    { "n": 50,  "gmv": 31200.0,  "baseline_gmv": 19800.0, "roi": 6.24, "selected_count": 6 },
+    { "n": 300, "gmv": 152300.0, "baseline_gmv": 96400.0, "roi": 30.46, "selected_count": 14 }
+  ]
 }
 ```
+
+`needed_n` is the smallest swept size whose optimized `gmv` ≥ `target_gmv`, or `null` if the target is not reached by the largest size.
 
 ---
 
@@ -317,7 +326,7 @@ Optional fields default to computed or null values.
 
 ### PUT /kols/{id}
 
-Update an existing creator. Automatically records a metric snapshot to `kol_history.json` before applying changes.
+Update an existing creator. Automatically records a metric snapshot to `kol_history.json` before applying changes. Supplying a positive `cost` also sets `cost_estimated=false` (a manual edit is treated as a real quote).
 
 **Request Body:** Same fields as POST /kols/add (all optional — only updated fields need to be included).
 
@@ -335,36 +344,65 @@ Delete a creator.
 
 ---
 
-### POST /kols/import-csv
+### POST /kols/import  (alias: POST /kols/import-csv)
 
-Bulk import creators from a CSV file upload.
+Bulk import creators from a **CSV or Excel (`.xlsx`)** file upload. Headers are matched flexibly (FastMoss / spreadsheet variants like "Follower Count", "Engagement Rate (%)", "Region"), and values may be formatted (`250K`, `1.2M`, `$1,200`, `8%`).
 
 **Content-Type:** `multipart/form-data`  
-**Field:** `file` — `.csv` file
+**Fields:**
+- `file` — `.csv` or `.xlsx` (legacy `.xls` is rejected)
+- `default_country` *(optional)* — fills rows lacking a country
+- `default_category` *(optional)* — fills rows lacking a category
 
-Required CSV columns: `name, country, category, followers, engagement_rate, cost`  
-Optional CSV columns: `fit_score, avg_views, avg_likes, gender_ratio, age_group, tiktok_url`
+Required per row (or supplied as a default): `name, country, category, followers, engagement_rate`. `cost` is **estimated from follower tier when absent** and the row is flagged `cost_estimated=true`. When `default_country`/`default_category` are omitted they are inferred from the file name (e.g. `Beauty_MY.xlsx` → category=beauty, country=MY).
 
 **Response `200 OK`:**
 ```json
-{ "imported": 45, "failed": 2, "errors": ["Row 3: invalid engagement_rate"] }
+{
+  "message": "Imported 48 creators · 48 had no price (cost estimated from followers)",
+  "added": 48,
+  "estimated_cost": 48,
+  "applied_defaults": { "country": "MY", "category": "beauty" },
+  "errors": ["Row 5 (Glow Co): unknown country 'JP' (need one of MY, ID, TH, PH, SG, VN)"],
+  "total": 478
+}
+```
+
+---
+
+### POST /kols/backfill-costs
+
+Bulk-replace estimated prices with real negotiated quotes. Each row identifies an existing creator — by `id`, `tiktok_url`, or `name` (matched in that priority) — and supplies a real `cost`/`price`. Matched creators get the real price and are set `cost_estimated=false`.
+
+**Content-Type:** `multipart/form-data`  
+**Field:** `file` — `.csv` or `.xlsx` with a price column plus an id/tiktok_url/name column
+
+**Response `200 OK`:**
+```json
+{
+  "message": "Updated 42 creator prices · 3 rows didn't match any creator",
+  "updated": 42,
+  "no_price_rows": 0,
+  "unmatched": ["mystery_handle"],
+  "unmatched_count": 3
+}
 ```
 
 ---
 
 ### POST /kols/reset
 
-Clears all creators from the database.
+Restores the library to the curated **seed baseline** (`data/seed_kols.json`) — the initialization library every merchant starts from — rather than emptying it. Also clears metric history. If no seed baseline exists, the library is cleared to empty instead.
 
-**Response `200 OK`:** `{ "reset": true }`
+**Response `200 OK`:** `{ "message": "Library restored to seed baseline", "total": 430 }`
 
 ---
 
-### GET /kols/template
+### GET /kols/template  ·  GET /kols/template-excel
 
-Returns a downloadable CSV template file.
+Return a downloadable import template — `/kols/template` as CSV, `/kols/template-excel` as `.xlsx` — with the expected headers and one example row.
 
-**Response `200 OK`:** CSV file download (`Content-Disposition: attachment`).
+**Response `200 OK`:** File download (`Content-Disposition: attachment`).
 
 ---
 

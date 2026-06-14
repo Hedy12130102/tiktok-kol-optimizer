@@ -43,18 +43,19 @@ pytest tests/ -v
 | `GET` | `/kols` | Filtered & paginated KOL list |
 | `GET` | `/kol/{id}` | Single KOL detail with scores & reasons |
 | `GET` | `/top-kols` | Top 10 KOLs by creator score |
-| `POST` | `/scalability` | Algorithm performance at different pool sizes |
+| `POST` | `/simulate-scale` | Creator Pool Simulator — synthetic GMV-vs-pool-size curve + creators needed for a target GMV |
 
 ### Creator CRUD
 
 | Method | Path | Purpose |
 |--------|------|---------|
 | `POST` | `/kols/add` | Add a creator |
-| `PUT` | `/kols/{id}` | Update a creator (auto-snapshots metrics) |
+| `PUT` | `/kols/{id}` | Update a creator (auto-snapshots metrics; a manual cost clears the estimate flag) |
 | `DELETE` | `/kols/{id}` | Delete a creator |
-| `POST` | `/kols/import-csv` | Bulk import from CSV upload |
-| `POST` | `/kols/reset` | Clear entire database |
-| `GET` | `/kols/template` | Download CSV template |
+| `POST` | `/kols/import` (alias `/kols/import-csv`) | Bulk import from CSV **or Excel** (FastMoss-friendly) |
+| `POST` | `/kols/backfill-costs` | Bulk-replace estimated prices with real quotes (match by id / tiktok_url / name) |
+| `POST` | `/kols/reset` | Restore the curated seed baseline |
+| `GET` | `/kols/template` · `/kols/template-excel` | Download a CSV / Excel import template |
 | `GET` | `/kols/export` | Export all creators as CSV |
 
 ### KOL History Tracking
