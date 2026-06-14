@@ -62,7 +62,7 @@ Structured search beats naïve hill-climbing by **50–200%**, and the advantage
 - [Tech Stack](#-tech-stack)
 - [Features](#features)
 - [Algorithms](#algorithms)
-- [Architecture](#architecture)
+- [How It Works](#how-it-works)
 - [Project Structure](#project-structure)
 - [Quick Start](#quick-start)
 - [API Overview](#api-overview)
@@ -197,43 +197,25 @@ Sorts KOLs by predicted GMV-per-dollar and greedily fills the budget. Instant an
 
 ---
 
-## Architecture
+## How It Works
 
-A four-layer monolith: a single-page client, a FastAPI service that both serves that client and exposes the typed REST API, a dependency-free Python optimization engine, and a JSON-file data layer seeded offline from real exports. The flowchart traces an end-to-end optimization request:
+From the merchant's point of view, the whole tool is five simple steps with one feedback loop:
 
 ```mermaid
 flowchart TD
-    U(["Browser SPA<br/>vanilla JS · Tailwind"])
-    API["FastAPI service<br/>main.py · crud.py · campaigns.py"]
-
-    subgraph ENGINE["Optimization engine · pure Python"]
-        direction TB
-        SC["Filter + shortlist<br/>top-K by CreatorScore"]
-        OPT["Run 6 optimizers<br/>SA · HC · RS · GA · Tabu · Greedy"]
-        BEST["Select best portfolio<br/>max predicted GMV"]
-        EXP["Explainer + ROI + tiers"]
-        SC --> OPT --> BEST --> EXP
-    end
-
-    subgraph DATA["Data layer · JSON"]
-        direction LR
-        K[("sample_kols.json")]
-        H[("kol_history.json")]
-        C[("campaigns.json")]
-    end
-
-    PREP["Data prep (offline)<br/>build_seed.py · fill_slices.py · generator.py"]
-
-    U -->|"HTTP / JSON request"| API
-    API -.->|"serves SPA (static)"| U
-    API -->|"/optimize · /simulate-scale"| SC
-    EXP -->|"best KOL matrix + reasons"| API
-    API <-->|"CRUD · import · backfill · attribution"| DATA
-    SC -.->|"read library"| K
-    PREP -->|"seed / fill"| K
+    A([Start]) --> B["1 · Set your budget, target market<br/>and product category"]
+    B --> C["2 · The app finds the best mix of<br/>creators that fits your budget"]
+    C --> D["3 · Review the picks — each with a<br/>plain-English reason"]
+    D --> E{Enough creators<br/>in your niche?}
+    E -->|No| F["Import your own creators, or use the<br/>simulator to see how many you need"]
+    F --> B
+    E -->|Yes| G["4 · Launch the campaign"]
+    G --> H["5 · Enter the actual sales when it ends"]
+    H --> I["See predicted vs actual accuracy —<br/>each campaign sharpens the next"]
+    I --> A
 ```
 
-The engine takes no web/database dependencies (unit-testable in isolation and reused by the `experiments/` harness); candidate shortlisting decouples `/optimize` latency from library size; and persistence sits behind a small, env-overridable data seam (`KOL_DATA_PATH`) so tests run against an isolated dataset.
+Under the hood it's a four-layer app — browser SPA → FastAPI → a dependency-free Python optimization engine → JSON storage. See [`docs/report_draft.md`](docs/report_draft.md) §2.5 for the technical system architecture.
 
 ---
 

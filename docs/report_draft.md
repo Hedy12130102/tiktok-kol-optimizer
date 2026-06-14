@@ -42,6 +42,24 @@ This is the 0-1 knapsack problem, which is NP-hard in the general case and requi
 3. Enable merchants to track creator metric changes over time and validate campaign predictions against real outcomes.
 4. Produce a reproducible, multi-seed benchmark across pool sizes N ∈ {50, 100, 200, 500}.
 
+### 1.4 How a Merchant Uses the System
+
+From the merchant's point of view the whole tool is five simple steps with one feedback loop:
+
+```mermaid
+flowchart TD
+    A([Start]) --> B["1 · Set your budget, target market<br/>and product category"]
+    B --> C["2 · The app finds the best mix of<br/>creators that fits your budget"]
+    C --> D["3 · Review the picks — each with a<br/>plain-English reason"]
+    D --> E{Enough creators<br/>in your niche?}
+    E -->|No| F["Import your own creators, or use the<br/>simulator to see how many you need"]
+    F --> B
+    E -->|Yes| G["4 · Launch the campaign"]
+    G --> H["5 · Enter the actual sales when it ends"]
+    H --> I["See predicted vs actual accuracy —<br/>each campaign sharpens the next"]
+    I --> A
+```
+
 ---
 
 ## (d) Methodology
@@ -215,41 +233,12 @@ The generator is fully reproducible — `generate_kols(num=300, seed=42)` (CLI: 
 
 ### 2.5 System Architecture
 
-The system is a four-layer monolith — a single-page client, a FastAPI service that both serves that client and exposes the typed REST API, a pure-Python optimization engine, and a JSON-file data layer seeded offline from real exports. The flowchart below traces an end-to-end optimization request through those layers:
+The system is a four-layer monolith:
 
-```mermaid
-flowchart TD
-    U(["Browser SPA<br/>vanilla JS · Tailwind"])
-    API["FastAPI service<br/>main.py · crud.py · campaigns.py"]
-
-    subgraph ENGINE["Optimization engine · pure Python (no web/DB deps)"]
-        direction TB
-        SC["Filter pool by market/category<br/>+ shortlist top-K by CreatorScore"]
-        OPT["Run 6 optimizers<br/>SA · HC · RS · GA · Tabu · Greedy"]
-        BEST["Select best portfolio<br/>max predicted GMV"]
-        EXP["Explainer + ROI + tiers"]
-        SC --> OPT --> BEST --> EXP
-    end
-
-    subgraph DATA["Data layer · JSON persistence"]
-        direction LR
-        K[("sample_kols.json")]
-        H[("kol_history.json")]
-        C[("campaigns.json")]
-    end
-
-    PREP["Data prep (offline)<br/>build_seed.py · fill_slices.py · generator.py"]
-    EXT["Integration stubs (roadmap)<br/>TikTok Creator Mktplace · Shop · 3rd-party"]
-
-    U -->|"HTTP / JSON request"| API
-    API -.->|"serves SPA (static)"| U
-    API -->|"/optimize · /simulate-scale"| SC
-    EXP -->|"best KOL matrix + reasons"| API
-    API <-->|"CRUD · import · backfill · attribution"| DATA
-    SC -.->|"read library"| K
-    PREP -->|"seed / fill"| K
-    EXT -.->|"future sync"| API
-```
+1. **Client** — a single-page app (`frontend/index.html`, vanilla JS + Tailwind) with the Landing, Optimizer, Creators, Campaigns, and Creator Pool Simulator views.
+2. **API** — FastAPI (`main.py` optimization + simulator, `crud.py` creator management, `campaigns.py` attribution) that both serves the SPA as static files and exposes the typed REST surface; integration connectors (TikTok Creator Marketplace, TikTok Shop, third-party analytics) are roadmap stubs.
+3. **Optimization engine** — pure Python with no web/DB dependencies: `engine/optimization/` (the six solvers), `engine/scoring/` (CreatorScore, Explainer, ROI), `engine/fitness.py` (the objective), and `engine/models.py` (KOL, tiers, the SEA GMV model, candidate shortlisting).
+4. **Data** — JSON persistence (`sample_kols.json`, `kol_history.json`, `campaigns.json`), seeded offline by `build_seed.py` (from real FastMoss CSV/Excel) and `fill_slices.py` (synthetic slice fill), with `generator.py` producing the synthetic pools used by the simulator and benchmarks.
 
 Key architectural choices: the engine takes no web/database dependencies, so it is unit-testable in isolation and reusable from both the API and the `experiments/` harness; candidate shortlisting (top-K by CreatorScore before optimization) decouples `/optimize` latency from library size; and all persistence is plain JSON behind a small data-access seam (`KOL_DATA_PATH` is env-overridable), which is what lets the test suite run against an isolated dataset without touching production data.
 
