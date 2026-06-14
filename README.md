@@ -62,6 +62,7 @@ Structured search beats naïve hill-climbing by **50–200%**, and the advantage
 - [Tech Stack](#-tech-stack)
 - [Features](#features)
 - [Algorithms](#algorithms)
+- [How It Works](#how-it-works)
 - [Project Structure](#project-structure)
 - [Quick Start](#quick-start)
 - [API Overview](#api-overview)
@@ -193,6 +194,16 @@ Greedy-initialized deterministic local search with short-term memory.
 ### Greedy Ranking (Deterministic Baseline)
 
 Sorts KOLs by predicted GMV-per-dollar and greedily fills the budget. Instant and deterministic. Serves as an upper-bound reference for what a simple heuristic achieves.
+
+---
+
+## How It Works
+
+From the merchant's point of view, the whole tool is a handful of simple steps with one feedback loop — set a budget, let the app pick the best mix of creators, review the reasons, launch, then record real sales so each campaign sharpens the next.
+
+<p align="center">
+  <img src="docs/figures/user_flowchart.png" alt="User flowchart: how merchants use the KOL / Creator Budget Optimizer" width="460">
+</p>
 
 ---
 

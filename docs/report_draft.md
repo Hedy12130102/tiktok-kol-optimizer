@@ -42,6 +42,12 @@ This is the 0-1 knapsack problem, which is NP-hard in the general case and requi
 3. Enable merchants to track creator metric changes over time and validate campaign predictions against real outcomes.
 4. Produce a reproducible, multi-seed benchmark across pool sizes N ∈ {50, 100, 200, 500}.
 
+### 1.4 How a Merchant Uses the System
+
+From the merchant's point of view the tool is a handful of simple steps with one feedback loop: set a budget, market and category; let the app find the best mix of creators; review the picks (each with a plain-English reason); launch; then record the actual sales so each campaign sharpens the next. If a niche has too few creators, the merchant imports their own or uses the Creator Pool Simulator to gauge how many are needed.
+
+![User flowchart — how merchants use the optimizer](figures/user_flowchart.png)
+
 ---
 
 ## (d) Methodology
