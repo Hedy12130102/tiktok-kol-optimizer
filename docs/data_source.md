@@ -20,7 +20,7 @@ So the shipped library is **real data with a synthetic top-up** (430 creators to
 
 ## 1. KOL Schema
 
-The synthetic generator (`data/generator.py`) writes `data/sample_kols.json` and `data/influencers_mock.csv`; real imports (`build_seed.py`, the `/kols/import` endpoint) write the same schema with a few extra provenance fields. Each record contains:
+The synthetic generator (`data/generator.py`) writes `data/sample_kols.json`; real imports (`build_seed.py`, the `/kols/import` endpoint) write the same schema with a few extra provenance fields. Each record contains:
 
 | Field | Type | Range / Values | Description |
 |-------|------|----------------|-------------|
@@ -290,11 +290,10 @@ python data/fill_slices.py --min 15                                  # + synthet
 | `data/fastmoss/` | XLSX | Raw FastMoss exports + their normalized form (`normalized/creators_*.xlsx`) that `build_seed.py` ingests |
 | `data/kol_history.json` | JSON array of snapshots | `GET /kols/{id}/history`, `POST /kols/{id}/simulate-update`; auto-written on every `PUT /kols/{id}` |
 | `data/campaigns.json` | JSON array | Campaign Attribution endpoints (`/campaigns`); persists predicted vs actual GMV records |
-| `data/influencers_mock.csv` | CSV with header | CSV mirror of the **synthetic** `generator.py` output (manual inspection, BI tooling) |
-| `experiments/plots/` | PNG + CSV | Convergence charts, scalability results |
+| `experiments/plots/` | CSV | `scalability_results.csv` (benchmark data; the dir is otherwise git-ignored, regenerable artefacts) |
 | `docs/figures/` | PNG | Report-ready figures |
 
-`influencers_mock.csv` is the CSV mirror of a synthetic `generator.py` run; it is **not** identical to the shipped `sample_kols.json` (which is the real FastMoss seed). `build_seed.py` / `fill_slices.py` write only the JSON library, not the CSV.
+The shipped `sample_kols.json` is the real FastMoss seed + synthetic slice-fill; `build_seed.py` / `fill_slices.py` write only the JSON library. `generator.py` writes a JSON pool (and, optionally, a CSV mirror) only when invoked directly — nothing in the running app reads a CSV.
 
 ### 8.1 kol_history.json Schema
 

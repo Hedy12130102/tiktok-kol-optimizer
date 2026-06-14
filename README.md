@@ -234,8 +234,7 @@ tiktok-kol-optimizer/
 │   ├── seed_kols.json       # Restore baseline that /kols/reset returns to
 │   ├── kol_history.json     # KOL metric snapshots over time
 │   ├── campaigns.json       # Saved campaign attribution records
-│   ├── fastmoss/            # Raw + normalized FastMoss exports the seed is built from
-│   └── influencers_mock.csv # Synthetic generator output (CSV mirror)
+│   └── fastmoss/            # Raw + normalized FastMoss exports the seed is built from
 ├── experiments/
 │   ├── run_comparison.py    # Convergence curve experiment (6 algorithms)
 │   ├── scalability.py       # N=50 to 500 scaling benchmark (6 algorithms)

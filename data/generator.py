@@ -182,7 +182,12 @@ def generate_for_slices(targets: dict, start_id: int = 1, seed: int = 42,
 
 
 def generate_kols(num=2000, json_output_path="data/sample_kols.json",
-                  csv_output_path="data/influencers_mock.csv", seed=42):
+                  csv_output_path=None, seed=42):
+    """Generate a synthetic KOL pool.
+
+    Writes JSON to `json_output_path`. A CSV mirror is written only if
+    `csv_output_path` is given (optional — nothing in the app reads it).
+    """
     if num < 1:
         raise ValueError("num must be a positive integer")
     random.seed(seed)
@@ -196,12 +201,14 @@ def generate_kols(num=2000, json_output_path="data/sample_kols.json",
         category = random.choice(_CATEGORIES)
         kols.append(_make_kol(i, country, category, random))
 
-    with open(json_output_path, "w", encoding="utf-8") as f:
-        json.dump(kols, f, indent=4, ensure_ascii=False)
-    with open(csv_output_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=kols[0].keys())
-        writer.writeheader()
-        writer.writerows(kols)
+    if json_output_path:
+        with open(json_output_path, "w", encoding="utf-8") as f:
+            json.dump(kols, f, indent=4, ensure_ascii=False)
+    if csv_output_path:
+        with open(csv_output_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=kols[0].keys())
+            writer.writeheader()
+            writer.writerows(kols)
     print(f"Generated {num} KOLs -> {json_output_path}")
     return kols
 
