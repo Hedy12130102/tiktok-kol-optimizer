@@ -1016,6 +1016,11 @@
                     <p id="c-pred-gmv" class="font-headline-lg text-headline-lg text-on-surface font-bold">—</p>
                 </div>
             </div>
+            <!-- Self-calibration status -->
+            <div id="calibration-banner" class="hidden glass-card rounded-xl px-lg py-3 mb-lg flex items-center gap-3">
+                <span class="material-symbols-outlined text-[20px] text-secondary flex-shrink-0">tune</span>
+                <p id="calibration-text" class="text-[12.5px] text-on-surface-variant leading-snug"></p>
+            </div>
             <!-- Empty state -->
             <div id="campaigns-empty" class="flex flex-col items-center justify-center py-20 text-center">
                 <span class="material-symbols-outlined text-[56px] text-outline mb-lg">analytics</span>
@@ -2491,12 +2496,33 @@
         }
 
         async function loadCampaigns() {
+            loadCalibration();
             try {
                 const r = await fetch(`${API}/campaigns`);
                 if (!r.ok) throw new Error('Failed');
                 const d = await r.json();
                 renderCampaigns(Array.isArray(d) ? d : (d.campaigns || []));
             } catch (e) { toast('Failed to load campaigns', 'err'); }
+        }
+
+        async function loadCalibration() {
+            const banner = document.getElementById('calibration-banner');
+            const text = document.getElementById('calibration-text');
+            if (!banner || !text) return;
+            try {
+                const r = await fetch(`${API}/calibration`);
+                if (!r.ok) { banner.classList.add('hidden'); return; }
+                const d = await r.json();
+                if (!d.campaigns_used) {
+                    text.innerHTML = '<b>Self-calibrating predictions.</b> Record the actual sales on completed campaigns and future GMV forecasts auto-adjust to match your real results. No adjustment yet.';
+                } else {
+                    const pct = Math.round((d.global_factor - 1) * 100);
+                    const dir = pct === 0 ? 'no net change' : (pct > 0 ? `+${pct}%` : `${pct}%`);
+                    const n = d.campaigns_used;
+                    text.innerHTML = `<b>Predictions calibrated</b> from <b>${n}</b> completed campaign${n > 1 ? 's' : ''} — GMV forecasts adjusted <b>${dir}</b> (×${d.global_factor}) to match your actual results.`;
+                }
+                banner.classList.remove('hidden');
+            } catch (e) { banner.classList.add('hidden'); }
         }
 
         function renderCampaigns(campaigns) {
