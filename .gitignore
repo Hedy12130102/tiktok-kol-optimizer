@@ -15,3 +15,8 @@ node_modules/
 data/temp_*.json
 data/temp_*.csv
 
+# Multi-tenant runtime data — per-merchant libraries and user credentials.
+# Never commit: contains password hashes and tenant data.
+data/users.json
+data/tenants/
+

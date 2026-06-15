@@ -1,18 +1,17 @@
 # engine/optimization/greedy_ranking.py
 """
-Greedy Ranking Algorithm — LP relaxation approximation for KOL selection.
+Greedy Ranking — knapsack-style construction + local polish.
 
-Phase 1: Sort by GMV/cost ratio, add greedily until budget exhausted.
-Phase 2: 2-OPT swap — replace selected KOL with unselected if fitness improves.
-Phase 3: Drop improvement — remove any KOL whose absence improves fitness
-         (handles the case where all KOLs fit within budget but some cause
-         excessive audience overlap penalty).
+Builds the best of a GMV-descending and a GMV/cost-ratio-descending greedy fill
+(see engine.optimization._common.greedy_init — ratio ordering alone maximises
+ROI not GMV and badly underperforms), then polishes with 2-OPT swap / ADD / DROP.
 """
 import copy
 from typing import List, Optional, Tuple
 
 from engine.models import KOL
 from engine.fitness import fitness
+from engine.optimization._common import greedy_init, local_improve
 
 
 def greedy_ranking(
@@ -21,82 +20,32 @@ def greedy_ranking(
     seed: Optional[int] = None,
 ) -> Tuple[List[int], float, List[float]]:
     """
-    Greedy Ranking with 2-OPT swap + drop improvement.
+    Greedy Ranking with multi-strategy seeding + 2-OPT / ADD / DROP polish.
+    Deterministic — `seed` is accepted only for a uniform solver signature.
     """
     n = len(kols)
-    history: List[float] = []
 
-    # ── Phase 1: Greedy build ────────────────────────────────────────
-    order = sorted(
-        range(n),
-        key=lambda i: kols[i].expected_gmv() / kols[i].cost if kols[i].cost > 0 else 0,
-        reverse=True,
-    )
-    current = [0] * n
+    # Multi-strategy greedy fill, then 2-OPT / ADD / DROP polish.
+    best_state = local_improve(greedy_init(kols, budget), kols, budget)
+    best_cost = fitness(best_state, kols, budget)
+
+    # ── Build an ascending convergence history from the GMV-descending fill,
+    #    ending at the final polished value (cosmetic, for the chart). ──
+    order = sorted(range(n), key=lambda i: kols[i].expected_gmv(), reverse=True)
+    state = [0] * n
     total_cost = 0.0
-
+    history: List[float] = []
     for i in order:
         if total_cost + kols[i].cost <= budget:
-            current[i] = 1
+            state[i] = 1
             total_cost += kols[i].cost
-        history.append(-fitness(current, kols, budget))
+        history.append(-fitness(state, kols, budget))
+    history.append(-best_cost)
 
-    current_cost = fitness(current, kols, budget)
-
-    # ── Phase 2: 2-OPT swap improvement ─────────────────────────────
-    improved = True
-    for _ in range(20):
-        if not improved:
-            break
-        improved = False
-
-        selected = [i for i, x in enumerate(current) if x == 1]
-        unselected = [i for i, x in enumerate(current) if x == 0]
-
-        for drop in selected:
-            for add in unselected:
-                new_total = total_cost - kols[drop].cost + kols[add].cost
-                if new_total > budget:
-                    continue
-                nb = copy.copy(current)
-                nb[drop] = 0
-                nb[add] = 1
-                nb_cost = fitness(nb, kols, budget)
-                if nb_cost < current_cost:
-                    current = nb
-                    current_cost = nb_cost
-                    total_cost = new_total
-                    improved = True
-                    history.append(-current_cost)
-                    break
-            if improved:
-                break
-
-    # ── Phase 3: Drop improvement ─────────────────────────────────
-    # When all KOLs fit within budget, Phase 2 has no unselected KOLs
-    # to swap in. This phase drops any KOL whose removal reduces the
-    # audience overlap penalty more than it costs in GMV.
-    drop_improved = True
-    while drop_improved:
-        drop_improved = False
-        selected = [i for i, x in enumerate(current) if x == 1]
-        for drop in selected:
-            nb = copy.copy(current)
-            nb[drop] = 0
-            nb_cost = fitness(nb, kols, budget)
-            if nb_cost < current_cost:
-                current = nb
-                current_cost = nb_cost
-                total_cost -= kols[drop].cost
-                drop_improved = True
-                history.append(-current_cost)
-                break
-
-    # ── Pad history up to 400 points for consistent chart display ──
-    # Only pad when the history is short (small pool); don't pad beyond 400.
+    # Pad up to ~400 points for consistent chart display (don't pad beyond 400).
     if history and len(history) < 400:
         pad_val = history[-1]
         target = min(400, len(history) + 100)
         history.extend([pad_val] * max(0, target - len(history)))
 
-    return copy.copy(current), current_cost, history
+    return copy.copy(best_state), best_cost, history

@@ -362,6 +362,30 @@
 
 <body class="font-body-base text-on-background antialiased overflow-hidden">
 
+    <!-- ═══════════════════════ AUTH GATE (login / register) ═══════════════════════ -->
+    <div id="auth-overlay" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(10,15,20,.72);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:24px">
+        <div class="glass-card" style="width:100%;max-width:400px;border-radius:20px;padding:30px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+                <div style="width:34px;height:34px;border-radius:9px;background:#000;display:flex;align-items:center;justify-content:center">
+                    <span style="color:#fff;font-weight:800;font-size:12px;letter-spacing:-.5px">tiko</span>
+                </div>
+                <span style="font-weight:800;font-size:17px;color:var(--on-surface,#1f2933)">KOL Optimizer</span>
+            </div>
+            <p id="auth-title" style="font-size:20px;font-weight:800;margin:14px 0 2px">Sign in</p>
+            <p id="auth-sub" style="font-size:12.5px;color:#7B8794;margin-bottom:18px">Each merchant gets a private, isolated creator library.</p>
+            <div style="display:flex;flex-direction:column;gap:12px">
+                <input id="auth-email" type="email" placeholder="you@company.com" autocomplete="username" class="form-input" style="width:100%" />
+                <input id="auth-password" type="password" placeholder="Password (min 6 chars)" autocomplete="current-password" class="form-input" style="width:100%" onkeydown="if(event.key==='Enter')authSubmit()" />
+                <p id="auth-error" style="display:none;font-size:12px;color:#ef4444;margin:-4px 0 0"></p>
+                <button id="auth-submit" onclick="authSubmit()" class="btn btn-primary" style="width:100%;justify-content:center;padding:11px">Sign in</button>
+            </div>
+            <p style="font-size:12.5px;color:#7B8794;text-align:center;margin-top:16px">
+                <span id="auth-switch-text">No account yet?</span>
+                <button onclick="authToggleMode()" id="auth-switch-btn" style="color:#0FB5AE;font-weight:700;background:none;border:none;cursor:pointer">Create one</button>
+            </p>
+        </div>
+    </div>
+
     <!-- ═══════════════════════ LANDING PAGE (merchant front door) ═══════════════════════ -->
     <div id="landing-page">
         <div class="lp-blob b1"></div>
@@ -635,9 +659,16 @@
                         class="font-title-md text-title-md">Campaigns</span></div>
             </div>
         </nav>
-        <footer class="mt-auto pt-lg border-t border-outline-variant/30 text-center">
-            <p class="text-[10px] text-on-surface-variant/40 font-data-mono tracking-tighter">tiko · AI-powered KOL optimization</p>
-        </footer>
+        <div class="mt-auto pt-md border-t border-outline-variant/30">
+            <div class="flex items-center gap-2 px-xs py-2">
+                <span class="material-symbols-outlined text-[18px] text-on-surface-variant">account_circle</span>
+                <span id="account-email" class="text-[12px] text-on-surface-variant truncate flex-1" title="">—</span>
+                <button onclick="logout()" title="Log out" class="text-outline hover:text-error transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">logout</span>
+                </button>
+            </div>
+            <p class="text-[10px] text-on-surface-variant/40 font-data-mono tracking-tighter text-center pt-1">tiko · AI-powered KOL optimization</p>
+        </div>
     </aside>
 
     <!-- ═══════════ MAIN ═══════════ -->
@@ -1506,6 +1537,8 @@
         // ══════════ LANDING PAGE ══════════
         // Enter the console: fade the landing out, then take it out of the layout.
         function enterApp() {
+            if (!AUTH_TOKEN) { showAuth(); return; }
+            setAccountEmail();
             const lp = document.getElementById('landing-page');
             if (!lp) return;
             lp.classList.remove('lp-show');
@@ -1539,6 +1572,86 @@
         })();
 
         const API = 'http://localhost:8000';
+
+        // ══════════ AUTH (multi-tenant) ══════════
+        let AUTH_TOKEN = localStorage.getItem('kol_token') || null;
+        let AUTH_EMAIL = localStorage.getItem('kol_email') || null;
+        let authMode = 'login';   // 'login' | 'register'
+
+        // Inject the bearer token into every API call; auto-logout on a 401 (except auth calls).
+        (function () {
+            const _fetch = window.fetch.bind(window);
+            window.fetch = function (url, opts) {
+                opts = opts || {};
+                const u = typeof url === 'string' ? url : (url && url.url) || '';
+                if (AUTH_TOKEN && (u.startsWith(API) || u.startsWith('/'))) {
+                    opts.headers = Object.assign({}, opts.headers, { 'Authorization': 'Bearer ' + AUTH_TOKEN });
+                }
+                return _fetch(url, opts).then(r => {
+                    if (r.status === 401 && typeof u === 'string' && !u.includes('/auth/')) handleAuthExpired();
+                    return r;
+                });
+            };
+        })();
+
+        function showAuth() {
+            authMode = 'login'; renderAuthMode();
+            document.getElementById('auth-overlay').style.display = 'flex';
+        }
+        function hideAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
+        function renderAuthMode() {
+            const reg = authMode === 'register';
+            document.getElementById('auth-title').textContent = reg ? 'Create your account' : 'Sign in';
+            document.getElementById('auth-submit').textContent = reg ? 'Create account' : 'Sign in';
+            document.getElementById('auth-switch-text').textContent = reg ? 'Already have an account?' : 'No account yet?';
+            document.getElementById('auth-switch-btn').textContent = reg ? 'Sign in' : 'Create one';
+            document.getElementById('auth-password').setAttribute('autocomplete', reg ? 'new-password' : 'current-password');
+            const e = document.getElementById('auth-error'); e.style.display = 'none';
+        }
+        function authToggleMode() { authMode = authMode === 'login' ? 'register' : 'login'; renderAuthMode(); }
+        async function authSubmit() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const errEl = document.getElementById('auth-error');
+            if (!email || !password) { errEl.textContent = 'Enter your email and password.'; errEl.style.display = 'block'; return; }
+            const btn = document.getElementById('auth-submit'); btn.disabled = true;
+            try {
+                const r = await fetch(`${API}/auth/${authMode}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const d = await r.json();
+                if (!r.ok) { errEl.textContent = d.detail || 'Something went wrong.'; errEl.style.display = 'block'; return; }
+                AUTH_TOKEN = d.token; AUTH_EMAIL = d.email;
+                localStorage.setItem('kol_token', AUTH_TOKEN); localStorage.setItem('kol_email', AUTH_EMAIL);
+                setAccountEmail();
+                hideAuth();
+                document.getElementById('auth-password').value = '';
+                enterApp();
+                if (typeof loadDashboard === 'function') loadDashboard();
+                else if (typeof loadTable === 'function') loadTable();
+                toast(authMode === 'register' ? 'Account created' : 'Signed in');
+            } catch (e) { errEl.textContent = 'Cannot reach the server.'; errEl.style.display = 'block'; }
+            finally { btn.disabled = false; }
+        }
+        function setAccountEmail() {
+            const el = document.getElementById('account-email');
+            if (el) { el.textContent = AUTH_EMAIL || '—'; el.title = AUTH_EMAIL || ''; }
+        }
+        function logout() {
+            AUTH_TOKEN = null; AUTH_EMAIL = null;
+            localStorage.removeItem('kol_token'); localStorage.removeItem('kol_email');
+            setAccountEmail();
+            backToLanding();
+            showAuth();
+        }
+        function handleAuthExpired() {
+            if (!AUTH_TOKEN) return;
+            AUTH_TOKEN = null; localStorage.removeItem('kol_token');
+            toast('Session expired — please sign in again', 'err');
+            showAuth();
+        }
+
         const TIER_BADGE = { Mega: 'tier-mega', Macro: 'tier-macro', Micro: 'tier-micro', Nano: 'tier-nano' };
         const TIER_EMOJI = { Mega: '🟣', Macro: '🔵', Micro: '🟢', Nano: '🟡' };
         const ALGO_COLORS = { 'Simulated Annealing': '#00C853', 'Hill Climber': '#FB923C', 'Random Search': '#4a4a45', 'Genetic Algorithm': '#A855F7', 'Tabu Search': '#06B6D4', 'Greedy Ranking': '#F59E0B' };
@@ -1728,7 +1841,8 @@
                 results.simulated_annealing,
                 results.hill_climber,
             ].filter(Boolean);
-            return candidates.sort((a, b) => b.total_gmv - a.total_gmv)[0];
+            // Rank by true objective (GMV net of overlap penalty), matching the backend.
+            return candidates.sort((a, b) => b.objective - a.objective)[0];
         }
 
         function renderBenchmark(results, recommendedAlgo) {
@@ -1750,7 +1864,8 @@
                     const aBaseline = a === 'random_search' ? 1 : 0;
                     const bBaseline = b === 'random_search' ? 1 : 0;
                     if (aBaseline !== bBaseline) return aBaseline - bBaseline;
-                    return (results[b] ? results[b].total_gmv : 0) - (results[a] ? results[a].total_gmv : 0);
+                    // Order by true objective (GMV net of overlap), not raw GMV.
+                    return (results[b] ? results[b].objective : 0) - (results[a] ? results[a].objective : 0);
                 })
                 .forEach(key => {
                     const r = results[key];
@@ -1769,10 +1884,11 @@
                 { key: 'greedy_ranking',    label: 'Greedy Ranking',      color: '#F59E0B', style: 'LP relaxation + 2-OPT local swap' },
                 { key: 'simulated_annealing', label: 'Simulated Annealing', color: '#00C853', style: 'thermal exploration' },
                 { key: 'hill_climber',      label: 'Hill Climber',        color: '#FB923C', style: 'greedy descent' },
-            ].filter(a => !!results[a.key]).map(a => ({ ...a, gmv: results[a.key].total_gmv }));
+            ].filter(a => !!results[a.key]).map(a => ({ ...a, gmv: results[a.key].total_gmv, obj: results[a.key].objective }));
             if (!allResults.length) return;
-            const best = allResults.reduce((a, b) => b.gmv > a.gmv ? b : a);
-            const worst = allResults.reduce((a, b) => a.gmv < b.gmv ? a : b);
+            // "Best" is the true-objective winner (GMV net of overlap); GMV stays the displayed figure.
+            const best = allResults.reduce((a, b) => b.obj > a.obj ? b : a);
+            const worst = allResults.reduce((a, b) => a.obj < b.obj ? a : b);
             const hcGmv = results.hill_climber ? results.hill_climber.total_gmv : 0;
             const hcGain = hcGmv > 0 ? ((best.gmv / hcGmv - 1) * 100).toFixed(0) : '—';
             const spread = allResults.length >= 2 && worst.gmv > 0
@@ -2033,13 +2149,15 @@
                         { key: 'hill_climber',        short: 'HC',      color: '#FB923C' },
                         { key: 'random_search',       short: 'Random',  color: '#4a4a45' },
                     ].filter(a => !!data.results[a.key]);
-                    const bestGmv = algoMeta.reduce((m, a) => Math.max(m, data.results[a.key].total_gmv), 0);
+                    // Rank by true objective (GMV net of overlap), not raw GMV — otherwise the
+                    // Random Search baseline grabs the "best" star by ignoring audience overlap.
+                    const bestObj = algoMeta.reduce((m, a) => Math.max(m, data.results[a.key].objective), -Infinity);
                     // Dynamic column count — adapts to however many algorithms the server returned
                     acGrid.style.gridTemplateColumns = `repeat(${algoMeta.length}, minmax(0, 1fr))`;
                     acGrid.innerHTML = algoMeta.map(a => {
                         const r = data.results[a.key];
-                        const isBest = r.total_gmv >= bestGmv && bestGmv > 0;
-                        const pct = bestGmv > 0 ? (r.total_gmv / bestGmv * 100).toFixed(0) : 0;
+                        const isBest = r.objective >= bestObj;
+                        const pct = bestObj > 0 ? (Math.max(0, r.objective) / bestObj * 100).toFixed(0) : 0;
                         return `<div class="glass-card rounded-xl p-md flex flex-col gap-xs" style="${isBest ? 'box-shadow:0 0 14px ' + a.color + '44;border-color:' + a.color + '88' : ''}">
                             <div class="flex justify-between items-center">
                                 <span class="text-[10px] font-extrabold uppercase tracking-wider" style="color:${a.color}">${a.short}</span>

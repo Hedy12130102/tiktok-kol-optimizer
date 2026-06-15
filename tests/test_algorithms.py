@@ -150,3 +150,58 @@ def test_greedy_ranking_history_length_one(small_pool):
     """Greedy ranking produces a single-point history (instant result)."""
     _, _, history = greedy_ranking(small_pool, BUDGET)
     assert len(history) >= 1
+
+
+# ────────────────────────────────────────────────────────────
+#  Greedy-seeded solvers must add value over the random baseline
+# ────────────────────────────────────────────────────────────
+
+# The constructive / memory solvers seed from the multi-strategy greedy
+# (engine.optimization._common.greedy_init); they are the ones the product
+# recommends, and must beat the Random Search baseline. The cold-start
+# trajectory controls (SA, HC) are NOT required to — they exist to measure the
+# value of a warm greedy start, and can legitimately trail random on small pools.
+GREEDY_SEEDED_SOLVERS = [
+    ("genetic_algorithm",   genetic_algorithm),
+    ("tabu_search",         tabu_search),
+    ("greedy_ranking",      greedy_ranking),
+]
+
+
+@pytest.fixture
+def knapsack_pool():
+    """Pool that exposes the ratio-greedy trap (mirrors the real-data failure):
+    a couple of high-GMV creators worth picking, plus many cheap, high-ROI-ratio,
+    mutually-overlapping ones that ratio-greedy would wrongly pile up. The true
+    optimum is the few big creators, not the many small ones."""
+    big = [
+        KOL(id=1, name="Big1", country="MY", category="beauty",
+            followers=2_000_000, engagement_rate=0.12, fit_score=0.9,
+            commission_rate=0.12, cost=4000),
+        KOL(id=2, name="Big2", country="MY", category="beauty",
+            followers=900_000, engagement_rate=0.12, fit_score=0.85,
+            commission_rate=0.12, cost=900),
+    ]
+    small = [
+        KOL(id=i, name=f"Small{i}", country="MY", category="beauty",
+            followers=30_000, engagement_rate=0.10, fit_score=0.7,
+            commission_rate=0.15, cost=150)
+        for i in range(3, 22)
+    ]
+    return big + small
+
+
+@pytest.mark.parametrize("name,solver", GREEDY_SEEDED_SOLVERS)
+def test_greedy_seeded_solver_beats_random_baseline(name, solver, knapsack_pool):
+    """The greedy-seeded constructive/memory solvers (the ones the product
+    recommends) must score at least as high (true objective = GMV net of overlap)
+    as the Random Search baseline. Regression guard for the ratio-greedy-seed bug
+    that let random outscore them on skewed real pools."""
+    budget = 5000
+    rs_state, _, _ = random_search(knapsack_pool, budget, seed=42)
+    rs_obj = summarize_state(rs_state, knapsack_pool)["objective"]
+
+    state, _, _ = solver(knapsack_pool, budget, seed=42)
+    obj = summarize_state(state, knapsack_pool)["objective"]
+    assert obj >= rs_obj - 1e-6, \
+        f"{name} objective {obj:.0f} is below the random baseline {rs_obj:.0f}"
