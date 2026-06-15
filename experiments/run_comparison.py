@@ -77,10 +77,30 @@ def run_experiment(budget=5000.0, seed=42, use_demo_case=True):
     os.makedirs("docs/figures", exist_ok=True)
 
     # ── Convergence chart ─────────────────────────────────────────
-    min_len = min(len(h) for h in all_hists.values())
+    # Pad every history forward to a common length (carry the last value) so
+    # short, early-stopping runs (Tabu Search; GA/Greedy after the greedy seed)
+    # still span the x-axis instead of being truncated to the shortest history.
+    max_len = max((len(h) for h in all_hists.values()), default=1)
+
+    def _pad(h):
+        return (h + [h[-1]] * (max_len - len(h))) if h else [0.0] * max_len
+
+    # Distinct dash patterns + light transparency keep the winners legible where
+    # GA / TS / Greedy Ranking plateau at the same GMV and would otherwise hide
+    # one another. GA is drawn thickest so it shows through the dashed overlays.
+    styles = {
+        "Simulated Annealing": ("-",          2.0),
+        "Hill Climber":        ("-",          1.6),
+        "Random Search":       ("--",         1.6),
+        "Genetic Algorithm":   ("-",          2.8),
+        "Tabu Search":         ((0, (6, 3)),  2.0),
+        "Greedy Ranking":      ((0, (1, 2)),  2.0),
+    }
     plt.figure(figsize=(11, 5))
     for name, hist in all_hists.items():
-        plt.plot(hist[:min_len], label=name, color=ALGO_COLORS[name], linewidth=1.8)
+        ls, lw = styles[name]
+        plt.plot(_pad(hist), label=name, color=ALGO_COLORS[name],
+                 linewidth=lw, linestyle=ls, alpha=0.85)
     plt.xlabel("Iterations")
     plt.ylabel("Best GMV (USD)")
     plt.title("Algorithm Convergence Comparison (demo pool, commission-rate model)")
