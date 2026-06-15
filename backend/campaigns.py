@@ -18,6 +18,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
 from backend import tenancy
+from backend import calibration
 from backend.auth import require_tenant
 
 router = APIRouter()
@@ -152,6 +153,23 @@ def record_actual(campaign_id: int, req: ActualResultsUpdate, _t: str = Depends(
     c["completed_at"] = datetime.utcnow().isoformat()
 
     _save(data)
+
+    # Close the loop: fold this outcome into the tenant's GMV calibration so
+    # future predictions self-correct — at the campaign level (segment) and,
+    # when a per-creator actual breakdown is given, per creator.
+    creator_ratios = {}
+    if req.kol_actuals:
+        predicted_by_id = {k.get("id"): k.get("predicted_gmv") for k in c.get("selected_kols", [])}
+        for ka in req.kol_actuals:
+            p = predicted_by_id.get(ka.id)
+            if p and p > 0 and ka.actual_gmv is not None:
+                creator_ratios[ka.id] = ka.actual_gmv / p
+
+    calibration.record_outcome(
+        c.get("category"), c.get("countries", []),
+        c.get("predicted_gmv"), req.actual_total_gmv,
+        creator_ratios=creator_ratios,
+    )
     return c
 
 

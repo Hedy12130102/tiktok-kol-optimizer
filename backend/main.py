@@ -39,6 +39,7 @@ from engine.optimization.greedy_ranking import greedy_ranking
 from engine.scoring.creator_score import compute_creator_score
 from engine.scoring.explainer import generate_reasons, get_tier
 from backend import tenancy
+from backend import calibration
 from backend.auth import router as auth_router, require_tenant
 from backend.crud import router as crud_router
 from backend.campaigns import router as campaigns_router
@@ -270,7 +271,10 @@ def to_kol_result(k: KOL, score: float, all_kols: List[KOL]) -> KOLResult:
         fit_score=k.fit_score,
         commission_rate=k.commission_rate,
         cost=k.cost,
-        expected_gmv=round(k.expected_gmv(), 2),
+        # Calibrated by past actual-vs-predicted outcomes — this creator's own
+        # track record, falling back to its (category, country) segment, then
+        # global (factor = 1.0 until the tenant has completed campaigns).
+        expected_gmv=round(k.expected_gmv() * calibration.factor(k.category, k.country, k.id), 2),
         tier=get_tier(k),
         age_group=k.age_group,
         gender_ratio=k.gender_ratio,
@@ -288,16 +292,23 @@ def build_algorithm_result(
     kols: List[KOL],
     scores: List[float],
 ) -> AlgorithmResult:
+    # Displayed GMV/ROI are summed from the per-creator *calibrated* predictions
+    # (to_kol_result applies the calibration factor), so the cards always reconcile
+    # with the total. The solver's `objective` (its ranking metric) stays raw, so
+    # which creators/algorithm win is unaffected. No calibration history → factor
+    # 1.0 → numbers match the raw model.
     selected_idx = [i for i, x in enumerate(state) if x == 1]
     selected = [to_kol_result(kols[i], scores[i], kols) for i in selected_idx]
     summary = summarize_state(state, kols)
+    total_cost = round(summary["total_cost"], 2)
+    total_gmv = round(sum(s.expected_gmv for s in selected), 2)
     return AlgorithmResult(
         algorithm=name,
         selected_kols=selected,
         selected_count=int(summary["selected_count"]),
-        total_cost=round(summary["total_cost"], 2),
-        total_gmv=round(summary["total_gmv"], 2),
-        roi=round(summary["roi"], 4),
+        total_cost=total_cost,
+        total_gmv=total_gmv,
+        roi=round(total_gmv / total_cost, 4) if total_cost > 0 else 0.0,
         objective=round(summary["objective"], 2),
         history=history,
     )
@@ -531,6 +542,13 @@ def run_plan_optimizers(
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/calibration")
+def get_calibration(_t: str = Depends(require_tenant)):
+    """How much past actual-vs-predicted outcomes are nudging this tenant's GMV
+    predictions (1.0 = no adjustment yet)."""
+    return calibration.summary()
 
 
 

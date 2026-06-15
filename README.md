@@ -1,14 +1,14 @@
 # 🎯 TikTok Shop KOL Matrix Optimizer
 
-**Turn a fixed influencer budget into the highest-GMV creator portfolio — powered by six competing optimization algorithms, explainable AI, and closed-loop campaign attribution.**
+**Turn a fixed influencer budget into the highest-GMV creator portfolio — powered by six competing optimization algorithms, explainable AI, and a closed-loop that self-calibrates predictions from real campaign results.**
 
 [![CI](https://github.com/Hedy12130102/tiktok-kol-optimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/Hedy12130102/tiktok-kol-optimizer/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-123%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-128%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-For Southeast-Asia TikTok Shop merchants and agencies who must allocate a marketing budget across hundreds of creators — and **prove the ROI afterwards**. The system filters the creator pool by market and category, runs **six optimization algorithms in parallel** to maximize predicted GMV, explains *why* each creator was chosen, and tracks predicted-vs-actual GMV so every campaign sharpens the next.
+For Southeast-Asia TikTok Shop merchants and agencies who must allocate a marketing budget across hundreds of creators — and **prove the ROI afterwards**. The system filters the creator pool by market and category, runs **six optimization algorithms in parallel** to maximize predicted GMV, explains *why* each creator was chosen, and feeds predicted-vs-actual GMV back into the model so every campaign **automatically** sharpens the next. Each merchant works in their own isolated, login-gated tenant.
 
 > **▶ Live demo:** `start_server.bat` (Windows) or `uvicorn backend.main:app --reload`, then open **http://localhost:8000/ui**
 
@@ -23,7 +23,7 @@ A brand with 100 candidate creators and a budget that fits 5–8 of them faces *
 | Manual shortlists, gut feel | Six algorithms compete; the best portfolio wins |
 | Overspend on one mega-KOL | Budget-optimal mixed-tier mix, every dollar inside budget |
 | "Trust me" recommendations | 3+ data-driven reasons generated per creator |
-| No feedback loop | Predicted vs actual GMV tracked per campaign |
+| No feedback loop | Predictions self-calibrate from each campaign's real GMV |
 
 ---
 
@@ -47,11 +47,12 @@ Structured search beats naïve hill-climbing by **49–201%**, and the advantage
 | Layer | Technology |
 |---|---|
 | **Optimization engine** | Pure-Python implementations of Simulated Annealing, Genetic Algorithm, Tabu Search, Hill Climber, Random Search, Greedy Ranking |
-| **Backend API** | FastAPI + Pydantic — 20+ typed REST endpoints, auto-generated Swagger docs |
+| **Backend API** | FastAPI + Pydantic — 25+ typed REST endpoints, auto-generated Swagger docs |
+| **Auth & multi-tenancy** | JWT (PyJWT) + `pbkdf2_sha256` (passlib); per-merchant isolated data tenants |
 | **Frontend** | Single-page app (vanilla JS + Tailwind CSS), served directly by FastAPI — no separate web server |
-| **Data & analytics** | NumPy; JSON persistence; CSV/Excel import (openpyxl) + export; calibrated SEA market model |
+| **Data & analytics** | NumPy; JSON persistence; CSV/Excel import (openpyxl) + export; calibrated SEA market model with actual-vs-predicted feedback |
 | **Experiments** | Matplotlib figure pipeline; seeded, fully reproducible benchmarks |
-| **Quality** | 123 pytest tests (isolated from production data); GitHub Actions CI on every push |
+| **Quality** | 128 pytest tests (isolated from production data); GitHub Actions CI on every push |
 
 ---
 
@@ -82,7 +83,8 @@ The platform is organised into three product modules backed by two intelligence 
 |---|---|---|
 | 🎯 **Campaign Optimizer** | Runs six algorithms on your filtered creator pool and returns the budget-optimal portfolio | Winning portfolio · GMV/ROI benchmark · live convergence chart |
 | 👥 **Creator Management** | Build, import, and curate your own KOL database | CRUD · CSV/Excel import · price backfill · metric-trend sparklines |
-| 📈 **Campaign Attribution** | Closes the loop by comparing predicted vs actual GMV | Accuracy % · per-campaign history |
+| 📈 **Campaign Attribution** | Closes the loop by comparing predicted vs actual GMV | Accuracy % · **self-calibrating predictions** |
+| 🔐 **Merchant Accounts** | Email/password login; each merchant's data is fully isolated | JWT auth · per-tenant library & campaigns |
 | 🧠 **Explainable AI** | Plain-English justification for every pick | 3+ data-driven reasons per creator |
 | ⭐ **CreatorScore & Tiers** | Composite quality score + tier classification | Leaderboards · badges · ranking |
 
@@ -106,9 +108,21 @@ Bring your own creators or curate the seeded dataset. The default seed library i
 - **Metric trends** — each creator has a detail view with sparkline history for engagement, fit, and followers (↑/↓ trend arrows). **Simulate Update** applies realistic random drift to preview how a live TikTok-API refresh would move the numbers.
 - **Roadmap connectors** — stubs for the TikTok Creator Marketplace API, TikTok Shop Partner API, and third-party analytics; "Coming Soon" cards capture early-access interest.
 
-### 📈 Campaign Attribution
+### 📈 Campaign Attribution & Self-Calibration
 
-Turn one-shot predictions into a feedback loop. Save an optimization as a campaign, then after it runs record the **actual GMV** — the system computes `accuracy % = actual / predicted × 100` and renders a predicted-vs-actual breakdown per creator. Over many campaigns this becomes an attribution history that shows how well the GMV model tracks reality.
+Turn one-shot predictions into a true feedback loop. Save an optimization as a campaign, then after it runs record the **actual GMV** — the system computes `accuracy % = actual / predicted × 100` and renders a predicted-vs-actual breakdown per creator.
+
+Crucially, those outcomes **feed back into future predictions**. Each completed campaign updates a per-merchant calibration table (EWMA + shrinkage) at three resolutions, each refining the coarser one:
+
+- **Global** — overall systematic over/under-prediction bias.
+- **Segment** — per `category × country` (where the model's CTR/CVR/AOV tables live).
+- **Creator** — from the per-creator actual-vs-predicted breakdown, so a creator who consistently over- or under-delivers gets an individual correction.
+
+A `GET /calibration` endpoint and a Campaigns-page banner show the current adjustment (e.g. *"calibrated from 4 campaigns — forecasts adjusted −12%"*). With no history, every factor is `1.0` — the raw model. The recommendation *ranking* is never affected (the solver's objective stays raw); only the displayed GMV self-corrects toward your real results.
+
+### 🔐 Merchant Accounts & Data Isolation
+
+Each merchant registers with email + password (hashed with `pbkdf2_sha256`) and works in a **fully isolated tenant**: their own creator library, campaigns, history, and calibration live under `data/tenants/{id}/`, seeded from the curated baseline on signup. Every data endpoint requires a **JWT** bearer token (`/auth/register`, `/auth/login`); the single-page app gates the console behind a login screen and attaches the token to every request.
 
 ### 🧠 Explainable AI
 
@@ -213,7 +227,10 @@ From the merchant's point of view, the whole tool is a handful of simple steps w
 tiktok-kol-optimizer/
 ├── backend/
 │   ├── main.py              # FastAPI: /optimize, /kols, /kol/{id}, /top-kols, /simulate-scale,
-│   │                        #          /api/connections (integration stubs)
+│   │                        #          /calibration, /api/connections (integration stubs)
+│   ├── auth.py              # JWT auth: /auth/register, /auth/login, /auth/me; require_tenant dep
+│   ├── tenancy.py           # Per-tenant data paths + provisioning (data/tenants/{id}/)
+│   ├── calibration.py       # Self-calibration: actual→predicted feedback (global/segment/creator)
 │   ├── crud.py              # KOL CRUD: /kols/add, PUT, DELETE, /import, /backfill-costs, /reset
 │   │                        # also: GET /kols/{id}/history, POST /kols/{id}/simulate-update
 │   ├── campaigns.py         # Campaign Attribution: POST/GET/PUT/DELETE /campaigns
@@ -310,6 +327,8 @@ start_server.bat
 uvicorn backend.main:app --reload
 ```
 
+For production, set a `JWT_SECRET` env var (a dev fallback is used otherwise).
+
 ### 4. Open the app
 
 | URL | Purpose |
@@ -317,11 +336,21 @@ uvicorn backend.main:app --reload
 | http://localhost:8000/ui | Web application (Optimizer · Creators · Campaigns) |
 | http://localhost:8000/docs | Interactive Swagger API docs |
 
+On first use, **Create an account** (Launch Console → *Create one*). Each merchant starts from the curated seed library in their own isolated tenant.
+
 ---
 
 ## API Overview
 
-Full specification: [`docs/API_SPEC.md`](docs/API_SPEC.md)
+Full specification: [`docs/API_SPEC.md`](docs/API_SPEC.md). All data endpoints require a `Authorization: Bearer <jwt>` header; `/health` and `/auth/*` are open.
+
+### Auth
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/auth/register` | Create a merchant account + isolated tenant, return a JWT |
+| `POST` | `/auth/login` | Verify credentials, return a JWT |
+| `GET` | `/auth/me` | Current account / tenant |
 
 ### Core Optimization
 
@@ -333,6 +362,7 @@ Full specification: [`docs/API_SPEC.md`](docs/API_SPEC.md)
 | `GET` | `/kol/{id}` | Single KOL detail + scores + reasons |
 | `GET` | `/top-kols` | Top 10 by CreatorScore |
 | `POST` | `/simulate-scale` | Creator Pool Simulator — synthetic GMV-vs-pool-size curve + "creators needed to hit target GMV" |
+| `GET` | `/calibration` | Current self-calibration factors (from completed campaigns) |
 
 ### Creator Management
 
@@ -376,7 +406,7 @@ Full specification: [`docs/API_SPEC.md`](docs/API_SPEC.md)
 
 ## Testing
 
-The suite has **123 tests** covering the fitness function, all six algorithms, scoring/explainer logic, and every API endpoint (optimization, the Creator Pool Simulator, CRUD, KOL history, campaign attribution). Tests run against an isolated throwaway dataset (`tests/conftest.py`), so the suite never mutates `data/sample_kols.json`.
+The suite has **128 tests** covering the fitness function, all six algorithms, scoring/explainer logic, and every API endpoint (optimization, the Creator Pool Simulator, CRUD, KOL history, campaign attribution, **auth & per-tenant isolation, and prediction calibration**). Tests run against an isolated throwaway tenant (`tests/conftest.py`), so the suite never mutates production data.
 
 ```bash
 # Run the full suite
