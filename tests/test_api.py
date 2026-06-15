@@ -69,6 +69,7 @@ def test_optimize_happy_path():
         assert "total_cost" in algo
         assert "total_gmv" in algo
         assert "roi" in algo
+        assert "objective" in algo
         assert "history" in algo
         assert isinstance(algo["history"], list)
 
@@ -108,8 +109,11 @@ def test_optimize_history_arrays_nonempty():
             f"{algo_key} history is empty"
 
 
-def test_optimize_best_algorithm_has_highest_gmv():
-    """The best_algorithm field must correspond to the algorithm with max GMV."""
+def test_optimize_best_algorithm_has_highest_objective():
+    """The best_algorithm field must correspond to the algorithm with the highest
+    objective (GMV net of the audience-overlap penalty) — the value the solvers
+    actually optimise. Ranking by raw GMV instead would let the Random Search
+    baseline win by ignoring overlap."""
     response = client.post("/optimize", json={
         "budget": 5000, "countries": ["MY"], "category": "beauty", "seed": 42,
     })
@@ -117,10 +121,10 @@ def test_optimize_best_algorithm_has_highest_gmv():
     best_name = data["best_algorithm"]
 
     if data["candidates"] > 0:
-        gmvs = {algo["algorithm"]: algo["total_gmv"]
-                for algo in data["results"].values()}
-        max_gmv = max(gmvs.values())
-        assert gmvs[best_name] == max_gmv
+        objectives = {algo["algorithm"]: algo["objective"]
+                      for algo in data["results"].values()}
+        max_obj = max(objectives.values())
+        assert objectives[best_name] == max_obj
 
 
 # ════════════════════════════════════════════════════════════════

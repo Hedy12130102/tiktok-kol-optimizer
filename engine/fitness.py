@@ -45,6 +45,12 @@ def summarize_state(state: List[int], kols: List[KOL]) -> Dict[str, float]:
         "total_gmv": total_gmv,
         "roi": roi,
         "overlap_penalty": overlap_penalty,
+        # True objective the solvers minimise (as a maximise-me value): GMV net
+        # of the audience-overlap penalty. Rank algorithms by THIS, not raw GMV —
+        # otherwise a solver that correctly avoids overlapping creators shows a
+        # lower raw GMV and loses to a baseline that ignores overlap. Budget term
+        # is omitted: every returned portfolio is within budget (hard penalty wall).
+        "objective": total_gmv - overlap_penalty,
     }
 
 

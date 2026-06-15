@@ -1,11 +1,11 @@
 """
-Test isolation: point the backend at a throwaway data directory before it is
-imported, and seed it with a fresh synthetic dataset.
+Test isolation for the multi-tenant backend.
 
-Without this, the CRUD/import tests mutate (and the reset test would overwrite)
-the production data/sample_kols.json. pytest imports conftest.py before any test
-module, so setting the KOL_*_PATH env vars here guarantees backend.main and
-backend.crud read these isolated paths at import time.
+Before the backend is imported we point the data tree at a throwaway directory
+(KOL_DATA_DIR) and enable an unauthenticated fallback tenant (DEFAULT_TENANT), so
+the existing suite hits a private, pre-seeded "test" tenant without needing tokens.
+The auth/isolation tests (tests/test_auth.py) send real Bearer tokens, which take
+precedence over the fallback.
 """
 import atexit
 import json
@@ -17,28 +17,28 @@ import tempfile
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _ROOT)
 
-# Isolated, auto-cleaned data dir for the whole test session.
+# Isolated, auto-cleaned data tree for the whole test session.
 _TMP = tempfile.mkdtemp(prefix="kol_test_")
-_DATA = os.path.join(_TMP, "sample_kols.json")
-_SEED = os.path.join(_TMP, "seed_kols.json")
-_HISTORY = os.path.join(_TMP, "kol_history.json")
+_TEST_TENANT = "test"
+_TENANT_DIR = os.path.join(_TMP, "tenants", _TEST_TENANT)
+os.makedirs(_TENANT_DIR, exist_ok=True)
 
-# Generate a deterministic synthetic library — independent of production data.
+# Generate a deterministic synthetic library for the default test tenant.
 from data.generator import generate_kols  # noqa: E402
 
-generate_kols(
-    num=300,
-    seed=42,
-    json_output_path=_DATA,
-    csv_output_path=os.path.join(_TMP, "mock.csv"),
-)
-shutil.copyfile(_DATA, _SEED)          # reset test restores to this baseline
-with open(_HISTORY, "w", encoding="utf-8") as f:
-    json.dump([], f)
+_DATA = os.path.join(_TENANT_DIR, "sample_kols.json")
+generate_kols(num=300, seed=42, json_output_path=_DATA, csv_output_path=None)
+shutil.copyfile(_DATA, os.path.join(_TENANT_DIR, "seed_kols.json"))  # reset baseline
+for _name in ("kol_history.json", "campaigns.json"):
+    with open(os.path.join(_TENANT_DIR, _name), "w", encoding="utf-8") as f:
+        json.dump([], f)
 
-# Must be set BEFORE backend.main / backend.crud are imported by test modules.
-os.environ["KOL_DATA_PATH"] = _DATA
-os.environ["KOL_SEED_PATH"] = _SEED
-os.environ["KOL_HISTORY_PATH"] = _HISTORY
+# Also expose the synthetic library as the global template so newly registered
+# tenants (auth tests) start from a non-empty library too.
+shutil.copyfile(_DATA, os.path.join(_TMP, "seed_kols.json"))
+
+# Must be set BEFORE backend.tenancy / backend.main are imported by test modules.
+os.environ["KOL_DATA_DIR"] = _TMP
+os.environ["DEFAULT_TENANT"] = _TEST_TENANT
 
 atexit.register(lambda: shutil.rmtree(_TMP, ignore_errors=True))

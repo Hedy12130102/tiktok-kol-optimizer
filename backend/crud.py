@@ -24,35 +24,31 @@ import re
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
 from pydantic import BaseModel, field_validator
+
+from backend import tenancy
+from backend.auth import require_tenant
 
 router = APIRouter()
 
-_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
-
-# Data file locations. Overridable via env vars so tests (and alternate
-# deployments) can point at an isolated copy instead of the production files.
-DATA_PATH = os.environ.get("KOL_DATA_PATH") or os.path.join(_DATA_DIR, "sample_kols.json")
-KOL_HISTORY_PATH = os.environ.get("KOL_HISTORY_PATH") or os.path.join(_DATA_DIR, "kol_history.json")
-
-# Restore baseline for /kols/reset — the official seed library every merchant
-# starts from (built by data/build_seed.py). If absent, reset clears to empty.
-SEED_PATH = os.environ.get("KOL_SEED_PATH") or os.path.join(_DATA_DIR, "seed_kols.json")
+# Data file locations are resolved per-tenant at call time (see backend/tenancy.py),
+# so every endpoint reads/writes only the current merchant's isolated folder.
 
 # ── KOL history helpers ───────────────────────────────────────
 _SNAPSHOT_FIELDS = ("engagement_rate", "fit_score", "followers", "commission_rate", "avg_views", "avg_likes")
 
 
 def _load_history() -> List[dict]:
-    if not os.path.exists(KOL_HISTORY_PATH):
+    path = tenancy.history_path()
+    if not os.path.exists(path):
         return []
-    with open(KOL_HISTORY_PATH, encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
 def _save_history(data: List[dict]):
-    with open(KOL_HISTORY_PATH, "w", encoding="utf-8") as f:
+    with open(tenancy.history_path(), "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
@@ -166,14 +162,15 @@ class KOLUpdate(BaseModel):
 #  Helpers
 # ════════════════════════════════════════════════════════════════
 def _load() -> List[dict]:
-    if not os.path.exists(DATA_PATH):
+    path = tenancy.data_path()
+    if not os.path.exists(path):
         return []
-    with open(DATA_PATH, encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
 def _save(data: List[dict]):
-    with open(DATA_PATH, "w", encoding="utf-8") as f:
+    with open(tenancy.data_path(), "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
@@ -397,7 +394,7 @@ def _auto_fill(d: dict) -> dict:
 #  Endpoints
 # ════════════════════════════════════════════════════════════════
 @router.post("/kols/add")
-def add_kol(kol: KOLCreate):
+def add_kol(kol: KOLCreate, _t: str = Depends(require_tenant)):
     """Add a single KOL to the database."""
     data = _load()
     new_id = _next_id(data)
@@ -411,7 +408,7 @@ def add_kol(kol: KOLCreate):
 
 
 @router.put("/kols/{kol_id}")
-def update_kol(kol_id: int, updates: KOLUpdate):
+def update_kol(kol_id: int, updates: KOLUpdate, _t: str = Depends(require_tenant)):
     """Update an existing KOL. Snapshots current metrics before applying changes."""
     data = _load()
     idx = next((i for i, d in enumerate(data) if d["id"] == kol_id), None)
@@ -440,7 +437,7 @@ def update_kol(kol_id: int, updates: KOLUpdate):
 
 
 @router.get("/kols/{kol_id}/history")
-def get_kol_history(kol_id: int):
+def get_kol_history(kol_id: int, _t: str = Depends(require_tenant)):
     """Return all metric snapshots for a KOL, newest first."""
     data = _load()
     if not any(d["id"] == kol_id for d in data):
@@ -453,7 +450,7 @@ def get_kol_history(kol_id: int):
 
 
 @router.post("/kols/{kol_id}/simulate-update")
-def simulate_kol_update(kol_id: int):
+def simulate_kol_update(kol_id: int, _t: str = Depends(require_tenant)):
     """
     Simulate a TikTok API metric refresh: apply realistic random drift to
     engagement_rate, fit_score, followers, and record a new snapshot.
@@ -499,7 +496,7 @@ def simulate_kol_update(kol_id: int):
 
 
 @router.delete("/kols/{kol_id}")
-def delete_kol(kol_id: int):
+def delete_kol(kol_id: int, _t: str = Depends(require_tenant)):
     """Delete a KOL from the database."""
     data = _load()
     before = len(data)
@@ -516,6 +513,7 @@ async def import_file(
     file: UploadFile = File(...),
     default_country: Optional[str] = Form(None),
     default_category: Optional[str] = Form(None),
+    _t: str = Depends(require_tenant),
 ):
     """
     Bulk import creators from a CSV or Excel (.xlsx) file.
@@ -575,7 +573,7 @@ async def import_file(
 
 
 @router.post("/kols/backfill-costs")
-async def backfill_costs(file: UploadFile = File(...)):
+async def backfill_costs(file: UploadFile = File(...), _t: str = Depends(require_tenant)):
     """
     Bulk-update real collaboration prices from a CSV/Excel file.
 
@@ -695,7 +693,7 @@ def download_template_excel():
 
 
 @router.get("/kols/export")
-def export_csv():
+def export_csv(_t: str = Depends(require_tenant)):
     """Export all KOLs as a downloadable CSV file."""
     from fastapi.responses import StreamingResponse
 
@@ -723,9 +721,9 @@ def export_csv():
 
 
 @router.post("/kols/reset")
-def reset_database():
+def reset_database(_t: str = Depends(require_tenant)):
     """
-    Restore the library to the official seed baseline (data/seed_kols.json) —
+    Restore the library to this tenant's seed baseline (seed_kols.json) —
     the initialization creator library every merchant starts from.
 
     A merchant can freely add / edit / delete / import while experimenting,
@@ -735,8 +733,9 @@ def reset_database():
     Also clears metric history so reset state is clean (snapshots that
     referenced edited/removed creators do not linger).
     """
-    if os.path.exists(SEED_PATH):
-        with open(SEED_PATH, encoding="utf-8") as f:
+    seed_p = tenancy.seed_path()
+    if os.path.exists(seed_p):
+        with open(seed_p, encoding="utf-8") as f:
             seed = json.load(f)
         _save(seed)
         _save_history([])

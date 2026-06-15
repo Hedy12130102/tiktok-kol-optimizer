@@ -23,26 +23,7 @@ from typing import List, Optional, Tuple
 
 from engine.models import KOL
 from engine.fitness import fitness
-
-
-def _greedy_init(kols: List[KOL], budget: float) -> List[int]:
-    """
-    Build a starting individual by greedily adding KOLs in descending
-    GMV/cost order until the budget is exhausted.
-    """
-    n = len(kols)
-    order = sorted(
-        range(n),
-        key=lambda i: kols[i].expected_gmv() / kols[i].cost if kols[i].cost > 0 else 0,
-        reverse=True,
-    )
-    state = [0] * n
-    total_cost = 0.0
-    for i in order:
-        if total_cost + kols[i].cost <= budget:
-            state[i] = 1
-            total_cost += kols[i].cost
-    return state
+from engine.optimization._common import greedy_init
 
 
 def _tournament(
@@ -87,8 +68,8 @@ def genetic_algorithm(
     mutation_prob = 1.0 / max(1, n)
 
     # ── Initialize population ────────────────────────────────────────
-    # First individual: greedy seed (strong starting point)
-    population = [_greedy_init(kols, budget)]
+    # First individual: strong multi-strategy greedy seed (GMV-desc vs ratio).
+    population = [greedy_init(kols, budget)]
 
     # Remaining: random individuals scaled to realistic inclusion probability
     avg_cost = sum(k.cost for k in kols) / n if n > 0 else 1.0

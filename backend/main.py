@@ -18,8 +18,9 @@ import json
 import math
 import os
 import sys
+import contextvars
 from typing import Dict, List, Optional
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -37,6 +38,8 @@ from engine.optimization.tabu_search import tabu_search
 from engine.optimization.greedy_ranking import greedy_ranking
 from engine.scoring.creator_score import compute_creator_score
 from engine.scoring.explainer import generate_reasons, get_tier
+from backend import tenancy
+from backend.auth import router as auth_router, require_tenant
 from backend.crud import router as crud_router
 from backend.campaigns import router as campaigns_router
 
@@ -53,6 +56,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(auth_router)
 app.include_router(crud_router)
 app.include_router(campaigns_router)
 
@@ -61,13 +65,8 @@ VALID_COUNTRIES = ["MY", "ID", "TH", "PH", "SG", "VN"]
 VALID_CATEGORIES = ["beauty", "fashion", "home", "fmcg"]
 VALID_TIERS = ["Mega", "Macro", "Micro", "Nano"]
 
-# Overridable via KOL_DATA_PATH so tests run against an isolated copy instead
-# of the production library (keeps `pytest` from mutating data/sample_kols.json).
-DATA_PATH = os.environ.get("KOL_DATA_PATH") or os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "data",
-    "sample_kols.json",
-)
+# The active KOL library is resolved per-tenant at call time (backend/tenancy.py),
+# so every request reads only the current merchant's isolated library.
 
 
 # ════════════════════════════════════════════════════════════════
@@ -123,6 +122,10 @@ class AlgorithmResult(BaseModel):
     total_cost: float
     total_gmv: float
     roi: float
+    # GMV net of the audience-overlap penalty — the true objective the solvers
+    # optimise. Algorithms are RANKED by this, while total_gmv stays the headline
+    # display number. (See summarize_state in engine/fitness.py.)
+    objective: float
     history: List[float]
 
 
@@ -210,23 +213,28 @@ class SimulateScaleResponse(BaseModel):
 #  Helpers
 # ════════════════════════════════════════════════════════════════
 # Presentation-only metadata (source, cost_estimated) that the engine KOL
-# dataclass deliberately doesn't carry. Refreshed on every load so any endpoint
-# building KOLResults (list, detail, optimize, top) can surface the badges.
-_KOL_META: dict = {}
+# dataclass deliberately doesn't carry. Held in a request-scoped contextvar so
+# concurrent tenants never share each other's badge metadata.
+_KOL_META_VAR: contextvars.ContextVar = contextvars.ContextVar("kol_meta", default=None)
 
 
 def _refresh_meta(raw_list: List[dict]):
-    _KOL_META.clear()
-    for d in raw_list:
-        _KOL_META[d["id"]] = {
+    _KOL_META_VAR.set({
+        d["id"]: {
             "source": d.get("source", "fastmoss"),
             "cost_estimated": bool(d.get("cost_estimated", False)),
         }
+        for d in raw_list
+    })
+
+
+def _kol_meta() -> dict:
+    return _KOL_META_VAR.get() or {}
 
 
 def load_kols() -> List[KOL]:
     try:
-        with open(DATA_PATH, encoding="utf-8") as f:
+        with open(tenancy.data_path(), encoding="utf-8") as f:
             raw = json.load(f)
         _refresh_meta(raw)
         return [_dict_to_kol(d) for d in raw]
@@ -235,7 +243,7 @@ def load_kols() -> List[KOL]:
 
 
 def load_raw_kols() -> List[dict]:
-    with open(DATA_PATH, encoding="utf-8") as f:
+    with open(tenancy.data_path(), encoding="utf-8") as f:
         raw = json.load(f)
     _refresh_meta(raw)
     return raw
@@ -268,8 +276,8 @@ def to_kol_result(k: KOL, score: float, all_kols: List[KOL]) -> KOLResult:
         gender_ratio=k.gender_ratio,
         creator_score=score,
         reasons=generate_reasons(k, all_kols),
-        source=_KOL_META.get(k.id, {}).get("source", "fastmoss"),
-        cost_estimated=_KOL_META.get(k.id, {}).get("cost_estimated", False),
+        source=_kol_meta().get(k.id, {}).get("source", "fastmoss"),
+        cost_estimated=_kol_meta().get(k.id, {}).get("cost_estimated", False),
     )
 
 
@@ -290,8 +298,23 @@ def build_algorithm_result(
         total_cost=round(summary["total_cost"], 2),
         total_gmv=round(summary["total_gmv"], 2),
         roi=round(summary["roi"], 4),
+        objective=round(summary["objective"], 2),
         history=history,
     )
+
+
+# Key of the reference baseline in the results dict. Random Search is a
+# yardstick the real optimisers are measured against — never a recommendation.
+BASELINE_ALGORITHM = "random_search"
+
+
+def pick_recommended_key(results: Dict[str, AlgorithmResult]) -> str:
+    """Choose the recommended algorithm: the highest objective (GMV net of the
+    audience-overlap penalty) AMONG the real optimisers, excluding the Random
+    Search baseline. Falls back to all results only if no optimiser ran."""
+    solvers = [k for k in results if k != BASELINE_ALGORITHM]
+    pool = solvers or list(results)
+    return max(pool, key=lambda k: results[k].objective)
 
 
 def compute_tier_breakdown(kols: List[KOLResult]) -> TierBreakdown:
@@ -460,10 +483,11 @@ def run_single_optimization(
     sa_T0: float = 15000.0,
     sa_max_iter: int = 150,
 ) -> AlgorithmResult:
-    """Run all 6 algorithms and return the one with highest GMV."""
+    """Run all 6 algorithms and return the recommended optimiser — the highest
+    true objective (GMV net of audience-overlap penalty) among the real solvers,
+    excluding the Random Search baseline."""
     results = run_all_optimizations(filtered, budget, seed, scores, sa_T0, sa_max_iter)
-    best_key = max(results, key=lambda k: results[k].total_gmv)
-    return results[best_key]
+    return results[pick_recommended_key(results)]
 
 
 def run_greedy_only(filtered: List[KOL], budget: float, seed: int, scores: List[float]) -> AlgorithmResult:
@@ -578,7 +602,7 @@ def shortlist_candidates(kols: List[KOL], scores: List[float], cap: int = CANDID
 
 
 @app.post("/optimize", response_model=OptimizeResponse)
-def optimize(req: OptimizeRequest):
+def optimize(req: OptimizeRequest, _t: str = Depends(require_tenant)):
     """Run all six algorithms and return the best KOL matrix."""
     if req.budget <= 0:
         raise HTTPException(status_code=422, detail="budget must be a positive number")
@@ -626,7 +650,9 @@ def optimize(req: OptimizeRequest):
         "greedy_ranking":      build_algorithm_result("Greedy Ranking",      gr_state, _downsample(gr_hist), filtered, scores),
     }
 
-    best_key = max(results, key=lambda key: results[key].total_gmv)
+    # Recommend the best real optimiser by true objective (GMV net of overlap),
+    # excluding the Random Search baseline.
+    best_key = pick_recommended_key(results)
     best = results[best_key]
 
     tier_bd = compute_tier_breakdown(best.selected_kols)
@@ -649,7 +675,7 @@ def optimize(req: OptimizeRequest):
 
 
 @app.post("/optimize-plans", response_model=OptimizePlansResponse)
-def optimize_plans(req: OptimizeRequest):
+def optimize_plans(req: OptimizeRequest, _t: str = Depends(require_tenant)):
     """Return 3 plans with genuinely different selection objectives.
 
     Aggressive  — 120% budget, winner = algorithm with highest total GMV.
@@ -767,6 +793,7 @@ def get_kols(
     tier: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
+    _t: str = Depends(require_tenant),
 ):
     """Return a filtered, paginated list of KOLs."""
     if country is not None and country not in VALID_COUNTRIES:
@@ -802,7 +829,7 @@ def get_kols(
 
 
 @app.get("/kol/{kol_id}", response_model=KOLDetail)
-def get_kol(kol_id: int):
+def get_kol(kol_id: int, _t: str = Depends(require_tenant)):
     """Return full details for a single KOL, including extended fields."""
     raw_kols = load_raw_kols()
     raw = next((d for d in raw_kols if d["id"] == kol_id), None)
@@ -832,6 +859,7 @@ def get_kol(kol_id: int):
 def top_kols(
     country: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
+    _t: str = Depends(require_tenant),
 ):
     """Return the top 10 KOLs ranked by creator score."""
     if country is not None and country not in VALID_COUNTRIES:

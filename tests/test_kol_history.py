@@ -18,7 +18,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi.testclient import TestClient
 from backend.main import app
-import backend.crud as crud_module
 
 client = TestClient(app)
 
@@ -28,9 +27,10 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def isolated_history_file(tmp_path, monkeypatch):
     """Each test gets a fresh kol_history.json to prevent pollution."""
+    import backend.tenancy as tenancy_module
     tmp_file = tmp_path / "kol_history.json"
     tmp_file.write_text("[]")
-    monkeypatch.setattr(crud_module, "KOL_HISTORY_PATH", str(tmp_file))
+    monkeypatch.setattr(tenancy_module, "history_path", lambda: str(tmp_file))
     yield str(tmp_file)
 
 

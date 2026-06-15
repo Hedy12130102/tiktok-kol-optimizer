@@ -15,23 +15,7 @@ from typing import List, Optional, Tuple
 
 from engine.models import KOL
 from engine.fitness import fitness
-
-
-def _greedy_init(kols: List[KOL], budget: float) -> List[int]:
-    """Sort by GMV/cost ratio and greedily fill to budget."""
-    n = len(kols)
-    order = sorted(
-        range(n),
-        key=lambda i: kols[i].expected_gmv() / kols[i].cost if kols[i].cost > 0 else 0,
-        reverse=True,
-    )
-    state = [0] * n
-    total_cost = 0.0
-    for i in order:
-        if total_cost + kols[i].cost <= budget:
-            state[i] = 1
-            total_cost += kols[i].cost
-    return state
+from engine.optimization._common import greedy_init
 
 
 def tabu_search(
@@ -47,7 +31,7 @@ def tabu_search(
     rng = random.Random(seed)
     n = len(kols)
 
-    current = _greedy_init(kols, budget)
+    current = greedy_init(kols, budget)
     current_cost = fitness(current, kols, budget)
     best = copy.copy(current)
     best_cost = current_cost

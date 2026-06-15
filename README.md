@@ -5,7 +5,7 @@
 [![CI](https://github.com/Hedy12130102/tiktok-kol-optimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/Hedy12130102/tiktok-kol-optimizer/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-111%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-123%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 For Southeast-Asia TikTok Shop merchants and agencies who must allocate a marketing budget across hundreds of creators — and **prove the ROI afterwards**. The system filters the creator pool by market and category, runs **six optimization algorithms in parallel** to maximize predicted GMV, explains *why* each creator was chosen, and tracks predicted-vs-actual GMV so every campaign sharpens the next.
@@ -33,12 +33,12 @@ Reproducible benchmark — `experiments/scalability.py`, fixed **$5,000** budget
 
 | Creator pool N | Best algorithm | Best GMV | Hill Climber GMV | **Uplift** |
 |:---:|:---|---:|---:|:---:|
-| 50 | Genetic Algorithm | $41.4K | $27.6K | **+50%** |
-| 100 | Genetic Algorithm | $48.4K | $27.1K | **+79%** |
-| 200 | Greedy Ranking | $60.0K | $26.0K | **+131%** |
-| 500 | Genetic Algorithm | $73.2K | $24.4K | **+200%** |
+| 50 | Genetic Algorithm | $41.1K | $27.6K | **+49%** |
+| 100 | Genetic Algorithm | $50.1K | $27.1K | **+85%** |
+| 200 | Genetic Algorithm | $61.0K | $26.0K | **+135%** |
+| 500 | Genetic Algorithm | $73.5K | $24.4K | **+201%** |
 
-Structured search beats naïve hill-climbing by **50–200%**, and the advantage *widens* as the creator pool grows — Hill Climber's GMV actually *falls* with N (it sinks its budget into a few expensive creators and never escapes) while every structured method exploits the richer pool. Full methodology, per-algorithm analysis, the six-algorithm execution-time comparison, and a best-algorithm-per-N selection guide: [`docs/report_draft.md`](docs/report_draft.md).
+Structured search beats naïve hill-climbing by **49–201%**, and the advantage *widens* as the creator pool grows — Hill Climber's GMV actually *falls* with N (it sinks its budget into a few expensive creators and never escapes) while every structured method exploits the richer pool. The Greedy Ranking baseline ties GA within ≈1% at N≥200 while running 5–25× faster. Full methodology, per-algorithm analysis, the six-algorithm execution-time comparison, and a best-algorithm-per-N selection guide: [`docs/report_draft.md`](docs/report_draft.md).
 
 ---
 
@@ -51,7 +51,7 @@ Structured search beats naïve hill-climbing by **50–200%**, and the advantage
 | **Frontend** | Single-page app (vanilla JS + Tailwind CSS), served directly by FastAPI — no separate web server |
 | **Data & analytics** | NumPy; JSON persistence; CSV/Excel import (openpyxl) + export; calibrated SEA market model |
 | **Experiments** | Matplotlib figure pipeline; seeded, fully reproducible benchmarks |
-| **Quality** | 111 pytest tests (isolated from production data); GitHub Actions CI on every push |
+| **Quality** | 123 pytest tests (isolated from production data); GitHub Actions CI on every push |
 
 ---
 
@@ -176,7 +176,7 @@ Pure random sampling. Demonstrates that structured search significantly outperfo
 
 Population-based evolutionary search.
 
-- **Population:** 60 individuals over 120 generations; first individual is a greedy-seeded solution, the rest are randomly seeded at a budget-aware inclusion probability.
+- **Population:** 60 individuals over 120 generations; first individual is the multi-strategy greedy seed (the better of a GMV-descending and a GMV/cost-ratio-descending fill), the rest are randomly seeded at a budget-aware inclusion probability.
 - **Selection:** Tournament selection (k=3).
 - **Crossover:** Single-point crossover (probability 0.9). Budget feasibility is enforced by the fitness penalty rather than explicit repair, so over-budget children are culled by selection.
 - **Mutation:** Bit-flip with probability 1/n per gene.
@@ -185,15 +185,15 @@ Population-based evolutionary search.
 
 ### Tabu Search
 
-Greedy-initialized deterministic local search with short-term memory.
+Multi-strategy-greedy-initialized deterministic local search with short-term memory.
 
 - **Tabu tenure:** 8 iterations — recently flipped indices are forbidden.
 - **Aspiration criterion:** A tabu move is allowed if it produces a new global best.
 - **Advantage:** Systematically explores the neighbourhood without cycling; stronger than basic HC on large pools.
 
-### Greedy Ranking (Deterministic Baseline)
+### Greedy Ranking (Deterministic Constructive Solver)
 
-Sorts KOLs by predicted GMV-per-dollar and greedily fills the budget. Instant and deterministic. Serves as an upper-bound reference for what a simple heuristic achieves.
+Builds the better (by fitness) of a GMV-descending and a GMV/cost-ratio-descending greedy fill, then polishes it with a 2-opt swap / ADD / drop local search. Trying both orderings is the knapsack guard that stops ratio-greedy from wasting the budget on many small, overlapping creators on skewed pools. Instant and deterministic — the strongest constructive heuristic in the suite.
 
 ---
 
@@ -376,7 +376,7 @@ Full specification: [`docs/API_SPEC.md`](docs/API_SPEC.md)
 
 ## Testing
 
-The suite has **111 tests** covering the fitness function, all six algorithms, scoring/explainer logic, and every API endpoint (optimization, the Creator Pool Simulator, CRUD, KOL history, campaign attribution). Tests run against an isolated throwaway dataset (`tests/conftest.py`), so the suite never mutates `data/sample_kols.json`.
+The suite has **123 tests** covering the fitness function, all six algorithms, scoring/explainer logic, and every API endpoint (optimization, the Creator Pool Simulator, CRUD, KOL history, campaign attribution). Tests run against an isolated throwaway dataset (`tests/conftest.py`), so the suite never mutates `data/sample_kols.json`.
 
 ```bash
 # Run the full suite
@@ -401,10 +401,10 @@ Merchant input (manual / CSV / Excel)
          |
    +----------------------------------------------------------+
    |  SA    HC    RS    GA    Tabu   Greedy Ranking           |
-   |  (global) (greedy) (random) (evol.) (memory) (ratio-sort)|
+   |  (global) (greedy) (random) (evol.) (memory) (multi-greedy)|
    +----------------------------------------------------------+
          |
-   Best algorithm selected (highest GMV)
+   Best algorithm selected (highest objective = GMV net of overlap; baseline excluded)
          |
    CreatorScore + Tier + Reasons enrichment
          |
@@ -421,7 +421,9 @@ Merchant input (manual / CSV / Excel)
 
 ## Why Structured Search Wins (Technical Deep-Dive)
 
-Hill Climber selects expensive Mega/Macro KOLs early, exhausts the budget, and gets trapped — no single-bit flip can improve the solution. Greedy Ranking (ratio-sort + 2-opt), Genetic Algorithm, Tabu Search, and Simulated Annealing each avoid this trap via different mechanisms — cost-effectiveness ranking, population crossover, tabu memory, and temperature-driven acceptance respectively. In the reproducible benchmark (`experiments/scalability.py`, fixed budget $5,000, mean of 10 seeds), HC is the weakest method at every pool size — and is the *only* method whose GMV falls as N grows ($27.6K→$24.4K) — while the best algorithm's lead over HC widens from **+50% at N=50 to +200% at N=500**. At scale the lead is shared by GA and Greedy Ranking (GA $73.2K at N=500; GR ties GA at N=200, ~$60K) versus HC's ~$24K — a ~3× gap that underscores the value of structured search for large creator pools. Greedy Ranking matches GA's quality at N≥200 while running 2–8× faster, making it the best quality-per-second default. See [`docs/report_draft.md`](docs/report_draft.md) §3.2 and §3.7 for the full tables and the best-algorithm-per-N guide.
+Hill Climber selects expensive Mega/Macro KOLs early, exhausts the budget, and gets trapped — no single-bit flip can improve the solution. Greedy Ranking (multi-strategy greedy + 2-opt), Genetic Algorithm, Tabu Search, and Simulated Annealing each avoid this trap via different mechanisms — knapsack-aware construction, population crossover, tabu memory, and temperature-driven acceptance respectively. In the reproducible benchmark (`experiments/scalability.py`, fixed budget $5,000, mean of 10 seeds), HC is the weakest method at every pool size — and is the *only* method whose GMV falls as N grows ($27.6K→$24.4K) — while the best algorithm's lead over HC widens from **+49% at N=50 to +201% at N=500**. At scale the lead is shared by GA and Greedy Ranking (GA $73.5K at N=500; GR ties GA within ≈1% at N≥200, ~$61K) versus HC's ~$24K — a ~3× gap that underscores the value of structured search for large creator pools. Greedy Ranking matches GA's quality at N≥200 while running 5–25× faster, making it the best quality-per-second default.
+
+The three constructive/memory solvers (GR, GA, TS) share a **multi-strategy greedy seed**: they build *both* a GMV-descending and a GMV/cost-ratio-descending fill and keep the better. Ratio ordering alone maximizes ROI rather than GMV, so on a skewed pool dominated by a few big creators it wastes the budget on many small, overlapping micro-creators — on the shipped real-seed library it scored *below* even Random Search until this guard was added. The live `/optimize` recommendation also ranks algorithms by the true objective (GMV net of the audience-overlap penalty) and excludes the Random Search baseline, so the recommended portfolio is never beaten by one that simply ignores overlap. See [`docs/report_draft.md`](docs/report_draft.md) §2.3.1, §3.2 and §3.7 for the full tables and the best-algorithm-per-N guide.
 
 ---
 
