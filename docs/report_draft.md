@@ -10,7 +10,7 @@
 
 ## (b) Abstract
 
-Cross-border TikTok Shop merchants operating in Southeast Asia face a combinatorial budget allocation problem: given a fixed marketing spend and a pool of hundreds of potential KOL creators, which subset maximizes predicted gross merchandise value (GMV)? This project formulates the problem as a variant of the 0-1 knapsack problem and implements six optimization algorithms — Simulated Annealing, Hill Climber, Random Search, Genetic Algorithm, Tabu Search, and Greedy Ranking — to solve it. A full-stack web application allows merchants to run live optimization, manage their creator database, track KOL metric trends over time via snapshot history, and close the feedback loop through post-campaign attribution (comparing predicted vs. actual GMV). A reproducible benchmark over pool sizes N ∈ {50, 100, 200, 500} (fixed budget $5,000, mean of 10 seeds) shows that the naïve Hill Climber is the weakest algorithm at every scale — and is the only method whose GMV *falls* as the pool grows — while the best algorithm's advantage over it widens from 50% at N=50 to 200% at N=500, directly confirming the "budget-exhaustion local-optima trap" hypothesis. At scale the lead is shared by the Genetic Algorithm and the 2-opt-augmented Greedy Ranking (GA tops all four pool sizes, reaching $73.5K at N=500; GR ties it within ≈1% — e.g. $60.9K vs $61.0K at N=200), with Tabu Search within a few percent up to N=100. GA wins on solution quality while Greedy Ranking matches it within ≈1% at large N while running 2–8× faster, making GR the best quality-per-second default; Simulated Annealing forms a middle tier under its live-default parameters, and Random Search trails the structured methods at every scale as a proper lower-bound baseline. The three constructive/memory solvers (GA, GR, TS) are warm-started from a multi-strategy greedy seed that takes the better of a GMV-descending and a GMV/cost-ratio-descending fill — a guard that prevents the ratio-only heuristic from squandering the budget on many small, mutually-overlapping creators on skewed pools.
+Cross-border TikTok Shop merchants operating in Southeast Asia face a combinatorial budget allocation problem: given a fixed marketing spend and a pool of hundreds of potential KOL creators, which subset maximizes predicted gross merchandise value (GMV)? This project formulates the problem as a variant of the 0-1 knapsack problem and implements six optimization algorithms — Simulated Annealing, Hill Climber, Random Search, Genetic Algorithm, Tabu Search, and Greedy Ranking — to solve it. A multi-tenant full-stack web application (JWT login, per-merchant isolated data) allows merchants to run live optimization, manage their creator database, track KOL metric trends over time via snapshot history, and close the feedback loop through post-campaign attribution that **self-calibrates future predictions** from realised GMV (at global, market×category, and per-creator resolution). A reproducible benchmark over pool sizes N ∈ {50, 100, 200, 500} (fixed budget $5,000, mean of 10 seeds) shows that the naïve Hill Climber is the weakest algorithm at every scale — and is the only method whose GMV *falls* as the pool grows — while the best algorithm's advantage over it widens from 50% at N=50 to 200% at N=500, directly confirming the "budget-exhaustion local-optima trap" hypothesis. At scale the lead is shared by the Genetic Algorithm and the 2-opt-augmented Greedy Ranking (GA tops all four pool sizes, reaching $73.5K at N=500; GR ties it within ≈1% — e.g. $60.9K vs $61.0K at N=200), with Tabu Search within a few percent up to N=100. GA wins on solution quality while Greedy Ranking matches it within ≈1% at large N while running 2–8× faster, making GR the best quality-per-second default; Simulated Annealing forms a middle tier under its live-default parameters, and Random Search trails the structured methods at every scale as a proper lower-bound baseline. The three constructive/memory solvers (GA, GR, TS) are warm-started from a multi-strategy greedy seed that takes the better of a GMV-descending and a GMV/cost-ratio-descending fill — a guard that prevents the ratio-only heuristic from squandering the budget on many small, mutually-overlapping creators on skewed pools.
 
 ---
 
@@ -62,7 +62,7 @@ Before any code, the project followed a deliberate four-step process to identify
 
 **Process.** Raw benchmark figures were processed into (i) lookup tables of CTR/CVR/AOV/purchasing-power keyed by (category, country) (§2.4.2, §5 of `data_source.md`); (ii) a parametric GMV model with diminishing returns and quality normalisation (§2.2); and (iii) a reproducible synthetic-data generator that samples a realistic long-tailed creator population with tier-specific engagement and commission distributions (§2.4.3–2.4.4). The optimization problem itself was processed into a binary-vector formulation with a single scalar fitness function combining GMV, a near-hard budget penalty, and an audience-overlap penalty (§2.1).
 
-**Analyze.** Finally, the processed artefacts are analyzed empirically (Section e): a reproducible, multi-seed benchmark measures solution quality and runtime across pool sizes; convergence and parameter-sensitivity studies explain *why* the algorithms differ; generated distributions are checked back against the source benchmarks; and 123 automated tests guard functional correctness. The remainder of Section (d) details each model the analysis rests on.
+**Analyze.** Finally, the processed artefacts are analyzed empirically (Section e): a reproducible, multi-seed benchmark measures solution quality and runtime across pool sizes; convergence and parameter-sensitivity studies explain *why* the algorithms differ; generated distributions are checked back against the source benchmarks; and 128 automated tests guard functional correctness. The remainder of Section (d) details each model the analysis rests on.
 
 ### 2.1 Problem Formulation
 
@@ -235,12 +235,12 @@ The generator is fully reproducible — `generate_kols(num=300, seed=42)` (CLI: 
 
 The system is a four-layer monolith:
 
-1. **Client** — a single-page app (`frontend/index.html`, vanilla JS + Tailwind) with the Landing, Optimizer, Creators, Campaigns, and Creator Pool Simulator views.
-2. **API** — FastAPI (`main.py` optimization + simulator, `crud.py` creator management, `campaigns.py` attribution) that both serves the SPA as static files and exposes the typed REST surface; integration connectors (TikTok Creator Marketplace, TikTok Shop, third-party analytics) are roadmap stubs.
+1. **Client** — a single-page app (`frontend/index.html`, vanilla JS + Tailwind) with a login gate plus the Landing, Optimizer, Creators, Campaigns, and Creator Pool Simulator views.
+2. **API** — FastAPI (`main.py` optimization + simulator, `crud.py` creator management, `campaigns.py` attribution) that both serves the SPA as static files and exposes the typed REST surface. `auth.py` (JWT register/login) + `tenancy.py` make it **multi-tenant**: a `require_tenant` dependency on every data endpoint resolves the caller's tenant and scopes all reads/writes to it. Integration connectors (TikTok Creator Marketplace, TikTok Shop, third-party analytics) are roadmap stubs.
 3. **Optimization engine** — pure Python with no web/DB dependencies: `engine/optimization/` (the six solvers), `engine/scoring/` (CreatorScore, Explainer, ROI), `engine/fitness.py` (the objective), and `engine/models.py` (KOL, tiers, the SEA GMV model, candidate shortlisting).
-4. **Data** — JSON persistence (`sample_kols.json`, `kol_history.json`, `campaigns.json`), seeded offline by `build_seed.py` (from real FastMoss CSV/Excel) and `fill_slices.py` (synthetic slice fill), with `generator.py` producing the synthetic pools used by the simulator and benchmarks.
+4. **Data** — per-tenant JSON persistence under `data/tenants/{id}/` (`sample_kols.json`, `kol_history.json`, `campaigns.json`, `calibration.json`), provisioned from the curated seed on signup. The shipped seed is built offline by `build_seed.py` (from real FastMoss CSV/Excel) and `fill_slices.py` (synthetic slice fill), with `generator.py` producing the synthetic pools used by the simulator and benchmarks.
 
-Key architectural choices: the engine takes no web/database dependencies, so it is unit-testable in isolation and reusable from both the API and the `experiments/` harness; candidate shortlisting (top-K by CreatorScore before optimization) decouples `/optimize` latency from library size; and all persistence is plain JSON behind a small data-access seam (`KOL_DATA_PATH` is env-overridable), which is what lets the test suite run against an isolated dataset without touching production data.
+Key architectural choices: the engine takes no web/database dependencies, so it is unit-testable in isolation and reusable from both the API and the `experiments/` harness; candidate shortlisting (top-K by CreatorScore before optimization) decouples `/optimize` latency from library size; the GMV prediction self-calibrates from realised outcomes (`calibration.py`, §3.9) at the display layer without changing the solver's ranking; and all persistence is plain JSON behind a small per-tenant data-access seam, which also lets the test suite run against an isolated throwaway tenant without touching production data.
 
 ---
 
@@ -250,7 +250,7 @@ Key architectural choices: the engine takes no web/database dependencies, so it 
 
 The project's outcomes are validated at four complementary levels, so that "it works" means both *correct* and *effective*:
 
-1. **Functional correctness (does the code do what it claims?)** — 123 automated `pytest` tests assert algorithm interface contracts (valid binary states, budget compliance), fitness/penalty behaviour, scoring and explainer logic, and the full REST surface (optimization, CRUD, KOL history, campaign attribution). They run in CI on every push (§3.9).
+1. **Functional correctness (does the code do what it claims?)** — 128 automated `pytest` tests assert algorithm interface contracts (valid binary states, budget compliance), fitness/penalty behaviour, scoring and explainer logic, and the full REST surface (optimization, CRUD, KOL history, campaign attribution, auth & per-tenant isolation, and prediction calibration). They run in CI on every push (§3.9).
 2. **Empirical effectiveness (does it produce good portfolios?)** — controlled simulation experiments measure *solution quality* (predicted GMV) and *runtime* across pool sizes, with every algorithm compared on identical data under identical budgets (§3.1–3.6).
 3. **Data plausibility (is the input model realistic?)** — the synthetic generator's output distributions are checked back against the published benchmarks they target (e.g. generated vs real engagement rates per tier, §2.4.3), and the GMV formula is sanity-checked with a worked example (§2.2).
 4. **Reproducibility (can the results be trusted and repeated?)** — fixed seeds, shared generated pools, and multi-seed averaging make every number in this section regenerable from `experiments/` with no hidden state.
@@ -425,9 +425,15 @@ See `docs/figures/sensitivity_heatmap.png` (single-seed SA grid at N=100, budget
 
 ---
 
-### 3.9 Campaign Attribution Accuracy
+### 3.9 Campaign Attribution & Self-Calibration
 
-The post-campaign attribution feature records actual GMV after campaigns complete and computes `accuracy_pct = actual / predicted × 100` (implemented in `backend/campaigns.py`, covered by `tests/test_campaigns.py`). This closes the prediction→outcome loop so a merchant can see, per campaign, how close the optimizer's predicted GMV was to the realised figure. Because the project ships with synthetic data and no real TikTok Shop sales feed, we do not report a calibrated accuracy number here — the attribution pipeline is validated functionally by the campaign CRUD tests rather than against ground-truth GMV. Validating calibration against real affiliate sales data is left to future work (see §f).
+The post-campaign attribution feature records actual GMV after a campaign completes and computes `accuracy_pct = actual / predicted × 100` (`backend/campaigns.py`). Crucially, each completed campaign now **feeds back into the model**: the actual-vs-predicted ratio updates a per-tenant calibration table (EWMA + shrinkage) at three resolutions (`backend/calibration.py`):
+
+- a **global** bias factor;
+- a **(category, country) segment** factor — where the model's CTR/CVR/AOV tables live; and
+- a **per-creator** factor, derived from the `kol_actuals` breakdown, so a creator who systematically over- or under-delivers gets an individual correction.
+
+Future predicted GMV is multiplied by the matching factor (creator → segment → global → 1.0; each level shrinks toward the coarser one so thin data can't overreact). The solver's ranking *objective* stays raw, so which creators/algorithm win is unaffected — only the displayed prediction self-corrects toward realised results, surfaced via `GET /calibration`. The loop is validated functionally by `tests/test_calibration.py` (actual = ½·predicted halves future predictions; an under-delivering creator is discounted while its segment-neighbour is untouched; calibration is per-tenant). Because the project ships with synthetic data and no real TikTok Shop sales feed, we do not report a *calibrated accuracy number against ground truth* — validating the calibration against real affiliate sales is left to future work (§f).
 
 ---
 
@@ -441,11 +447,12 @@ tests/test_creator_score.py  — CreatorScore edge cases                  ( 3)
 tests/test_explainer.py      — recommendation reason generation         ( 4)
 tests/test_api.py            — core API + simulate-scale + reset        (32)
 tests/test_auth.py           — auth + tenant isolation                  ( 9)
+tests/test_calibration.py    — prediction-calibration feedback loop     ( 5)
 tests/test_campaigns.py      — campaign attribution CRUD                (13)
 tests/test_kol_history.py    — KOL history tracking + simulate-update   (12)
 ```
 
-Total: **123 tests** (isolated from production data via `tests/conftest.py`). Run with: `pytest tests/ --tb=short`
+Total: **128 tests** (isolated from production data via `tests/conftest.py`). Run with: `pytest tests/ --tb=short`
 
 ---
 
@@ -453,7 +460,7 @@ Total: **123 tests** (isolated from production data via `tests/conftest.py`). Ru
 
 ### Summary
 
-This project formulated TikTok Shop KOL portfolio selection as a budget-constrained 0-1 knapsack variant and delivered an end-to-end system around it: six optimization algorithms, a calibrated Southeast-Asian GMV model, a FastAPI backend with a single-page web app, explainable per-creator recommendations, KOL metric-history tracking, and closed-loop campaign attribution — all validated by a reproducible multi-seed benchmark and 123 automated tests.
+This project formulated TikTok Shop KOL portfolio selection as a budget-constrained 0-1 knapsack variant and delivered an end-to-end system around it: six optimization algorithms, a calibrated Southeast-Asian GMV model, a multi-tenant FastAPI backend (JWT auth, per-merchant isolated data) with a single-page web app, explainable per-creator recommendations, KOL metric-history tracking, and a closed-loop campaign attribution that **self-calibrates predictions** from realised GMV — all validated by a reproducible multi-seed benchmark and 128 automated tests.
 
 ### Key Findings
 
@@ -468,15 +475,15 @@ This project formulated TikTok Shop KOL portfolio selection as a budget-constrai
 
 - A deployable optimizer that returns a budget-feasible, **mixed-tier** portfolio in seconds, each pick justified by 3+ human-readable reasons.
 - Concrete algorithm **improvements over textbook baselines** — SA's thermal-adaptive hybrid neighbourhood, the shared multi-strategy greedy seed (GMV-vs-ratio guard) feeding GA/GR/TS, GA's budget-aware init + elitism, TS's aspiration criterion + early stopping, and GR's 2-opt + ADD/drop phases — together with a rigorous, reproducible benchmark that *quantifies* the value of each.
-- A fully **documented, calibrated synthetic data model** for SEA TikTok Shop that makes the optimization trap realistic, plus two product layers — metric-history tracking and campaign attribution — that turn a one-shot recommender into a campaign-management loop.
+- A fully **documented, calibrated synthetic data model** for SEA TikTok Shop that makes the optimization trap realistic, plus product layers — metric-history tracking and a **self-calibrating** campaign-attribution loop, served from per-merchant authenticated tenants — that turn a one-shot recommender into a campaign-management loop.
 
 ### Reflection & Insights
 
-The most instructive surprise was that a well-engineered *greedy* method (Greedy Ranking with 2-opt) rivals population metaheuristics on this problem at a fraction of the cost — a reminder that problem-specific construction heuristics often match general-purpose search, and that "more sophisticated" is not automatically "better." The work also showed how fragile single-seed conclusions are: a stable ranking only emerged after averaging ten seeds, which reshaped how we report every result (variance-aware, with ties acknowledged). Finally, building the attribution loop made concrete that an optimizer is only as trustworthy as its objective model — motivating calibration against real outcomes as the natural next step.
+The most instructive surprise was that a well-engineered *greedy* method (Greedy Ranking with 2-opt) rivals population metaheuristics on this problem at a fraction of the cost — a reminder that problem-specific construction heuristics often match general-purpose search, and that "more sophisticated" is not automatically "better." The work also showed how fragile single-seed conclusions are: a stable ranking only emerged after averaging ten seeds, which reshaped how we report every result (variance-aware, with ties acknowledged). Finally, building the attribution loop made concrete that an optimizer is only as trustworthy as its objective model — which motivated the self-calibration layer that now folds each campaign's realised GMV back into future predictions (the remaining step being validation against *real* sales rather than synthetic outcomes).
 
 ### Future Work
 
-- **Calibrate against reality.** Connect the (currently stubbed) TikTok Shop Partner API to replace synthetic GMV with measured affiliate sales, and report calibrated prediction accuracy through the existing attribution pipeline.
+- **Validate calibration against reality.** The self-calibration loop (§3.9) is implemented; the remaining step is to connect the (currently stubbed) TikTok Shop Partner API so it learns from *measured* affiliate sales rather than synthetic outcomes, and to report calibrated prediction accuracy against ground truth.
+- **Richer feedback models.** The current calibration is a global/segment/creator EWMA correction; with enough campaigns it could be replaced by a learned regression (actual ~ f(features)) using the hand-tuned formula as a prior, and could account for selection bias (only hired creators yield actuals).
 - **Multi-objective optimization.** Optimize GMV *and* audience diversity/reach on a Pareto front rather than a single scalarized objective.
 - **Close SA's large-N gap.** Increase SA's evaluations per temperature level or add random restarts, and optionally warm-start SA/HC from the multi-strategy greedy seed too (they are currently kept cold-start as controls).
-- **Learning from feedback.** Explore approaches that improve the GMV model over time from accumulated campaign-attribution data.
