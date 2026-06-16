@@ -80,6 +80,82 @@ def run_one(algo_fn, kols, budget, seed, **kwargs):
     return elapsed, gmv
 
 
+_CSV_PATH = "experiments/plots/scalability_results.csv"
+_TS_NOTE = ("Note: Tabu Search is skipped at N > 100 — its O(N²) full-neighbourhood "
+            "scan makes runtime prohibitive.")
+
+
+def _filtered(mean_vals, err_vals):
+    """Return (x, y, err) for the non-None entries, aligned to POOL_SIZES."""
+    xs, ys, es = [], [], []
+    for x, y, e in zip(POOL_SIZES, mean_vals, err_vals):
+        if y is not None:
+            xs.append(x); ys.append(y); es.append(e)
+    return xs, ys, es
+
+
+def _summary_from_csv(csv_path=_CSV_PATH):
+    """Rebuild the plotting `summary` from a results CSV, so figures can be
+    regenerated/restyled WITHOUT re-running the (wall-clock-noisy) benchmark."""
+    rows = {}
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            rows[(r["Algorithm"], int(r["N"]))] = r
+
+    def _num(v):
+        try:
+            return float(v)
+        except (ValueError, TypeError):
+            return None
+
+    summary = {}
+    for algo_name in ALGO_CONFIGS:
+        summary[algo_name] = {
+            "mean_times": [_num(rows.get((algo_name, N), {}).get("Mean_Time_Sec")) for N in POOL_SIZES],
+            "std_times":  [_num(rows.get((algo_name, N), {}).get("Std_Time_Sec"))  for N in POOL_SIZES],
+            "mean_gmvs":  [_num(rows.get((algo_name, N), {}).get("Mean_GMV"))       for N in POOL_SIZES],
+            "std_gmvs":   [_num(rows.get((algo_name, N), {}).get("Std_GMV"))        for N in POOL_SIZES],
+        }
+    return summary
+
+
+def make_plots(summary):
+    """Render the execution-time and solution-quality figures from a summary."""
+    os.makedirs("experiments/plots", exist_ok=True)
+    os.makedirs("docs/figures", exist_ok=True)
+
+    panels = [
+        ("mean_times", "std_times", "Execution Time (seconds)",
+         "Algorithm Scalability — Execution Time vs Pool Size", None,
+         ["experiments/plots/scalability_time.png", "docs/figures/scalability_time.png"]),
+        ("mean_gmvs", "std_gmvs", "Mean Best GMV (USD)",
+         "Algorithm Scalability — Solution Quality vs Pool Size",
+         plt.FuncFormatter(lambda x, _: f"${x:,.0f}"),
+         ["experiments/plots/scalability_gmv.png", "docs/figures/scalability_gmv.png"]),
+    ]
+    for mean_key, std_key, ylabel, title, yfmt, paths in panels:
+        fig, ax = plt.subplots(figsize=(10, 5))
+        for algo_name, cfg in ALGO_CONFIGS.items():
+            s = summary[algo_name]
+            xs, ys, es = _filtered(s[mean_key], s[std_key])
+            ax.errorbar(xs, ys, yerr=es, label=algo_name, color=cfg["color"],
+                        marker=cfg["marker"], linestyle=cfg["ls"],
+                        linewidth=2, markersize=7, capsize=4)
+        ax.set_xlabel("KOL Pool Size (N)", fontsize=12)
+        ax.set_ylabel(ylabel, fontsize=12)
+        ax.set_title(title, fontsize=13)
+        ax.legend(fontsize=10)
+        ax.grid(True, linestyle="--", alpha=0.4)
+        if yfmt is not None:
+            ax.yaxis.set_major_formatter(yfmt)
+        fig.text(0.5, 0.01, _TS_NOTE, ha="center", fontsize=8.5, color="#666666")
+        fig.tight_layout(rect=[0, 0.045, 1, 1])
+        for path in paths:
+            fig.savefig(path, dpi=150)
+        plt.close(fig)
+        print(f"[OK] {paths[1]}")
+
+
 def run_scalability_experiment():
     os.makedirs("experiments/plots", exist_ok=True)
     os.makedirs("docs/figures", exist_ok=True)
@@ -142,52 +218,7 @@ def run_scalability_experiment():
             "std_gmvs":   [np.std( results[algo_name][N]["gmvs"])  if results[algo_name][N]["gmvs"]  else None for N in POOL_SIZES],
         }
 
-    def _filtered(vals):
-        """Return (x, y, err) only for non-None entries."""
-        xs, ys, es = [], [], []
-        for x, y, e in zip(POOL_SIZES, vals[0], vals[1]):
-            if y is not None:
-                xs.append(x); ys.append(y); es.append(e)
-        return xs, ys, es
-
-    # ── Plot 1: Execution Time ────────────────────────────────────
-    fig, ax = plt.subplots(figsize=(10, 5))
-    for algo_name, cfg in ALGO_CONFIGS.items():
-        s = summary[algo_name]
-        xs, ys, es = _filtered((s["mean_times"], s["std_times"]))
-        ax.errorbar(xs, ys, yerr=es, label=algo_name, color=cfg["color"],
-                    marker=cfg["marker"], linestyle=cfg["ls"],
-                    linewidth=2, markersize=7, capsize=4)
-    ax.set_xlabel("KOL Pool Size (N)", fontsize=12)
-    ax.set_ylabel("Execution Time (seconds)", fontsize=12)
-    ax.set_title("Algorithm Scalability — Execution Time vs Pool Size", fontsize=13)
-    ax.legend(fontsize=10)
-    ax.grid(True, linestyle="--", alpha=0.4)
-    fig.tight_layout()
-    for path in ["experiments/plots/scalability_time.png", "docs/figures/scalability_time.png"]:
-        fig.savefig(path, dpi=150)
-    plt.close(fig)
-    print("[OK] Time chart → docs/figures/scalability_time.png")
-
-    # ── Plot 2: Final GMV ─────────────────────────────────────────
-    fig, ax = plt.subplots(figsize=(10, 5))
-    for algo_name, cfg in ALGO_CONFIGS.items():
-        s = summary[algo_name]
-        xs, ys, es = _filtered((s["mean_gmvs"], s["std_gmvs"]))
-        ax.errorbar(xs, ys, yerr=es, label=algo_name, color=cfg["color"],
-                    marker=cfg["marker"], linestyle=cfg["ls"],
-                    linewidth=2, markersize=7, capsize=4)
-    ax.set_xlabel("KOL Pool Size (N)", fontsize=12)
-    ax.set_ylabel("Mean Best GMV (USD)", fontsize=12)
-    ax.set_title("Algorithm Scalability — Solution Quality vs Pool Size", fontsize=13)
-    ax.legend(fontsize=10)
-    ax.grid(True, linestyle="--", alpha=0.4)
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"${x:,.0f}"))
-    fig.tight_layout()
-    for path in ["experiments/plots/scalability_gmv.png", "docs/figures/scalability_gmv.png"]:
-        fig.savefig(path, dpi=150)
-    plt.close(fig)
-    print("[OK] GMV chart  → docs/figures/scalability_gmv.png")
+    make_plots(summary)
 
     # ── Summary table ─────────────────────────────────────────────
     print("\n" + "═" * 75)
@@ -206,4 +237,10 @@ def run_scalability_experiment():
 
 
 if __name__ == "__main__":
-    run_scalability_experiment()
+    # `--plot-only` restyles/regenerates the figures from the existing CSV without
+    # re-running the wall-clock-noisy benchmark (keeps the reported times stable).
+    if "--plot-only" in sys.argv:
+        make_plots(_summary_from_csv())
+        print("[OK] Figures regenerated from", _CSV_PATH)
+    else:
+        run_scalability_experiment()
