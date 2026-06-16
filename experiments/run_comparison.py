@@ -102,7 +102,7 @@ def run_experiment(budget=5000.0, seed=42, use_demo_case=True):
         plt.plot(_pad(hist), label=name, color=ALGO_COLORS[name],
                  linewidth=lw, linestyle=ls, alpha=0.85)
     plt.xlabel("Iterations")
-    plt.ylabel("Best GMV (USD)")
+    plt.ylabel("Best Objective (GMV − overlap penalty, USD)")
     plt.title("Algorithm Convergence Comparison (demo pool, commission-rate model)")
     plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"${x:,.0f}"))
     plt.legend(fontsize=9)

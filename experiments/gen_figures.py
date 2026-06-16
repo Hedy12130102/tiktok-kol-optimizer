@@ -137,7 +137,7 @@ def gen_convergence_panels():
 
         ax.set_title(f"N = {N}  (budget = ${N*25:,})", fontsize=11)
         ax.set_xlabel("Iterations", fontsize=10)
-        ax.set_ylabel("Best GMV (USD)", fontsize=10)
+        ax.set_ylabel("Best Objective (USD)", fontsize=10)
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"${v:,.0f}"))
         ax.grid(True, linestyle="--", alpha=0.35)
         ax.legend(fontsize=8)
