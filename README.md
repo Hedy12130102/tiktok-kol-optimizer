@@ -8,7 +8,7 @@
 ![Tests](https://img.shields.io/badge/tests-128%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-For Southeast-Asia TikTok Shop merchants and agencies who must allocate a marketing budget across hundreds of creators — and **prove the ROI afterwards**. The system filters the creator pool by market and category, runs **six optimization algorithms in parallel** to maximize predicted GMV, explains *why* each creator was chosen, and feeds predicted-vs-actual GMV back into the model so every campaign **automatically** sharpens the next. Each merchant works in their own isolated, login-gated tenant.
+For Southeast-Asia TikTok Shop merchants and agencies who must allocate a marketing budget across hundreds of creators — and **prove the ROI afterwards**. The system filters the creator pool by market and category, compares **six optimization algorithms** to maximize predicted GMV, explains *why* each creator was chosen, and feeds predicted-vs-actual GMV back into the model so every campaign **automatically** sharpens the next. Each merchant works in their own isolated, login-gated tenant.
 
 > **▶ Live demo:** `start_server.bat` (Windows) or `uvicorn backend.main:app --reload`, then open **http://localhost:8000/ui**
 
@@ -90,7 +90,7 @@ The platform is organised into three product modules backed by two intelligence 
 
 ### 🎯 Campaign Optimizer
 
-The core engine. Choose a **budget**, one or more **target markets**, and a **product category**; the backend filters the creator pool and runs all six algorithms in parallel, then surfaces the highest-GMV portfolio.
+The core engine. Choose a **budget**, one or more **target markets**, and a **product category**; the backend filters the creator pool, runs all six algorithms, and surfaces the highest-GMV portfolio.
 
 - **Inputs** — budget ($100–$20,000), any of six SEA markets (MY · ID · TH · PH · SG · VN), a product category (Beauty · Fashion · Home & Living · FMCG), and an optional random seed for reproducible runs.
 - **Results** — five headline metrics (winning algorithm, predicted GMV, budget utilization, creators selected, candidate-pool size); an SVG **convergence chart** tracing all six algorithms; a side-by-side **benchmark table** (GMV + ROI, winner highlighted); and the **KOL matrix** — one card per selected creator showing tier, reach, cost, engagement, fit, estimated GMV, and a **"Why?"** explainer.

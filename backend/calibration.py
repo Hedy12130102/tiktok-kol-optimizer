@@ -3,10 +3,11 @@ Prediction calibration — closes the loop from actual campaign GMV back into
 future GMV predictions.
 
 When a campaign is completed with its real GMV, we fold the actual/predicted
-ratio (EWMA + shrinkage) into a per-tenant calibration table: one global factor
-plus per-(category, country) segment factors. When presenting a predicted GMV we
-multiply by the matching factor, so a model that systematically over- or
-under-predicts a segment self-corrects over time.
+ratio (EWMA + shrinkage) into a per-tenant calibration table: one global factor,
+per-(category, country) segment factors, and optional per-creator factors from
+creator-level actuals. When presenting a predicted GMV we multiply by the most
+specific matching factor, so a model that systematically over- or under-predicts
+a tenant, segment, or creator self-corrects over time.
 
 Stored at data/tenants/{id}/calibration.json. A brand-new tenant has no history,
 so every factor defaults to 1.0 (predictions unchanged — zero behaviour change

@@ -3,7 +3,7 @@
 Tabu Search for KOL portfolio optimization.
 
 Algorithm:
-  1. Greedy initialisation (sort by GMV/cost, fill to budget)
+  1. Multi-strategy greedy initialisation (best of GMV-desc and GMV/cost-ratio fills)
   2. At each iteration: evaluate ALL n single-flip neighbours
   3. Choose best non-tabu neighbour (or any if aspiration criterion met)
   4. Add the flipped index to tabu list for `tabu_tenure` steps

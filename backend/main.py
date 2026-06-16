@@ -704,8 +704,9 @@ def optimize_plans(req: OptimizeRequest, _t: str = Depends(require_tenant)):
                   "Best trade-off between scale and efficiency."
 
     Safe        — 80% budget, winner = Greedy Ranking.
-                  Greedy picks by GMV/cost ratio, guaranteeing the best
-                  cost-effectiveness in the pool.
+                  Greedy Ranking keeps the stronger of GMV-descending and
+                  GMV/cost-ratio fills, then applies local improvements under
+                  a smaller budget cap.
                   "Protect budget, maximise ROI."
     """
     if req.budget <= 0:
@@ -754,10 +755,10 @@ def optimize_plans(req: OptimizeRequest, _t: str = Depends(require_tenant)):
     bal_overlap = detect_audience_overlap(bal_result.selected_kols, filtered)
 
     # ── Safe: 80% budget → always use Greedy Ranking ───────────────────────
-    #    Greedy sorts by GMV/cost and greedily fills the budget, giving the
-    #    provably best cost-effectiveness ratio in the pool.
+    #    Greedy Ranking is deterministic and strong under a smaller budget cap,
+    #    making the plan conservative without relying on the weak baselines.
     safe_budget = req.budget * 0.8
-    safe_result = run_greedy_only(filtered, safe_budget, req.seed + 2, scores)   # always best ROI
+    safe_result = run_greedy_only(filtered, safe_budget, req.seed + 2, scores)
     safe_tier = compute_tier_breakdown(safe_result.selected_kols)
     safe_overlap = detect_audience_overlap(safe_result.selected_kols, filtered)
 
@@ -791,7 +792,7 @@ def optimize_plans(req: OptimizeRequest, _t: str = Depends(require_tenant)):
             ),
             PlanResult(
                 plan_name="Safe",
-                description="80% budget cap, Greedy selection — highest cost-effectiveness guaranteed.",
+                description="80% budget cap with deterministic Greedy Ranking for a conservative, efficient portfolio.",
                 budget_limit=safe_budget,
                 selected_kols=safe_result.selected_kols,
                 total_cost=safe_result.total_cost,

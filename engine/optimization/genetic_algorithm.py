@@ -4,8 +4,8 @@ Genetic Algorithm for KOL portfolio optimization.
 
 Key design decisions:
   - Chromosome: binary list (1=selected, 0=not), length = pool size
-  - Greedy seeding: first individual is a near-optimal greedy solution
-    (sort by GMV/cost, fill greedily up to budget)
+  - Greedy seeding: first individual is the stronger of two greedy fills
+    (GMV-descending and GMV/cost-ratio-descending)
   - Selection: tournament (k=3) — fast, tunable selection pressure
   - Crossover: single-point (prob=0.9) — preserves portfolio structure
   - Mutation: uniform bit-flip with prob=1/n per gene

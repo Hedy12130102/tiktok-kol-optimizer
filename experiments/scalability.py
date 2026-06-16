@@ -144,12 +144,12 @@ def make_plots(summary):
         ax.set_xlabel("KOL Pool Size (N)", fontsize=12)
         ax.set_ylabel(ylabel, fontsize=12)
         ax.set_title(title, fontsize=13)
-        ax.legend(fontsize=10)
+        ax.legend(fontsize=9, loc="center left", bbox_to_anchor=(1.02, 0.5))
         ax.grid(True, linestyle="--", alpha=0.4)
         if yfmt is not None:
             ax.yaxis.set_major_formatter(yfmt)
         fig.text(0.5, 0.01, _TS_NOTE, ha="center", fontsize=8.5, color="#666666")
-        fig.tight_layout(rect=[0, 0.045, 1, 1])
+        fig.tight_layout(rect=[0, 0.045, 0.82, 1])
         for path in paths:
             fig.savefig(path, dpi=150)
         plt.close(fig)

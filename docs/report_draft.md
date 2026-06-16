@@ -132,7 +132,7 @@ This lands within the plausible range for a single mid-tier beauty creator's mon
 
 ### 2.3 Algorithms
 
-**Simulated Annealing (SA)** — Thermal-adaptive hybrid neighbourhood (single bit-flip, structural swap, and occasional multi-swap jumps). Acceptance probability P = exp(-δ/T). Parameters: T0=15,000; T_min=10; α=0.95; 150 iterations per temperature step (≈143 temperature levels, ≈21K evaluations). SA is the primary solver.
+**Simulated Annealing (SA)** — Thermal-adaptive hybrid neighbourhood (single bit-flip, structural swap, and occasional multi-swap jumps). Acceptance probability P = exp(-δ/T). Parameters: T0=15,000; T_min=10; α=0.95; 150 iterations per temperature step (≈143 temperature levels, ≈21K evaluations). SA is the main trajectory metaheuristic in the suite.
 
 **Hill Climber (HC)** — Greedy local search. At each iteration it flips one *randomly chosen* bit and accepts the move only if it strictly lowers cost (raises GMV), for a fixed 5,000 iterations. Fast (O(1) evaluation per iteration) but gets trapped in local optima when expensive KOLs fill the budget and no single flip improves the portfolio.
 
@@ -237,7 +237,7 @@ The system is a four-layer monolith:
 
 1. **Client** — a single-page app (`frontend/index.html`, vanilla JS + Tailwind) with a login gate plus the Landing, Optimizer, Creators, Campaigns, and Creator Pool Simulator views.
 2. **API** — FastAPI (`main.py` optimization + simulator, `crud.py` creator management, `campaigns.py` attribution) that both serves the SPA as static files and exposes the typed REST surface. `auth.py` (JWT register/login) + `tenancy.py` make it **multi-tenant**: a `require_tenant` dependency on every data endpoint resolves the caller's tenant and scopes all reads/writes to it. Integration connectors (TikTok Creator Marketplace, TikTok Shop, third-party analytics) are roadmap stubs.
-3. **Optimization engine** — pure Python with no web/DB dependencies: `engine/optimization/` (the six solvers), `engine/scoring/` (CreatorScore, Explainer, ROI), `engine/fitness.py` (the objective), and `engine/models.py` (KOL, tiers, the SEA GMV model, candidate shortlisting).
+3. **Optimization engine** — pure Python with no web/DB dependencies: `engine/optimization/` (the six solvers), `engine/scoring/` (CreatorScore, Explainer, ROI), `engine/fitness.py` (the objective), `engine/models.py` (KOL, tiers, the SEA GMV model), and `backend/main.py` (CreatorScore-based candidate shortlisting before live optimization).
 4. **Data** — per-tenant JSON persistence under `data/tenants/{id}/` (`sample_kols.json`, `kol_history.json`, `campaigns.json`, `calibration.json`), provisioned from the curated seed on signup. The shipped seed is built offline by `build_seed.py` (from real FastMoss CSV/Excel) and `fill_slices.py` (synthetic slice fill), with `generator.py` producing the synthetic pools used by the simulator and benchmarks.
 
 Key architectural choices: the engine takes no web/database dependencies, so it is unit-testable in isolation and reusable from both the API and the `experiments/` harness; candidate shortlisting (top-K by CreatorScore before optimization) decouples `/optimize` latency from library size; the GMV prediction self-calibrates from realised outcomes (`calibration.py`, §3.9) at the display layer without changing the solver's ranking; and all persistence is plain JSON behind a small per-tenant data-access seam, which also lets the test suite run against an isolated throwaway tenant without touching production data.
@@ -353,7 +353,7 @@ The ranking above is not absolute — it is produced by an interaction of proble
 
 See `docs/figures/convergence_panels.png` (three-panel N=20/50/100, proportional budget) and `docs/figures/convergence.png` (the 8-KOL "trap" demo from `run_comparison.py`, budget=$5,000).
 
-(Exact per-panel values are read off the figure; the robust qualitative behaviour is described here.)
+(Exact per-panel values are read off the figure; the robust qualitative behaviour is described here. Each curve uses that algorithm's native history trace, so the panels should be read as qualitative convergence shapes rather than a strict equal-evaluation comparison; Greedy Ranking's trace is a deterministic construction/polish display path.)
 
 **At N=20:** Every algorithm *except* Hill Climber converges to the same optimum within a few hundred iterations — the pool is small enough that GA, TS, SA, GR and even Random Search all find it. HC alone is trapped well below, unable to improve its greedy portfolio with a single bit-flip.
 
@@ -361,7 +361,7 @@ See `docs/figures/convergence_panels.png` (three-panel N=20/50/100, proportional
 
 **At N=100:** GA, TS and GR jump to a strong value almost immediately thanks to greedy seeding / ratio-sorting. SA starts from a cold (empty) portfolio and climbs *steadily*, then makes a late jump that — at this tighter **proportional** budget ($2,500) — carries it to the top of the panel. This is the mirror image of the fixed-$5,000 N=100 setting in §3.2, where the larger feasible set leaves SA's fixed evaluation budget spread thin and it lands mid-tier: SA's relative standing depends heavily on how generous the budget is. Random Search trails the seeded methods, and HC stays flat near the bottom.
 
-**8-KOL trap demo (`convergence.png`):** On the hand-built scenario where one expensive Macro creator tempts a greedy solver, **five of the six methods — SA, GA, TS, Greedy Ranking, and even Random Search on this tiny pool — converge to the same optimum within a handful of iterations**, while **Hill Climber alone stays trapped a notch below** and never escapes (the lower flat line). Their realised portfolios reach **$37.3K GMV versus HC's $36.4K** (`comparison_summary.csv`); the plotted curve is the search *objective* (GMV net of the audience-overlap penalty), which is why the shared plateau reads ≈$33.9K rather than the raw figure. This confirms the trap on a minimal, human-readable instance — only the naïve hill-climb fails to reach the optimum. (The instance is fixed in code, independent of the synthetic generator.)
+**8-KOL trap demo (`convergence.png`):** On the hand-built scenario where one expensive Macro creator tempts a greedy solver, **five of the six methods — SA, GA, TS, Greedy Ranking, and even Random Search on this tiny pool — converge to the same optimum within a handful of iterations**, while **Hill Climber alone stays trapped a notch below** and never escapes (the lower flat line). Their realised portfolios reach **$37.3K GMV versus HC's $36.4K** when `experiments/run_comparison.py` is run; the script writes the supporting `experiments/plots/comparison_summary.csv` artefact locally. The plotted curve is the search *objective* (GMV net of the audience-overlap penalty), which is why the shared plateau reads ≈$33.9K rather than the raw figure. This confirms the trap on a minimal, human-readable instance — only the naïve hill-climb fails to reach the optimum. (The instance is fixed in code, independent of the synthetic generator.)
 
 ---
 

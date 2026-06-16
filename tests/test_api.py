@@ -112,8 +112,8 @@ def test_optimize_history_arrays_nonempty():
 def test_optimize_best_algorithm_has_highest_objective():
     """The best_algorithm field must correspond to the algorithm with the highest
     objective (GMV net of the audience-overlap penalty) — the value the solvers
-    actually optimise. Ranking by raw GMV instead would let the Random Search
-    baseline win by ignoring overlap."""
+    actually optimise, excluding the Random Search baseline. Ranking by raw GMV
+    instead would let a baseline win by ignoring overlap."""
     response = client.post("/optimize", json={
         "budget": 5000, "countries": ["MY"], "category": "beauty", "seed": 42,
     })
@@ -122,7 +122,8 @@ def test_optimize_best_algorithm_has_highest_objective():
 
     if data["candidates"] > 0:
         objectives = {algo["algorithm"]: algo["objective"]
-                      for algo in data["results"].values()}
+                      for key, algo in data["results"].items()
+                      if key != "random_search"}
         max_obj = max(objectives.values())
         assert objectives[best_name] == max_obj
 
