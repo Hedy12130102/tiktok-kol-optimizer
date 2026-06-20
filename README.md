@@ -3,8 +3,8 @@
 **Turn a fixed influencer budget into the highest-GMV creator portfolio — powered by six competing optimization algorithms, explainable AI, and a closed-loop that self-calibrates predictions from real campaign results.**
 
 [![CI](https://github.com/Hedy12130102/tiktok-kol-optimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/Hedy12130102/tiktok-kol-optimizer/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.137-009688?logo=fastapi&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-128%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -291,7 +291,7 @@ tiktok-kol-optimizer/
 
 ### Prerequisites
 
-- **Python 3.10+**
+- **Python 3.11+**
 - pip (and, optionally, a virtual environment)
 
 ### 1. Install dependencies
