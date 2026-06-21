@@ -1,22 +1,4 @@
 # engine/optimization/genetic_algorithm.py
-"""
-Genetic Algorithm for KOL portfolio optimization.
-
-Key design decisions:
-  - Chromosome: binary list (1=selected, 0=not), length = pool size
-  - Greedy seeding: first individual is the stronger of two greedy fills
-    (GMV-descending and GMV/cost-ratio-descending)
-  - Selection: tournament (k=3) — fast, tunable selection pressure
-  - Crossover: single-point (prob=0.9) — preserves portfolio structure
-  - Mutation: uniform bit-flip with prob=1/n per gene
-  - Elitism: best individual always survives to next generation
-
-Why GA beats SA and HC here:
-  The KOL portfolio problem is a 0-1 knapsack variant. GA's crossover
-  operator naturally recombines good partial solutions (e.g., "these 3
-  high-ROI Nano KOLs" + "this Mega KOL") that SA/HC can only discover
-  one flip at a time. Population diversity prevents premature convergence.
-"""
 import copy
 import random
 from typing import List, Optional, Tuple
@@ -47,22 +29,6 @@ def genetic_algorithm(
     tournament_k: int = 3,
     seed: Optional[int] = None,
 ) -> Tuple[List[int], float, List[float]]:
-    """
-    Genetic Algorithm optimizer for KOL portfolio selection.
-
-    Args:
-        kols:           List of KOL candidates.
-        budget:         Maximum total hiring cost (USD).
-        pop_size:       Population size (individuals per generation).
-        generations:    Number of generations to evolve.
-        crossover_prob: Probability of applying crossover (vs. cloning).
-        tournament_k:   Tournament size for selection.
-        seed:           Random seed for reproducibility.
-
-    Returns:
-        (best_state, best_cost, history)
-        history: one entry per individual evaluation (pop_size × generations)
-    """
     rng = random.Random(seed)
     n = len(kols)
     mutation_prob = 1.0 / max(1, n)

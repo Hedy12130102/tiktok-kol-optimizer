@@ -13,21 +13,6 @@ def random_search(
     max_iter: int = 5000,
     seed: Optional[int] = None,
 ) -> Tuple[List[int], float, List[float]]:
-    """
-    Random Search baseline.
-
-    Each iteration samples a random binary state that is bounded
-    closer to the realistic budget selection constraints.
-
-    Args:
-        kols:      List of KOL candidates.
-        budget:    Maximum total hiring cost (USD).
-        max_iter:  Number of random states to evaluate.
-        seed:      Random seed for reproducibility.
-
-    Returns:
-        (best_state, best_cost, history)
-    """
     rng = random.Random(seed)
     n = len(kols)
     

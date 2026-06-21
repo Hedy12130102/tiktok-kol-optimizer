@@ -10,17 +10,6 @@ from engine.fitness import fitness
 
 def get_neighbour_swap_operator(state: List[int], kols: List[KOL], budget: float, rng: random.Random,
                                  T: float = 100.0) -> List[int]:
-    """
-    Smart neighbourhood generator with thermal-adaptive aggression.
-
-    - At high T: 10% chance of a 3-swap (big exploration jumps)
-    - At mid T: 40% single bit flip, 55% structural swap (standard behaviour)
-    - At low T: 10% multi-swap gamble
-
-    The multi-swap operator (swapping 2-3 KOLs at once) helps SA escape
-    the 'many-small-KOLs' local optimum to reach 'few-big-KOLs' global
-    optimum, especially crucial when the filtered pool is small (<50 KOLs).
-    """
     neighbour = copy.copy(state)
     n = len(state)
 
@@ -60,15 +49,6 @@ def simulated_annealing(
     max_iter: int = 150,
     seed: Optional[int] = None,
 ) -> Tuple[List[int], float, List[float]]:
-    """
-    Simulated Annealing with adaptive exploration.
-
-    Temperature is calibrated to the GMV fitness landscape:
-    - Typical single-KOL GMV delta is $2,000–$8,000
-    - T0=15,000 → initial acceptance probability ~60–85% for worsening moves
-    - Cooling: alpha=0.95, T_min=10 → ~143 temperature levels × 150 iters = ~21K evals
-    - At T=100 (late-stage), exp(-delta/T) ≈ 0 → algorithm converges
-    """
     rng = random.Random(seed)
     n = len(kols)
     current = [0] * n

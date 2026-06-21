@@ -13,11 +13,6 @@ def hill_climber(
     max_iter: int = 5000,
     seed: Optional[int] = None,
 ) -> Tuple[List[int], float, List[float]]:
-    """
-    Hill Climber (greedy local search).
-
-    Only accepts a neighbour if it strictly improves the cost function (minimization).
-    """
     rng = random.Random(seed)
     n = len(kols)
     current = [0] * n

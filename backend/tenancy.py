@@ -1,16 +1,3 @@
-"""
-Multi-tenant data isolation.
-
-Each merchant (tenant) gets its own folder under data/tenants/{tenant_id}/ holding
-that tenant's sample_kols.json / seed_kols.json / kol_history.json / campaigns.json.
-The current tenant for a request is held in a context variable, set by the
-`require_tenant` auth dependency (backend/auth.py). The data modules
-(crud.py / main.py / campaigns.py) resolve their file paths through the helpers here
-instead of module-level constants, so a single code path serves every tenant.
-
-Test/dev escape hatch: set env DEFAULT_TENANT to make unauthenticated requests fall
-back to a fixed tenant, and KOL_DATA_DIR to relocate the whole data tree.
-"""
 import contextvars
 import os
 

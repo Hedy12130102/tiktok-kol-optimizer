@@ -10,7 +10,7 @@
 
 For Southeast-Asia TikTok Shop merchants and agencies who must allocate a marketing budget across hundreds of creators — and **prove the ROI afterwards**. The system filters the creator pool by market and category, compares **six optimization algorithms** to maximize predicted GMV, explains *why* each creator was chosen, and feeds predicted-vs-actual GMV back into the model so every campaign **automatically** sharpens the next. Each merchant works in their own isolated, login-gated tenant.
 
-> **▶ Live demo:** `start_server.bat` (Windows) or `uvicorn backend.main:app --reload`, then open **http://localhost:8000/ui**
+> **▶ Live demo:** `start_server.bat` (Windows) or `uvicorn backend.main:app --reload`, then open **http://localhost:8000/**
 
 ---
 
@@ -333,7 +333,7 @@ For production, set a `JWT_SECRET` env var (a dev fallback is used otherwise).
 
 | URL | Purpose |
 |---|---|
-| http://localhost:8000/ui | Web application (Optimizer · Creators · Campaigns) |
+| http://localhost:8000/ | Web application (Optimizer · Creators · Campaigns) |
 | http://localhost:8000/docs | Interactive Swagger API docs |
 
 On first use, **Create an account** (Launch Console → *Create one*). Each merchant starts from the curated seed library in their own isolated tenant.

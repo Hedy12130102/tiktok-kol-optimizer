@@ -1,11 +1,3 @@
-# engine/optimization/greedy_ranking.py
-"""
-Greedy Ranking — knapsack-style construction + local polish.
-
-Builds the best of a GMV-descending and a GMV/cost-ratio-descending greedy fill
-(see engine.optimization._common.greedy_init — ratio ordering alone maximises
-ROI not GMV and badly underperforms), then polishes with 2-OPT swap / ADD / DROP.
-"""
 import copy
 from typing import List, Optional, Tuple
 
@@ -19,10 +11,6 @@ def greedy_ranking(
     budget: float,
     seed: Optional[int] = None,
 ) -> Tuple[List[int], float, List[float]]:
-    """
-    Greedy Ranking with multi-strategy seeding + 2-OPT / ADD / DROP polish.
-    Deterministic — `seed` is accepted only for a uniform solver signature.
-    """
     n = len(kols)
 
     # Multi-strategy greedy fill, then 2-OPT / ADD / DROP polish.

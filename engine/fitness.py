@@ -55,20 +55,6 @@ def summarize_state(state: List[int], kols: List[KOL]) -> Dict[str, float]:
 
 
 def _compute_overlap_penalty(selected: List[KOL]) -> float:
-    """
-    Compute audience overlap penalty for a portfolio.
-
-    IMPORTANT: The /optimize endpoint already filters by country AND category,
-    so ALL KOLs in the selected list share those attributes. We MUST NOT
-    penalise same country/category — that would penalise every pair equally
-    and drown the GMV signal. Instead, we only penalise pairs that ALSO
-    share a similar follower range, which is a genuine redundancy signal.
-
-    Two KOLs are considered overlapping when they share:
-    - same follower range (within 50% of each other) → 0.5
-    - same age group → 0.3
-    - same gender skew (both ≥70% or both ≤30%) → 0.2
-    """
     n = len(selected)
     if n < 2:
         return 0.0
